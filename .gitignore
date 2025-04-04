@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 package-lock.json
+/mcp-server/.env
+/mcp-server/node_modules
+/mcp-server/package-lock.json
+/mcp-server/package.json
