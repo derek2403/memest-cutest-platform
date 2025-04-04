@@ -240,44 +240,71 @@ export default function Shortcut({ onClose, onDrop }) {
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
-        <div className={styles.iconRow}>
-          <div className={styles.logoContainer}>
-            <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
-            <div className={styles.logoGlow}></div>
-          </div>
-          <div className={styles.logoContainer}>
-            <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
-            <div className={styles.logoGlow}></div>
-          </div>
-          <div className={styles.logoContainer}>
-            <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
-            <div className={styles.logoGlow}></div>
-          </div>
-        </div>
-        
         <div className={styles.content}>
-          {isDraggingOver ? (
-            <p>Drop to create shortcut</p>
-          ) : (
-            <p>Drag a button from the sidebar to create a shortcut</p>
-          )}
-        </div>
-        
-        <div className={styles.chatInputContainer}>
-          <input 
-            type="text" 
-            placeholder="Type a workflow..." 
-            className={styles.chatInput}
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-          />
-          <button 
-            className={styles.sendButton}
-            onClick={handleSendMessage}
-          >
-            Send
-          </button>
+          <div className={styles.iconRow}>
+            <div className={styles.logoContainer}>
+              <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+          </div>
+          
+          <div className={styles.mainInstructions}>
+            {isDraggingOver ? (
+              <p>Drop to create shortcut</p>
+            ) : (
+              <p>Drag a button from the sidebar to create a shortcut</p>
+            )}
+          </div>
+          
+          <div className={styles.alternativeMethod}>
+            <p>Or use AI agents method</p>
+            <button 
+              className={styles.aiMethodButton}
+              onClick={() => {
+                // Create a container for the workflow popup
+                let container = document.getElementById('workflow-popup-container');
+                if (!container) {
+                  container = document.createElement('div');
+                  container.id = 'workflow-popup-container';
+                  document.body.appendChild(container);
+                }
+                
+                // Import and render the workflow popup
+                import('./WorkflowPopup').then(module => {
+                  const WorkflowPopup = module.default;
+                  
+                  // Render the workflow popup component
+                  const root = ReactDOM.createRoot(container);
+                  root.render(
+                    <WorkflowPopup 
+                      initialInput=""
+                      onClose={() => {
+                        // Clean up when closed
+                        if (container && container.parentNode) {
+                          container.parentNode.removeChild(container);
+                        }
+                      }} 
+                    />
+                  );
+                }).catch(err => {
+                  console.error("Error loading WorkflowPopup:", err);
+                });
+                
+                // Close the shortcut popup
+                onClose();
+              }}
+            >
+              Create AI Workflow
+            </button>
+          </div>
         </div>
       </div>
     </div>
