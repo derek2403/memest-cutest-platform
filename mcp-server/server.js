@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { handleEmailVerification, verifyToken, isEmailVerified, sendTransactionApprovalEmail, verifyTransactionToken } from './scripts/email.js';
 import { handleTransaction, executeTransaction } from './scripts/wallet.js';
-import { generateTransactionExcel, addTransactionToSheet } from './scripts/excel.js';
+import { generateTransactionExcel, addTransactionToSheet, generateTransactionGraphs, sendGraphsByEmail } from './scripts/excel.js';
 
 // Load environment variables
 dotenv.config();
@@ -182,6 +182,29 @@ app.post('/transactions/report', async (req, res) => {
       error: error.message,
       reportUrl: reportUrl,
       fallback: true
+    });
+  }
+});
+
+// Add route for generating transaction graphs
+app.post('/api/transactions/graphs', async (req, res) => {
+  try {
+    const { address, chainId, month, year, email } = req.body;
+    
+    console.log(`Generating transaction graphs for address ${address} on chain ${chainId}, month ${month}, year ${year}`);
+    
+    // Generate Excel report with graphs and email
+    const result = await generateTransactionExcel(address, chainId, month, year, {
+      generateGraphs: true,
+      email: email || 'derekliew0@gmail.com' // Default email if not provided
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error generating transaction graphs:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 });
