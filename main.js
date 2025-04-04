@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { initSidebar } from './components/sidebar.js';
-
+//test
 // Scene setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#eeeee4'); // Light blue background (sky blue)
