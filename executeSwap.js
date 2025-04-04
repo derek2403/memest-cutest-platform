@@ -144,8 +144,8 @@ export default async function handler(req, res) {
 
     // Set up swap parameters
     const amount = "1000000000000000"; // 0.001 ETH
-    const srcToken = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // WETH on Arbitrum
-    const dstToken = "0x4200000000000000000000000000000000000006"; // WETH on Optimism
+    const srcToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+    const dstToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     const INCH_ROUTER = "0x1111111254eeb25477b68fb85ed929f73a960582";
 
     // Perform pre-flight checks
