@@ -32,9 +32,9 @@ export function spawn1inchUnicorn(scene) {
       
       // Set the position to the exact coordinates provided
       model.position.set(
-        -3.075565661559263,
-        -9.049334183721148e-16, // Essentially zero
-        4.075457805775765
+        -3.315565661559263,
+        -8.049334183721148e-16, // Essentially zero
+        4.075457805775765 
       );
       
       // Rotate the unicorn anti-clockwise (counter-clockwise)

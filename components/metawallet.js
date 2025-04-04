@@ -390,7 +390,7 @@ export function spawnMetamaskWolf(scene) {
       model.position.set(
         3.4178752221039543,
         8.495322759906675e-16, // Essentially zero
-        -3.8259532415907795
+        -4.259532415907795
       );
       
       // Make sure model casts and receives shadows
