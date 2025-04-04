@@ -87,7 +87,9 @@ export function initSidebar(callbacks = {}) {
     // Add Google Fonts
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
+
     fontLink.href = 'https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap';
+
     document.head.appendChild(fontLink);
     
     // Add CSS directly to ensure it's applied
@@ -97,6 +99,7 @@ export function initSidebar(callbacks = {}) {
             position: fixed;
             top: 20px;
             right: 20px;
+
             width: 220px;
             background-color: rgba(30, 40, 50, 0.85);
             border-radius: 12px;
@@ -137,12 +140,14 @@ export function initSidebar(callbacks = {}) {
             color: #A0E6FF;
             font-weight: 600;
             font-family: 'Poppins', sans-serif;
+
         }
         
         .sidebar-button {
             display: flex;
             align-items: center;
             width: 100%;
+
             padding: 10px 12px;
             margin-bottom: 8px;
             border: none;
@@ -167,6 +172,7 @@ export function initSidebar(callbacks = {}) {
         
         .service-button {
             color: #FFFFFF;
+
         }
         
         .button-icon {
@@ -176,6 +182,7 @@ export function initSidebar(callbacks = {}) {
             object-fit: contain;
         }
         
+
         .sidebar-button:hover {
             transform: translateY(-2px) scale(1.02);
             box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
@@ -183,8 +190,18 @@ export function initSidebar(callbacks = {}) {
         }
         
         .sidebar-button:active {
+
             transform: translateY(1px);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        #sidebar {
+            animation: fadeIn 0.4s ease-out;
         }
     `;
     document.head.appendChild(style);
@@ -214,10 +231,37 @@ export function initSidebar(callbacks = {}) {
             icon.style.cursor = 'grab';
             icon.style.zIndex = '2000';
             icon.style.pointerEvents = 'none'; // Allow mouse events to pass through initially
+
             icon.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))';
+
             
-            // Add the icon to the body
+            // Create glow animation
+            const glowKeyframes = document.createElement('style');
+            glowKeyframes.textContent = `
+                @keyframes pulse {
+                    0% { transform: scale(1); opacity: 0.7; }
+                    50% { transform: scale(1.2); opacity: 0.3; }
+                    100% { transform: scale(1); opacity: 0.7; }
+                }
+                #draggable-metamask-glow {
+                    animation: pulse 2s infinite;
+                }
+            `;
+            document.head.appendChild(glowKeyframes);
+            
+            // Add the elements to the body
+            document.body.appendChild(glow);
             document.body.appendChild(icon);
+            
+            // Update glow position with icon
+            const moveGlow = (moveEvent) => {
+                if (glow.parentNode) {
+                    glow.style.left = `${moveEvent.clientX - 25}px`;
+                    glow.style.top = `${moveEvent.clientY - 25}px`;
+                }
+            };
+            document.addEventListener('mousemove', moveGlow);
+            
             console.log("Icon created and added to body", icon);
             
             // After a short delay, make the icon interactive
@@ -241,13 +285,18 @@ export function initSidebar(callbacks = {}) {
             // Handle drop or click elsewhere
             const handleDrop = () => {
                 document.removeEventListener('mousemove', moveIcon);
+                document.removeEventListener('mousemove', moveGlow);
                 document.removeEventListener('mouseup', handleDrop);
                 
                 // If the icon is not dropped on a valid target after a delay, remove it
                 setTimeout(() => {
                     const iconElement = document.getElementById('draggable-metamask-icon');
+                    const glowElement = document.getElementById('draggable-metamask-glow');
                     if (iconElement && iconElement.parentNode) {
                         iconElement.parentNode.removeChild(iconElement);
+                    }
+                    if (glowElement && glowElement.parentNode) {
+                        glowElement.parentNode.removeChild(glowElement);
                     }
                 }, 100);
             };

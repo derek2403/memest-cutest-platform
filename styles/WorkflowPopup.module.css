@@ -1,0 +1,423 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&display=swap');
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  font-family: 'Baloo 2', cursive;
+}
+
+.container {
+  width: 90%;
+  max-width: 600px;
+  height: 80%;
+  max-height: 700px;
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 20px 20px 0 0;
+}
+
+.logoContainer {
+  position: relative;
+  margin-right: 15px;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.logoGlow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 10px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.closeButton {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.examplesSection {
+  margin-bottom: 10px;
+}
+
+.examplesTitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.exampleButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exampleButton {
+  padding: 6px 12px;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  color: #444;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Baloo 2', cursive;
+}
+
+.exampleButton:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-2px);
+}
+
+.workflowForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workflowInput {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-family: 'Baloo 2', cursive;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+.parseButton {
+  align-self: flex-end;
+  padding: 10px 15px;
+  background-color: #0084ff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-family: 'Baloo 2', cursive;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.parseButton:hover:not(:disabled) {
+  background-color: #0070d1;
+  transform: translateY(-2px);
+}
+
+.parseButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.resultSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 15px;
+  border: 1px solid #eee;
+}
+
+.resultTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+.parsedItems {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.parsedItem {
+  display: flex;
+  align-items: flex-start;
+}
+
+.itemType {
+  width: 90px;
+  font-weight: 600;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.itemContent {
+  flex: 1;
+}
+
+.flowchartContainer {
+  width: 100%;
+  margin: 20px 0;
+  padding: 10px 0;
+  overflow: hidden;
+}
+
+.flowchartTitle {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  font-weight: 600;
+  text-align: left;
+  width: 100%;
+}
+
+.flowchartScroller {
+  width: 100%;
+  overflow-x: auto;
+  padding: 10px 0 20px;
+}
+
+.flowchartContent {
+  display: flex;
+  align-items: center;
+  min-width: min-content;
+  padding: 0 10px;
+}
+
+.flowStep {
+  display: flex;
+  align-items: center;
+}
+
+.node {
+  background-color: rgba(242, 230, 255, 0.7);
+  border-radius: 15px;
+  padding: 15px 20px;
+  min-width: 120px;
+  min-height: 40px;
+  text-align: center;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+
+.arrowContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 10px;
+  min-width: 80px;
+}
+
+.arrowLabel {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.arrowLine {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.arrowStem {
+  height: 1.5px;
+  background-color: #aaa;
+  flex-grow: 1;
+  min-width: 40px;
+}
+
+.arrowHead {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid #aaa;
+}
+
+/* Action Buttons */
+.actionButtons {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.approveButton, .tryAgainButton {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.approveButton {
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  min-width: 150px;
+}
+
+.approveButton:hover {
+  background-color: #3367d6;
+  transform: translateY(-2px);
+}
+
+.tryAgainButton {
+  background-color: white;
+  color: #555;
+  border: 1px solid #ccc;
+  min-width: 120px;
+}
+
+.tryAgainButton:hover {
+  background-color: #f5f5f5;
+  transform: translateY(-2px);
+}
+
+/* Completion Screen Styles */
+.completionScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  height: 100%;
+}
+
+.checkmarkContainer {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #4caf50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.checkmark {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.completionScreen h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
+}
+
+.completionScreen p {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 30px 0;
+  max-width: 80%;
+}
+
+.doneButton {
+  padding: 12px 40px;
+  background-color: #6a5acd;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-family: 'Baloo 2', cursive;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.doneButton:hover {
+  background-color: #5a4abf;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
+.doneButton:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+} 
