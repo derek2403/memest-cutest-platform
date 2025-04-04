@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/MetamaskShortcut.module.css';
 
-export default function MetamaskShortcut({ onClose }) {
+export default function ShortcutDetails({ onClose, assistantType = 'metamask' }) {
   const [messages, setMessages] = useState([]);
   const [currentOptions, setCurrentOptions] = useState([]);
   const [conversationStage, setConversationStage] = useState('initial');
@@ -87,15 +87,41 @@ export default function MetamaskShortcut({ onClose }) {
     }, 600);
   };
 
+  // Determine the assistant title based on the type
+  const getAssistantTitle = () => {
+    switch(assistantType) {
+      case 'gmail':
+        return 'Gmail Assistant';
+      case '1inch':
+        return '1inch Assistant';
+      case 'metamask':
+      default:
+        return 'MetaMask Assistant';
+    }
+  };
+
+  // Get the correct icon path based on assistant type
+  const getAssistantIcon = () => {
+    switch(assistantType) {
+      case 'gmail':
+        return '/icon/gmail.png';
+      case '1inch':
+        return '/icon/1inch.png';
+      case 'metamask':
+      default:
+        return '/icon/metamask.png';
+    }
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.logoContainer}>
-            <img src="/icon/metamask.png" alt="MetaMask" className={styles.logo} />
+            <img src={getAssistantIcon()} alt={assistantType} className={styles.logo} />
             <div className={styles.logoGlow}></div>
           </div>
-          <h2>MetaMask Assistant</h2>
+          <h2>{getAssistantTitle()}</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
 
@@ -106,7 +132,7 @@ export default function MetamaskShortcut({ onClose }) {
               <div key={index} className={`${styles.message} ${msg.sender === 'AI' ? styles.aiMessage : styles.userMessage}`}>
                 <div className={styles.messageBubble}>
                   <div className={styles.senderName}>
-                    {msg.sender === 'AI' ? 'MetaMask' : 'You'}
+                    {msg.sender === 'AI' ? getAssistantTitle().split(' ')[0] : 'You'}
                   </div>
                   <p>{msg.text}</p>
                   <div className={styles.messageCorner}></div>

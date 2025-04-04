@@ -33,39 +33,16 @@ export default function Shortcut({ onClose, onDrop }) {
       icon.parentNode.removeChild(icon);
     }
     
-    // Navigate to the appropriate page based on the button ID or dragged element
+    // Handle different assistants based on the dragged icon
     if (buttonId === 'metamask-button' || buttonId === 'metamask-icon') {
-      // Instead of redirecting, render the MetaMask shortcut component
-      import('../components/metamask_shortcut').then(module => {
-        const MetamaskShortcut = module.default;
-        // Create a container for the MetaMask shortcut if it doesn't exist
-        let container = document.getElementById('metamask-shortcut-container');
-        if (!container) {
-          container = document.createElement('div');
-          container.id = 'metamask-shortcut-container';
-          document.body.appendChild(container);
-        }
-        
-        // Render the MetaMask shortcut component
-        const root = ReactDOM.createRoot(container);
-        root.render(
-          <MetamaskShortcut 
-            onClose={() => {
-              // Clean up when closed
-              if (container && container.parentNode) {
-                container.parentNode.removeChild(container);
-              }
-            }} 
-          />
-        );
-      });
-      
-      // Close the shortcut popup
+      renderAssistant('metamask');
       onClose();
     } else if (buttonId === 'gmail-button' || buttonId === 'gmail-icon') {
-      window.location.href = '/gmail_shortcut';
+      renderAssistant('gmail');
+      onClose();
     } else if (buttonId === '1inch-button' || buttonId === '1inch-icon') {
-      window.location.href = '/1inch_shortcut';
+      renderAssistant('1inch');
+      onClose();
     } else {
       // Check if the dragged element was one of the icons in the shortcut component
       const dataTransfer = e.dataTransfer;
@@ -76,45 +53,50 @@ export default function Shortcut({ onClose, onDrop }) {
               dataTransfer.items[i].type.indexOf('image') !== -1) {
             const file = dataTransfer.items[i].getAsFile();
             if (file.name.includes('metamask')) {
-              // Instead of redirecting, render the MetaMask shortcut component
-              import('../components/metamask_shortcut').then(module => {
-                const MetamaskShortcut = module.default;
-                // Create a container for the MetaMask shortcut if it doesn't exist
-                let container = document.getElementById('metamask-shortcut-container');
-                if (!container) {
-                  container = document.createElement('div');
-                  container.id = 'metamask-shortcut-container';
-                  document.body.appendChild(container);
-                }
-                
-                // Render the MetaMask shortcut component
-                const root = ReactDOM.createRoot(container);
-                root.render(
-                  <MetamaskShortcut 
-                    onClose={() => {
-                      // Clean up when closed
-                      if (container && container.parentNode) {
-                        container.parentNode.removeChild(container);
-                      }
-                    }} 
-                  />
-                );
-              });
-              
-              // Close the shortcut popup
+              renderAssistant('metamask');
               onClose();
               break;
             } else if (file.name.includes('gmail')) {
-              window.location.href = '/gmail_shortcut';
+              renderAssistant('gmail');
+              onClose();
               break;
             } else if (file.name.includes('1inch')) {
-              window.location.href = '/1inch_shortcut';
+              renderAssistant('1inch');
+              onClose();
               break;
             }
           }
         }
       }
     }
+  };
+
+  // Helper function to render the appropriate assistant
+  const renderAssistant = (assistantType) => {
+    import('./shortcutdetails').then(module => {
+      const AssistantShortcut = module.default;
+      // Create a container for the assistant shortcut if it doesn't exist
+      let container = document.getElementById(`${assistantType}-shortcut-container`);
+      if (!container) {
+        container = document.createElement('div');
+        container.id = `${assistantType}-shortcut-container`;
+        document.body.appendChild(container);
+      }
+      
+      // Render the assistant shortcut component with the appropriate type
+      const root = ReactDOM.createRoot(container);
+      root.render(
+        <AssistantShortcut 
+          assistantType={assistantType}
+          onClose={() => {
+            // Clean up when closed
+            if (container && container.parentNode) {
+              container.parentNode.removeChild(container);
+            }
+          }} 
+        />
+      );
+    });
   };
 
   // Make the icons in the shortcut component draggable
@@ -156,6 +138,10 @@ export default function Shortcut({ onClose, onDrop }) {
           if (icon.parentNode) {
             icon.parentNode.removeChild(icon);
           }
+          
+          // Render the MetaMask assistant
+          renderAssistant('metamask');
+          onClose();
         }
       }
     };

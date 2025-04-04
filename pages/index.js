@@ -10,7 +10,7 @@ import { spawn1inchUnicorn } from "../components/oneinch.js";
 import { spawnMetamaskWolf } from "../components/metawallet.js";
 import dynamic from 'next/dynamic';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
-const MetamaskShortcut = dynamic(() => import('../components/metamask_shortcut'), { ssr: false });
+const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
 
 // At the top of your file, before the component
 // Add this if you remove globals.css
