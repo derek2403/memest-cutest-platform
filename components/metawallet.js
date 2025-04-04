@@ -352,4 +352,86 @@ function connectToMetaMask() {
         // You might want to prompt the user to install MetaMask
         alert('Please install MetaMask to use this feature!');
     }
+}
+
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
+// Track if the model has been loaded
+let metamaskWolfLoaded = false;
+let metamaskWolfModel = null;
+
+// Function to load and place the Metamask wolf model
+export function spawnMetamaskWolf(scene) {
+  // If model already exists, just toggle visibility instead of reloading
+  if (metamaskWolfLoaded && metamaskWolfModel) {
+    metamaskWolfModel.visible = !metamaskWolfModel.visible;
+    console.log(`Metamask wolf visibility set to: ${metamaskWolfModel.visible}`);
+    return;
+  }
+  
+  console.log("Loading Metamask wolf model...");
+  const gltfLoader = new GLTFLoader();
+  
+  // Load the Metamask wolf model with the correct path
+  gltfLoader.load(
+    "/models/metamask_wolf/metamask_wolf.glb", // Updated path to locate in models folder
+    (gltf) => {
+      // Success callback
+      console.log("Metamask wolf model loaded successfully");
+      
+      // Get the model
+      const model = gltf.scene;
+      
+      // Scale the model appropriately
+      model.scale.set(1, 1, 1); // Adjust scale as needed
+      
+      // Set the position to the exact coordinates provided
+      model.position.set(
+        3.4178752221039543,
+        8.495322759906675e-16, // Essentially zero
+        -3.8259532415907795
+      );
+      
+      // Make sure model casts and receives shadows
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+          
+          // Instead of replacing materials, just modify existing ones
+          if (node.material) {
+            // Preserve original material properties but make it less shiny
+            node.material.roughness = 0.9;
+            node.material.metalness = 0.0;
+            
+            // If the model has no color (is black), add a default color
+            if (!node.material.color || node.material.color.getHex() === 0x000000) {
+              node.material.color = new THREE.Color(0x555555); // Gray fallback color
+            }
+            
+            // Ensure materials update properly
+            node.material.needsUpdate = true;
+          }
+        }
+      });
+      
+      // Add the model to the scene
+      scene.add(model);
+      
+      // Set tracking variables
+      metamaskWolfLoaded = true;
+      metamaskWolfModel = model;
+      
+      console.log("Metamask wolf added to scene");
+    },
+    (xhr) => {
+      // Progress callback
+      console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+    },
+    (error) => {
+      // Error callback
+      console.error("Error loading Metamask wolf model:", error);
+    }
+  );
 } 
