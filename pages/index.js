@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { initSidebar } from '../components/sidebar.js';
+import { loadFurniture } from '../components/furniture.js';
 
 export default function Home() {
   const mountRef = useRef(null);
@@ -44,8 +44,8 @@ export default function Home() {
 
     // Room dimensions
     const roomWidth = 6;
-    const roomHeight = 3;
-    const roomDepth = 6;
+    const roomHeight = 3.5;
+    const roomDepth = 8;
 
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
@@ -85,41 +85,8 @@ export default function Home() {
     backWall.receiveShadow = true;
     scene.add(backWall);
 
-    // Load the bed model
-    const gltfLoader = new GLTFLoader();
-    gltfLoader.load(
-      '/gltf/bed_double_A.gltf',
-      (gltf) => {
-        const model = gltf.scene;
-        
-        // Enable shadows for the model
-        model.traverse((node) => {
-          if (node.isMesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-          }
-        });
-        
-        // Position the bed in the room - move it to the right
-        //right , up , downside
-        model.position.set(-1.5, 0, -1.5); // X value increased to move right
-        
-        // You can also rotate the bed if needed
-        // model.rotation.y = Math.PI / 2; // Rotate 90 degrees
-        
-        // You can scale the model if needed
-        // model.scale.set(1, 1, 1);
-        
-        scene.add(model);
-        console.log('Bed model loaded successfully');
-      },
-      (progress) => {
-        console.log('Loading progress:', (progress.loaded / progress.total) * 100, '%');
-      },
-      (error) => {
-        console.error('Error loading bed model:', error);
-      }
-    );
+    // Load all furniture
+    loadFurniture(scene, roomWidth, roomHeight, roomDepth);
 
     // Initialize the sidebar
     initSidebar();
