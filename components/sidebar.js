@@ -1,27 +1,34 @@
 import { initMetaWallet } from './metawallet.js';
 
-// Create and initialize the sidebar with only the Summon AI Agent button
+// Create and initialize the sidebar with three buttons
 function initSidebar(callbacks = {}) {
     // Create sidebar container
     const sidebar = document.createElement('div');
     sidebar.id = 'sidebar';
     
-    // Create spawn AI Agent button
-    const spawnButton = document.createElement('button');
-    spawnButton.id = 'ai-agent-button';
-    spawnButton.textContent = 'Summon AI Agent';
+    // Create three buttons: Metamask, Gmail, 1inch
+    const buttonData = [
+        { id: 'metamask-button', text: 'Metamask', color: '#F6851B' },
+        { id: 'gmail-button', text: 'Gmail', color: '#EA4335' },
+        { id: 'oneinch-button', text: '1inch', color: '#1B314F' }
+    ];
     
-    // Style the button
-    spawnButton.style.backgroundColor = '#FF9966'; // Orange color
-    
-    spawnButton.addEventListener('click', () => {
-        console.log('Summon AI Agent button clicked');
-        // Call the spawnAIAgent callback if it exists
-        if (callbacks.spawnAIAgent) {
-            callbacks.spawnAIAgent();
-        }
+    buttonData.forEach(data => {
+        const button = document.createElement('button');
+        button.id = data.id;
+        button.textContent = data.text;
+        button.style.backgroundColor = data.color;
+        button.style.color = (data.id === 'oneinch-button') ? '#FFFFFF' : '#333333'; // White text for dark background
+        
+        button.addEventListener('click', () => {
+            console.log(`${data.text} button clicked`);
+            // Call the appropriate callback if it exists
+            if (callbacks[data.id]) {
+                callbacks[data.id]();
+            }
+        });
+        sidebar.appendChild(button);
     });
-    sidebar.appendChild(spawnButton);
     
     // Append sidebar to the document body
     document.body.appendChild(sidebar);
@@ -40,7 +47,7 @@ function initSidebar(callbacks = {}) {
             top: 20px;
             right: 20px;
             width: auto;
-            height: auto; /* Only as tall as needed */
+            height: auto;
             min-width: 120px;
             background-color: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
@@ -54,15 +61,19 @@ function initSidebar(callbacks = {}) {
             display: block;
             width: 100%;
             padding: 10px 15px;
+            margin-bottom: 8px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-family: 'Nunito', sans-serif;
             font-weight: 700;
-            color: #333;
             transition: transform 0.2s, box-shadow 0.2s;
             text-align: center;
             white-space: nowrap;
+        }
+        
+        #sidebar button:last-child {
+            margin-bottom: 0;
         }
         
         #sidebar button:hover {

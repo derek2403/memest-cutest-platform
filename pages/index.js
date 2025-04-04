@@ -160,8 +160,21 @@ export default function Home() {
     // Load all furniture
     loadFurniture(scene, roomWidth, roomHeight, roomDepth);
 
+    // Load AI Agent by default
+    loadAIAgent();
+
     // AI Agent loading and movement functions
     function loadAIAgent() {
+      // If the agent already exists, just reset its position
+      if (aiAgent) {
+        console.log("AI Agent already exists, resetting position");
+        aiAgent.position.set(0, 0, 0);
+        aiAgent.visible = true;
+        isAgentWalking = false;
+        playAnimation('idle');
+        return;
+      }
+      
       console.log("Loading AI Agent model (FBX)...");
       const fbxLoader = new FBXLoader();
       const textureLoader = new THREE.TextureLoader();
@@ -345,7 +358,18 @@ export default function Home() {
 
     // Initialize the sidebar with callbacks
     initSidebar({
-      spawnAIAgent: spawnAIAgent,
+      'metamask-button': () => {
+        console.log("Metamask button clicked");
+        // Add Metamask functionality here
+      },
+      'gmail-button': () => {
+        console.log("Gmail button clicked");
+        // Add Gmail functionality here
+      },
+      'oneinch-button': () => {
+        console.log("1inch button clicked");
+        // Add 1inch functionality here
+      }
     });
 
     // Add right-click event listener for movement
