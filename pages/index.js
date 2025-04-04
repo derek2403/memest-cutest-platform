@@ -9,6 +9,7 @@ import { loadAIAgent } from "../components/aiagent.js";
 import { spawn1inchUnicorn } from "../components/oneinch.js";
 import { spawnMetamaskWolf } from "../components/metawallet.js";
 import dynamic from 'next/dynamic';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/metamask_shortcut'), { ssr: false });
 
@@ -1594,6 +1595,26 @@ export default function Home() {
             Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
         }
         * { box-sizing: border-box; }
+        
+        .connect-button-wrapper {
+          position: fixed;
+          top: 20px;
+          right: 160px; /* Position to the left of sidebar */
+          z-index: 1000;
+          font-family: 'Baloo 2', cursive;
+          background-color: rgba(255, 255, 255, 0.9);
+          border-radius: 15px;
+          padding: 5px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+          backdrop-filter: blur(5px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          animation: fadeIn 0.4s ease-out;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
       <div style={{ width: "100%", height: "100vh" }} ref={mountRef}></div>
       
@@ -1609,6 +1630,10 @@ export default function Home() {
           onClose={() => setShowMetamaskShortcut(false)} 
         />
       )}
+      
+      <div className="connect-button-wrapper">
+        <ConnectButton />
+      </div>
     </>
   );
 }
