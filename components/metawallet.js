@@ -388,9 +388,9 @@ export function spawnMetamaskWolf(scene) {
       
       // Set the position to the exact coordinates provided
       model.position.set(
-        3.4178752221039543,
-        8.495322759906675e-16, // Essentially zero
-        -4.259532415907795
+        0.21083844329090778,
+        5.365217592205796e-16, // Essentially zero
+        -2.416279194901965
       );
       
       // Make sure model casts and receives shadows
@@ -467,9 +467,9 @@ export function spawn1inchUnicorn(scene) {
       
       // Set the position to the exact coordinates provided
       model.position.set(
-        -3.075565661559263,
-        -9.049334183721148e-16, // Essentially zero
-        4.075457805775765
+        0.9843086503678045,
+        -6.077401855916396e-16, // Essentially zero
+        2.7370184733685843
       );
       
       // Rotate the unicorn anti-clockwise (counter-clockwise)

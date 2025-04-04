@@ -32,14 +32,14 @@ export function spawn1inchUnicorn(scene) {
       
       // Set the position to the exact coordinates provided
       model.position.set(
-        -3.315565661559263,
-        -8.049334183721148e-16, // Essentially zero
-        4.075457805775765 
+        0.9843086503678045,
+        -6.077401855916396e-16, // Essentially zero
+        3.0370184733685843 // Moved backwards (smaller z value)
       );
       
       // Rotate the unicorn anti-clockwise (counter-clockwise)
       // Rotation is in radians, Math.PI/2 is 90 degrees
-      model.rotation.y = Math.PI / 2; // 90 degrees counter-clockwise
+      model.rotation.y = Math.PI; // 180 degrees counter-clockwise
       
       // Add the model to the scene
       scene.add(model);
