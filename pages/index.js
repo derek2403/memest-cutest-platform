@@ -126,11 +126,27 @@ export default function Home() {
       );
       await tx2.wait();
 
-      setStatus("Approvals complete! Ready for swap");
-      setTxHash(tx2.hash);
+      setStatus("Approvals complete! Executing swap...");
 
-      // Now you can call your backend API to execute the swap
-      // The actual swap execution would be handled by your backend
+      // Call the API to execute the swap
+      const response = await fetch("/api/executeSwap", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          walletAddress: account,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStatus(`Swap executed! Status: ${data.status}`);
+        setTxHash(data.orderHash);
+      } else {
+        throw new Error(data.error || "Swap failed");
+      }
     } catch (error) {
       console.error(error);
       setStatus("Swap failed: " + error.message);
