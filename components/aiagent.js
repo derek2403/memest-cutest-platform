@@ -22,21 +22,49 @@ export function loadAIAgent(scene, callbacks = {}) {
       // Scale down the model
       fbx.scale.set(0.01, 0.01, 0.01);
       
-      // Apply texture with a brighter color
-      const texture = textureLoader.load('/models/ai-agent/shaded.png');
+      // Apply textures with proper colors
+      const bodyTexture = textureLoader.load('/models/ai-agent/shaded.png');
+      
+      // Create materials for different parts
+      const bodyMaterial = new THREE.MeshStandardMaterial({
+        map: bodyTexture,
+        skinning: true,
+        color: new THREE.Color('#FF9D00'), // Bright orange for body
+        roughness: 0.9, // Much higher roughness to reduce shine
+        metalness: 0.0 // No metalness for a matte look
+      });
+      
+      const greenPartsMaterial = new THREE.MeshStandardMaterial({
+        map: bodyTexture,
+        skinning: true,
+        color: new THREE.Color('#1D8A77'), // Teal/green for limbs
+        roughness: 0.9, // Much higher roughness to reduce shine
+        metalness: 0.0 // No metalness for a matte look
+      });
+      
+      const eyesMaterial = new THREE.MeshStandardMaterial({
+        skinning: true,
+        color: new THREE.Color('#00FFEE'), // Cyan for eyes
+        emissive: new THREE.Color('#00FFEE'),
+        emissiveIntensity: 0.6, // Reduced intensity for less glow
+        roughness: 0.5, // More roughness but still some glow
+        metalness: 0.0 // No metalness
+      });
+      
+      // Apply materials based on mesh names or positions
       fbx.traverse((child) => {
         if (child.isMesh) {
-          // Create a standard material with skinning support and brighter orange tint
-          const material = new THREE.MeshStandardMaterial({
-            map: texture,
-            skinning: true,
-            color: new THREE.Color('#ffcc99'), // Much brighter orange color
-            emissive: new THREE.Color('#ffaa77'), // Slight orange glow
-            emissiveIntensity: 0.2, // Subtle glow effect
-            roughness: 0.5, // Less rough for more light reflection
-            metalness: 0.1 // Slight metallic look for better highlights
-          });
-          child.material = material;
+          // Try to identify parts by name
+          const name = child.name.toLowerCase();
+          
+          if (name.includes('eye') || name.includes('screen') || name.includes('face')) {
+            child.material = eyesMaterial;
+          } else if (name.includes('arm') || name.includes('leg') || name.includes('limb')) {
+            child.material = greenPartsMaterial;
+          } else {
+            child.material = bodyMaterial;
+          }
+          
           child.castShadow = false;
           child.receiveShadow = false;
         }
