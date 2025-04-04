@@ -11,11 +11,11 @@ export default function Home() {
 
   // Component level variables for animation and scene
   let walkingSpeed = 0.05;
-  let isWalking = false;
-  let wolf;
+  let isAgentWalking = false;
+  let aiAgent;
   let mixer;
   let walkAction;
-  let targetPosition = new THREE.Vector3();
+  let agentTargetPosition = new THREE.Vector3();
   let raycaster = new THREE.Raycaster();
   let mouse = new THREE.Vector2();
   let animationFrameId = null;
@@ -79,9 +79,9 @@ export default function Home() {
     scene.add(directionalLight2);
 
     // Room dimensions
-    const roomWidth = 6;
+    const roomWidth = 10;
     const roomHeight = 3.5;
-    const roomDepth = 8;
+    const roomDepth = 10;
 
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
@@ -110,8 +110,8 @@ export default function Home() {
 
     // Create a window cutout in the left wall
     const windowWidth = 1.2;
-    const windowHeight = 1.3;
-    const windowX = -roomWidth / 2 + 0.01; // Slightly in front of the wall
+    const windowHeight = 1.;
+    const windowX = -roomWidth/2 + 0.01; // Slightly in front of the wall
     const windowY = 2.1; // Height position
     const windowZ = -2; // Same Z position as the bed and window frame
 
@@ -121,7 +121,7 @@ export default function Home() {
       windowHeight
     );
     const windowGlassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xfa5f55, // Pure white color
+      color: 0xffffff, // Pure white color
       transparent: true,
       opacity: 0.8, // More opaque
       transmission: 0.2, // Less transmission for white appearance
@@ -155,14 +155,14 @@ export default function Home() {
     scene.add(backWall);
 
     // Control variables
-    targetPosition = new THREE.Vector3(0, 0, 0); // Initialize target position
+    agentTargetPosition = new THREE.Vector3(0, 0, 0); // Initialize target position
 
     // Load all furniture
     loadFurniture(scene, roomWidth, roomHeight, roomDepth);
 
-    // Wolf loading and movement functions
-    function loadWolf() {
-      console.log("Loading wolf model (FBX)...");
+    // AI Agent loading and movement functions
+    function loadAIAgent() {
+      console.log("Loading AI Agent model (FBX)...");
       const fbxLoader = new FBXLoader();
       const textureLoader = new THREE.TextureLoader();
 
@@ -170,19 +170,19 @@ export default function Home() {
       fbxLoader.load(
         "/models/idling.fbx",
         (fbx) => {
-          console.log("Wolf model loaded:", fbx);
-          wolf = fbx;
+          console.log("AI Agent model loaded:", fbx);
+          aiAgent = fbx;
 
           // Scale the model to a reasonable size
-          wolf.scale.set(0.01, 0.01, 0.01);
+          aiAgent.scale.set(0.01, 0.01, 0.01);
 
           // Position the model in the center of the room
-          wolf.position.set(0, 0, 0);
+          aiAgent.position.set(0, 0, 0);
           
           // Apply texture to all meshes with a slightly lighter orange tint
           const texture = textureLoader.load('/models/shaded.png');
           
-          wolf.traverse((child) => {
+          aiAgent.traverse((child) => {
             if (child instanceof THREE.Mesh) {
               // Create a standard material with skinning support and lighter orange tint
               const material = new THREE.MeshStandardMaterial({
@@ -202,7 +202,7 @@ export default function Home() {
           });
           
           // Set up animation mixer
-          mixer = new THREE.AnimationMixer(wolf);
+          mixer = new THREE.AnimationMixer(aiAgent);
           
           // Store the idle animation
           const idleAnim = mixer.clipAction(fbx.animations[0]);
@@ -211,11 +211,11 @@ export default function Home() {
           idleAnim.play();
           
           // Add to scene
-          scene.add(wolf);
-          console.log("Wolf added to scene at position:", wolf.position);
+          scene.add(aiAgent);
+          console.log("AI Agent added to scene at position:", aiAgent.position);
           
           // Make sure model is visible
-          wolf.visible = true;
+          aiAgent.visible = true;
           
           // Force render to update the scene
           renderer.render(scene, camera);
@@ -279,17 +279,17 @@ export default function Home() {
       currentAnimation = name;
     }
 
-    function updateWolfPosition(delta) {
-      if (wolf && isWalking) {
+    function updateAgentPosition(delta) {
+      if (aiAgent && isAgentWalking) {
         // Calculate direction and distance to target
         const direction = new THREE.Vector3()
-          .subVectors(targetPosition, wolf.position)
+          .subVectors(agentTargetPosition, aiAgent.position)
           .normalize();
-        const distance = wolf.position.distanceTo(targetPosition);
+        const distance = aiAgent.position.distanceTo(agentTargetPosition);
 
         // If we're close enough to the target, stop walking
         if (distance < 0.1) {
-          isWalking = false;
+          isAgentWalking = false;
           playAnimation('idle'); // Switch to idle animation
           return;
         }
@@ -299,13 +299,13 @@ export default function Home() {
           playAnimation('walk');
         }
 
-        // Move the wolf towards the target
-        wolf.position.x += direction.x * walkingSpeed;
-        wolf.position.z += direction.z * walkingSpeed;
+        // Move the AI Agent towards the target
+        aiAgent.position.x += direction.x * walkingSpeed;
+        aiAgent.position.z += direction.z * walkingSpeed;
 
-        // Rotate the wolf to face the direction of movement
+        // Rotate the AI Agent to face the direction of movement
         const targetRotation = Math.atan2(direction.x, direction.z);
-        wolf.rotation.y = targetRotation;
+        aiAgent.rotation.y = targetRotation;
 
         // Update animation mixer
         if (mixer) {
@@ -317,45 +317,45 @@ export default function Home() {
       }
     }
 
-    // Function to spawn wolf when button is clicked
-    function spawnWolf() {
-      console.log("Spawn Wolf button clicked");
-      if (!wolf) {
-        console.log("Metamask not loaded yet, loading now...");
-        loadWolf();
+    // Function to spawn AI Agent when button is clicked
+    function spawnAIAgent() {
+      console.log("Spawn AI Agent button clicked");
+      if (!aiAgent) {
+        console.log("AI Agent not loaded yet, loading now...");
+        loadAIAgent();
       } else {
         console.log(
-          "Metamask already loaded, making visible and resetting position"
+          "AI Agent already loaded, making visible and resetting position"
         );
-        // If wolf exists but is not visible, make it visible
-        wolf.visible = true;
+        // If AI Agent exists but is not visible, make it visible
+        aiAgent.visible = true;
 
         // Reset position to center if needed
-        wolf.position.set(0, 0, 0);
+        aiAgent.position.set(0, 0, 0);
 
         // Stop any ongoing walking
-        isWalking = false;
+        isAgentWalking = false;
 
-        // Force a render to show the wolf
+        // Force a render to show the AI Agent
         renderer.render(scene, camera);
 
-        console.log("Metamask is at position:", wolf.position);
+        console.log("AI Agent is at position:", aiAgent.position);
       }
     }
 
     // Initialize the sidebar with callbacks
     initSidebar({
-      spawnWolf: spawnWolf,
+      spawnAIAgent: spawnAIAgent,
     });
 
     // Add right-click event listener for movement
     function onRightClick(event) {
       event.preventDefault(); // Prevent the default context menu
 
-      // Only proceed if the wolf exists
-      if (!wolf) {
+      // Only proceed if the AI Agent exists
+      if (!aiAgent) {
         console.log(
-          "Metamask doesn't exist yet. Please summon the wolf first."
+          "AI Agent doesn't exist yet. Please summon the AI Agent first."
         );
         return;
       }
@@ -376,22 +376,22 @@ export default function Home() {
       if (intersects.length > 0) {
         console.log("Right click detected on floor", intersects[0].point);
 
-        // Set the target position where the wolf should move to
-        targetPosition.copy(intersects[0].point);
+        // Set the target position where the AI Agent should move to
+        agentTargetPosition.copy(intersects[0].point);
 
-        // Calculate direction and update wolf rotation
+        // Calculate direction and update AI Agent rotation
         const direction = new THREE.Vector3()
-          .subVectors(targetPosition, wolf.position)
+          .subVectors(agentTargetPosition, aiAgent.position)
           .normalize();
 
-        // Set the wolf's rotation to face the direction of movement
+        // Set the AI Agent's rotation to face the direction of movement
         const targetRotation = Math.atan2(direction.x, direction.z);
-        wolf.rotation.y = targetRotation;
+        aiAgent.rotation.y = targetRotation;
 
         // Start walking
-        isWalking = true;
+        isAgentWalking = true;
         playAnimation('walk');
-        console.log("Started walking to: ", targetPosition);
+        console.log("Started walking to: ", agentTargetPosition);
       } else {
         console.log("No intersection with floor detected");
       }
@@ -424,8 +424,8 @@ export default function Home() {
       const delta = deltaTime / 1000; // Convert to seconds
       lastFrameTime = currentTime - (deltaTime % frameInterval);
 
-      // Update wolf position if it's moving
-      updateWolfPosition(delta);
+      // Update AI Agent position if it's moving
+      updateAgentPosition(delta);
 
       controls.update();
       renderer.render(scene, camera);

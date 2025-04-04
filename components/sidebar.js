@@ -1,61 +1,27 @@
 import { initMetaWallet } from './metawallet.js';
 
-// Create and initialize the sidebar
+// Create and initialize the sidebar with only the Summon AI Agent button
 function initSidebar(callbacks = {}) {
     // Create sidebar container
     const sidebar = document.createElement('div');
     sidebar.id = 'sidebar';
     
-    // Create sidebar title
-    const title = document.createElement('h2');
-    title.textContent = 'Controls';
-    sidebar.appendChild(title);
-    
-    // Create spawn metamask button with icon
+    // Create spawn AI Agent button
     const spawnButton = document.createElement('button');
-    spawnButton.id = 'metamask-button';
-    
-    // Create and add the Metamask icon
-    const metamaskIcon = document.createElement('img');
-    metamaskIcon.src = '/icon/metamask.png'; // Path to the original metamask icon
-    metamaskIcon.alt = 'Metamask';
-    metamaskIcon.style.width = '24px';
-    metamaskIcon.style.height = '24px';
-    metamaskIcon.style.marginRight = '8px';
-    
-    // Add icon and text to button
-    spawnButton.appendChild(metamaskIcon);
-    spawnButton.appendChild(document.createTextNode('Summon Wolf'));
+    spawnButton.id = 'ai-agent-button';
+    spawnButton.textContent = 'Summon AI Agent';
     
     // Style the button
     spawnButton.style.backgroundColor = '#FF9966'; // Orange color
-    spawnButton.style.display = 'flex';
-    spawnButton.style.alignItems = 'center';
-    spawnButton.style.justifyContent = 'center';
     
     spawnButton.addEventListener('click', () => {
-        console.log('Summon Wolf button clicked');
-        // Call the spawnWolf callback if it exists
-        if (callbacks.spawnWolf) {
-            callbacks.spawnWolf();
+        console.log('Summon AI Agent button clicked');
+        // Call the spawnAIAgent callback if it exists
+        if (callbacks.spawnAIAgent) {
+            callbacks.spawnAIAgent();
         }
     });
     sidebar.appendChild(spawnButton);
-    
-    // Create buttons
-    const buttonLabels = ['Light', 'Color', 'Camera', 'Reset', 'Help'];
-    const buttonColors = ['#ff7eb9', '#7afcff', '#feff9c', '#fff7ad', '#b0c2f2'];
-    
-    buttonLabels.forEach((label, index) => {
-        const button = document.createElement('button');
-        button.textContent = label;
-        button.style.backgroundColor = buttonColors[index];
-        button.addEventListener('click', () => {
-            console.log(`${label} button clicked`);
-            // Add functionality for each button here
-        });
-        sidebar.appendChild(button);
-    });
     
     // Append sidebar to the document body
     document.body.appendChild(sidebar);
@@ -73,30 +39,21 @@ function initSidebar(callbacks = {}) {
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 180px;
+            width: auto;
+            height: auto; /* Only as tall as needed */
+            min-width: 120px;
             background-color: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             z-index: 1000;
             font-family: 'Nunito', sans-serif;
         }
         
-        #sidebar h2 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-            color: #333;
-            text-align: center;
-            font-family: 'Quicksand', sans-serif;
-            font-weight: 700;
-        }
-        
         #sidebar button {
             display: block;
             width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
+            padding: 10px 15px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -104,6 +61,8 @@ function initSidebar(callbacks = {}) {
             font-weight: 700;
             color: #333;
             transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+            white-space: nowrap;
         }
         
         #sidebar button:hover {
