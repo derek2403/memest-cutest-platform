@@ -108,6 +108,19 @@ async function checkLiquidity(
   walletAddress
 ) {
   try {
+    console.log("Attempting liquidity check with parameters:");
+    console.log({
+      amount,
+      srcChainId,
+      dstChainId,
+      srcTokenAddress,
+      dstTokenAddress,
+      walletAddress,
+    });
+
+    // Add delay before API call
+    await sleep(1100);
+
     const quote = await sdk.getQuote({
       amount,
       srcChainId,
@@ -123,7 +136,11 @@ async function checkLiquidity(
     console.log(`Output Amount: ${quote.dstTokenAmount}`);
     return true;
   } catch (error) {
-    console.error("Liquidity check failed:", error.message);
+    console.error("Liquidity check failed with error:", error.message);
+    if (error.response) {
+      console.error("Error details:", error.response.data);
+      console.error("Status code:", error.response.status);
+    }
     return false;
   }
 }
@@ -131,7 +148,10 @@ async function checkLiquidity(
 async function main() {
   const amount = "1000000000000000"; // 0.001 ETH
   const INCH_ROUTER = "0x1111111254eeb25477b68fb85ed929f73a960582";
-  const srcToken = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // WETH on Arbitrum
+
+  // Use the native ETH addresses
+  const srcToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"; // Native ETH
+  const dstToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"; // Native ETH
 
   console.log("Performing pre-flight checks...");
 
@@ -141,6 +161,8 @@ async function main() {
     throw new Error("Insufficient source token balance");
   }
   console.log("✅ Balance check passed");
+
+  await sleep(1100); // Add delay between API calls
 
   // Check allowance
   const hasAllowance = await checkAllowance(
@@ -155,6 +177,8 @@ async function main() {
   }
   console.log("✅ Allowance check passed");
 
+  await sleep(1100); // Add delay between API calls
+
   // Check liquidity
   const hasLiquidity = await checkLiquidity(
     sdk,
@@ -162,13 +186,15 @@ async function main() {
     NetworkEnum.ARBITRUM,
     NetworkEnum.OPTIMISM,
     srcToken,
-    "0x4200000000000000000000000000000000000006", // WETH on Optimism
+    dstToken,
     walletAddress
   );
   if (!hasLiquidity) {
     throw new Error("Insufficient liquidity for swap");
   }
   console.log("✅ Liquidity check passed");
+
+  await sleep(1100); // Add delay between API calls
 
   // Continue with the original code...
   const quote = await sdk.getQuote({
@@ -177,8 +203,15 @@ async function main() {
     dstChainId: NetworkEnum.OPTIMISM,
     enableEstimate: true,
     srcTokenAddress: srcToken,
-    dstTokenAddress: "0x4200000000000000000000000000000000000006",
+    dstTokenAddress: dstToken,
     walletAddress,
+  });
+
+  console.log("Quote details:", {
+    srcToken: quote.params.srcToken,
+    dstToken: quote.params.dstToken,
+    srcAmount: quote.srcTokenAmount,
+    dstAmount: quote.dstTokenAmount,
   });
 
   const preset = PresetEnum.fast;
@@ -195,7 +228,7 @@ async function main() {
 
   const secretHashes = secrets.map((s) => HashLock.hashSecret(s));
 
-  // create order
+  // create order with more logging
   const { hash, quoteId, order } = await sdk.createOrder(quote, {
     walletAddress,
     hashLock,
@@ -203,16 +236,28 @@ async function main() {
     source,
     secretHashes,
   });
-  console.log({ hash }, "order created");
+  console.log("Order created:", { hash, quoteId });
+  console.log("Order details:", order);
 
-  // submit order
-  const _orderInfo = await sdk.submitOrder(
-    quote.srcChainId,
-    order,
-    quoteId,
-    secretHashes
-  );
-  console.log({ hash }, "order submitted");
+  await sleep(1100);
+
+  try {
+    // submit order with more detailed error handling
+    const _orderInfo = await sdk.submitOrder(
+      quote.srcChainId,
+      order,
+      quoteId,
+      secretHashes
+    );
+    console.log("Order submitted successfully:", _orderInfo);
+  } catch (error) {
+    console.error("Error submitting order:", {
+      message: error.message,
+      response: error.response?.data,
+      meta: error.response?.data?.meta,
+    });
+    throw error;
+  }
 
   // submit secrets for deployed escrows
   while (true) {
