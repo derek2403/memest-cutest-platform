@@ -13,122 +13,234 @@ const dotenv = require("dotenv");
 // Load environment variables
 dotenv.config();
 
-// Debug environment variables
-console.log("Environment variables loaded:");
-console.log("ALCHEMY_URL:", process.env.ALCHEMY_URL ? "✓ Found" : "✗ Missing");
-console.log("AUTH_KEY:", process.env.AUTH_KEY ? "✓ Found" : "✗ Missing");
-console.log("PRIVATE_KEY:", process.env.PRIVATE_KEY ? "✓ Found" : "✗ Missing");
-
-// Check if private key is in the correct format
-if (process.env.PRIVATE_KEY) {
-  const pkFormat = process.env.PRIVATE_KEY.startsWith("0x")
-    ? "Has 0x prefix"
-    : "Missing 0x prefix";
-  console.log("PRIVATE_KEY format:", pkFormat);
-  console.log("PRIVATE_KEY length:", process.env.PRIVATE_KEY.length);
-}
-
 const privateKey = process.env.PRIVATE_KEY;
 const rpc = process.env.ALCHEMY_URL;
 const authKey = process.env.AUTH_KEY;
 const source = "sdk-tutorial";
 
-try {
-  const web3 = new Web3(rpc);
-  const walletAddress =
-    web3.eth.accounts.privateKeyToAccount(privateKey).address;
-  console.log("Successfully created wallet address:", walletAddress);
+const web3 = new Web3(rpc);
+const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
 
-  const sdk = new SDK({
-    url: "https://api.1inch.dev/fusion-plus",
-    authKey,
-    blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3), // only required for order creation
+const sdk = new SDK({
+  url: "https://api.1inch.dev/fusion-plus",
+  authKey,
+  blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3),
+});
+
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function checkBalance(web3, tokenAddress, walletAddress, requiredAmount) {
+  // For ETH/Native token
+  if (
+    tokenAddress.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  ) {
+    const balance = await web3.eth.getBalance(walletAddress);
+    const balanceInEth = web3.utils.fromWei(balance, "ether");
+    const requiredInEth = web3.utils.fromWei(requiredAmount, "ether");
+    console.log(`Native token balance: ${balanceInEth} ETH`);
+    console.log(`Required amount: ${requiredInEth} ETH`);
+    return BigInt(balance) >= BigInt(requiredAmount);
+  }
+
+  // For ERC20 tokens
+  const minABI = [
+    {
+      constant: true,
+      inputs: [{ name: "_owner", type: "address" }],
+      name: "balanceOf",
+      outputs: [{ name: "balance", type: "uint256" }],
+      type: "function",
+    },
+  ];
+
+  const contract = new web3.eth.Contract(minABI, tokenAddress);
+  const balance = await contract.methods.balanceOf(walletAddress).call();
+  console.log(`Token balance: ${balance}`);
+  console.log(`Required amount: ${requiredAmount}`);
+  return BigInt(balance) >= BigInt(requiredAmount);
+}
+
+async function checkAllowance(
+  web3,
+  tokenAddress,
+  walletAddress,
+  spenderAddress,
+  requiredAmount
+) {
+  // No allowance needed for native token
+  if (
+    tokenAddress.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  ) {
+    return true;
+  }
+
+  const minABI = [
+    {
+      constant: true,
+      inputs: [
+        { name: "_owner", type: "address" },
+        { name: "_spender", type: "address" },
+      ],
+      name: "allowance",
+      outputs: [{ name: "", type: "uint256" }],
+      type: "function",
+    },
+  ];
+
+  const contract = new web3.eth.Contract(minABI, tokenAddress);
+  const allowance = await contract.methods
+    .allowance(walletAddress, spenderAddress)
+    .call();
+  console.log(`Current allowance: ${allowance}`);
+  console.log(`Required allowance: ${requiredAmount}`);
+  return BigInt(allowance) >= BigInt(requiredAmount);
+}
+
+async function checkLiquidity(
+  sdk,
+  amount,
+  srcChainId,
+  dstChainId,
+  srcTokenAddress,
+  dstTokenAddress,
+  walletAddress
+) {
+  try {
+    const quote = await sdk.getQuote({
+      amount,
+      srcChainId,
+      dstChainId,
+      enableEstimate: true,
+      srcTokenAddress,
+      dstTokenAddress,
+      walletAddress,
+    });
+
+    console.log("Quote received successfully:");
+    console.log(`Input Amount: ${quote.srcTokenAmount}`);
+    console.log(`Output Amount: ${quote.dstTokenAmount}`);
+    return true;
+  } catch (error) {
+    console.error("Liquidity check failed:", error.message);
+    return false;
+  }
+}
+
+async function main() {
+  const amount = "1000000000000000"; // 0.001 ETH
+  const INCH_ROUTER = "0x1111111254eeb25477b68fb85ed929f73a960582";
+  const srcToken = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // WETH on Arbitrum
+
+  console.log("Performing pre-flight checks...");
+
+  // Check balance
+  const hasBalance = await checkBalance(web3, srcToken, walletAddress, amount);
+  if (!hasBalance) {
+    throw new Error("Insufficient source token balance");
+  }
+  console.log("✅ Balance check passed");
+
+  // Check allowance
+  const hasAllowance = await checkAllowance(
+    web3,
+    srcToken,
+    walletAddress,
+    INCH_ROUTER,
+    amount
+  );
+  if (!hasAllowance) {
+    throw new Error("Insufficient allowance for 1inch router");
+  }
+  console.log("✅ Allowance check passed");
+
+  // Check liquidity
+  const hasLiquidity = await checkLiquidity(
+    sdk,
+    amount,
+    NetworkEnum.ARBITRUM,
+    NetworkEnum.OPTIMISM,
+    srcToken,
+    "0x4200000000000000000000000000000000000006", // WETH on Optimism
+    walletAddress
+  );
+  if (!hasLiquidity) {
+    throw new Error("Insufficient liquidity for swap");
+  }
+  console.log("✅ Liquidity check passed");
+
+  // Continue with the original code...
+  const quote = await sdk.getQuote({
+    amount,
+    srcChainId: NetworkEnum.ARBITRUM,
+    dstChainId: NetworkEnum.OPTIMISM,
+    enableEstimate: true,
+    srcTokenAddress: srcToken,
+    dstTokenAddress: "0x4200000000000000000000000000000000000006",
+    walletAddress,
   });
 
-  async function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+  const preset = PresetEnum.fast;
 
-  async function main() {
-    // estimate
-    const quote = await sdk.getQuote({
-      amount: "100000000000000000",
-      srcChainId: NetworkEnum.ARBITRUM,
-      dstChainId: NetworkEnum.OPTIMISM,
-      enableEstimate: true,
-      srcTokenAddress: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1", //ETH
-      dstTokenAddress: "0x4200000000000000000000000000000000000006", //ETH
-      walletAddress,
-    });
+  // generate secrets
+  const secrets = Array.from({
+    length: quote.presets[preset].secretsCount,
+  }).map(() => "0x" + randomBytes(32).toString("hex"));
 
-    console.log(quote);
+  const hashLock =
+    secrets.length === 1
+      ? HashLock.forSingleFill(secrets[0])
+      : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets));
 
-    const preset = PresetEnum.fast;
+  const secretHashes = secrets.map((s) => HashLock.hashSecret(s));
 
-    // generate secrets
-    const secrets = Array.from({
-      length: quote.presets[preset].secretsCount,
-    }).map(() => "0x" + randomBytes(32).toString("hex"));
+  // create order
+  const { hash, quoteId, order } = await sdk.createOrder(quote, {
+    walletAddress,
+    hashLock,
+    preset,
+    source,
+    secretHashes,
+  });
+  console.log({ hash }, "order created");
 
-    const hashLock =
-      secrets.length === 1
-        ? HashLock.forSingleFill(secrets[0])
-        : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets));
+  // submit order
+  const _orderInfo = await sdk.submitOrder(
+    quote.srcChainId,
+    order,
+    quoteId,
+    secretHashes
+  );
+  console.log({ hash }, "order submitted");
 
-    const secretHashes = secrets.map((s) => HashLock.hashSecret(s));
+  // submit secrets for deployed escrows
+  while (true) {
+    const secretsToShare = await sdk.getReadyToAcceptSecretFills(hash);
 
-    // create order
-    const { hash, quoteId, order } = await sdk.createOrder(quote, {
-      walletAddress,
-      hashLock,
-      preset,
-      source,
-      secretHashes,
-    });
-    console.log({ hash }, "order created");
-
-    //submit order
-    const _orderInfo = await sdk.submitOrder(
-      quote.srcChainId,
-      order,
-      quoteId,
-      secretHashes
-    );
-    console.log({ hash }, "order submitted");
-
-    // submit secrets for deployed escrows
-    while (true) {
-      const secretsToShare = await sdk.getReadyToAcceptSecretFills(hash);
-
-      if (secretsToShare.fills.length) {
-        for (const { idx } of secretsToShare.fills) {
-          await sdk.submitSecret(hash, secrets[idx]);
-
-          console.log({ idx }, "shared secret");
-        }
+    if (secretsToShare.fills.length) {
+      for (const { idx } of secretsToShare.fills) {
+        await sdk.submitSecret(hash, secrets[idx]);
+        console.log({ idx }, "shared secret");
       }
-
-      // check if order finished
-      const { status } = await sdk.getOrderStatus(hash);
-
-      if (
-        status === OrderStatus.Executed ||
-        status === OrderStatus.Expired ||
-        status === OrderStatus.Refunded
-      ) {
-        break;
-      }
-
-      await sleep(1000);
     }
 
-    const statusResponse = await sdk.getOrderStatus(hash);
+    // check if order finished
+    const { status } = await sdk.getOrderStatus(hash);
 
-    console.log(statusResponse);
+    if (
+      status === OrderStatus.Executed ||
+      status === OrderStatus.Expired ||
+      status === OrderStatus.Refunded
+    ) {
+      break;
+    }
+
+    await sleep(1000);
   }
 
-  main().catch(console.error);
-} catch (error) {
-  console.error("Error initializing Web3 or SDK:", error.message);
-  console.error("Full error:", error);
+  const statusResponse = await sdk.getOrderStatus(hash);
+  console.log(statusResponse);
 }
+
+main().catch(console.error);
