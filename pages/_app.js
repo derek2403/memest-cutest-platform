@@ -4,21 +4,22 @@ import "@rainbow-me/rainbowkit/styles.css";
 import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import {
+  arbitrum,
+  optimism,
+  mainnet,
   sepolia,
   polygonAmoy,
   optimismSepolia,
   arbitrumSepolia,
   baseSepolia,
-  arbitrum,
-  optimism,
 } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
-// Configure Rainbow Kit with Polygon
+// Configure Rainbow Kit with mainnet chains
 const config = getDefaultConfig({
   appName: "Memest Cutest Platform",
   projectId: "YOUR_PROJECT_ID", // Replace with your WalletConnect Cloud project ID
-  chains: [sepolia, polygonAmoy, optimismSepolia, arbitrumSepolia, baseSepolia],
+  chains: [mainnet, arbitrum, optimism, sepolia, polygonAmoy, optimismSepolia, arbitrumSepolia, baseSepolia],
   ssr: true,
 });
 
