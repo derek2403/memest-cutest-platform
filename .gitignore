@@ -45,3 +45,6 @@ package-lock.json
 /mcp-server/node_modules
 /mcp-server/package-lock.json
 /mcp-server/package.json
+node_modules/
+.next/
+*.log
