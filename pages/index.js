@@ -86,16 +86,9 @@ export default function Home() {
     // Scene setup
     scene = new THREE.Scene();
     
-    // Load video background
-    const videoElement = document.createElement('video');
-    videoElement.src = '/assets/nite3.mp4';
-    videoElement.loop = true;
-    videoElement.muted = true;
-    videoElement.playsInline = true;
-    videoElement.autoplay = true;
-    videoElement.play();
-    
-    const backgroundTexture = new THREE.VideoTexture(videoElement);
+    // Load image background instead of video
+    const textureLoader = new THREE.TextureLoader();
+    const backgroundTexture = textureLoader.load('/assets/qwe.jpg');
     scene.background = backgroundTexture;
 
     // Camera setup

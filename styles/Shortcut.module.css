@@ -50,4 +50,23 @@
 .dragOver {
   background-color: #f0f9ff;
   border: 2px dashed #3498db;
+}
+
+.dragOver .content {
+  background-color: rgba(74, 144, 226, 0.05);
+}
+
+.iconRow {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 10px 0;
+  padding: 5px;
+}
+
+.shortcutIcon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 8px;
 } 

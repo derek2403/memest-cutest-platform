@@ -386,7 +386,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the picture frame on the wall above the couch - adjusted for 6x6 room
-      couchWallPicture.position.set(-2.95, 2, 1); // Adjusted to be above the couch
+      couchWallPicture.position.set(-3.5, 2.2, 1.5); // Adjusted to be above the couch
       
       // Rotate the picture frame to face into the room
       couchWallPicture.rotation.y = Math.PI / 2;
