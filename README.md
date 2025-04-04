@@ -38,6 +38,16 @@ This starts the application in development mode with hot-reloading at http://loc
 
 **Note:** Development mode may have performance issues with the 3D rendering.
 
+### Development Mode with Turbopack (Faster)
+
+For improved development performance, you can use Turbopack:
+
+```bash
+npx next dev --turbo
+```
+
+This uses Next.js's Turbopack bundler which offers faster refresh rates and improved development performance.
+
 ### Production Mode (Recommended for Better Performance)
 
 For optimal performance, use the production build:
