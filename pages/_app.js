@@ -1,28 +1,25 @@
 import "@/styles/globals.css";
-import '@rainbow-me/rainbowkit/styles.css';
+import "@rainbow-me/rainbowkit/styles.css";
 
-import {
-  getDefaultConfig,
-  RainbowKitProvider,
-} from '@rainbow-me/rainbowkit';
-import { WagmiProvider } from 'wagmi';
+import { getDefaultConfig, RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import { WagmiProvider } from "wagmi";
 import {
   sepolia,
   polygonAmoy,
   optimismSepolia,
   arbitrumSepolia,
   baseSepolia,
-} from 'wagmi/chains';
-import {
-  QueryClientProvider,
-  QueryClient,
-} from "@tanstack/react-query";
+  arbitrum,
+  optimism,
+} from "wagmi/chains";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 
 // Configure Rainbow Kit with Polygon
 const config = getDefaultConfig({
-  appName: 'Memest Cutest Platform',
-  projectId: 'YOUR_PROJECT_ID', // Replace with your WalletConnect Cloud project ID
-  chains: [sepolia, polygonAmoy, optimismSepolia, arbitrumSepolia, baseSepolia], ssr: true,
+  appName: "Memest Cutest Platform",
+  projectId: "YOUR_PROJECT_ID", // Replace with your WalletConnect Cloud project ID
+  chains: [sepolia, polygonAmoy, optimismSepolia, arbitrumSepolia, baseSepolia],
+  ssr: true,
 });
 
 // Create a new query client
