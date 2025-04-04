@@ -456,7 +456,7 @@ export const generateTransactionExcel = async (address, chainId, month, year, op
         if (options.email && graphsResult.success) {
           emailResult = await sendGraphsByEmail(
             options.email,
-            [graphsResult.barChartPath, graphsResult.cumulativeChartPath],
+            graphsResult,
             transactions
           );
         }
@@ -526,14 +526,6 @@ function getProviderUrl(chainId) {
 export const generateTransactionGraphs = async (transactions) => {
   try {
     console.log('Generating transaction graphs...');
-    const outputDir = path.join(process.cwd(), 'reports', 'graphs');
-    
-    // Create output directory if it doesn't exist
-    try {
-      await fs.mkdir(outputDir, { recursive: true });
-    } catch (err) {
-      if (err.code !== 'EEXIST') throw err;
-    }
     
     // Sort transactions by timestamp (oldest first for cumulative chart)
     const sortedTransactions = [...transactions].sort((a, b) => a.timestamp - b.timestamp);
@@ -563,31 +555,29 @@ export const generateTransactionGraphs = async (transactions) => {
       };
     });
     
-    // Create bar chart
-    const barChartPath = await createBarChart(
+    // Create bar chart (in memory)
+    const barChartBuffer = await createBarChart(
       barChartLabels,
       barChartData,
       'Transactions by Date',
       'Date',
-      'Number of Transactions',
-      path.join(outputDir, 'transactions_by_date.png')
+      'Number of Transactions'
     );
     
-    // Create cumulative spending chart
-    const cumulativeChartPath = await createLineChart(
+    // Create cumulative spending chart (in memory)
+    const cumulativeChartBuffer = await createLineChart(
       cumulativeData.map(d => d.date),
       cumulativeData.map(d => d.amount),
       'Cumulative ETH Spent',
       'Date',
-      'Cumulative ETH',
-      path.join(outputDir, 'cumulative_spending.png')
+      'Cumulative ETH'
     );
     
-    console.log(`Created charts at ${barChartPath} and ${cumulativeChartPath}`);
+    console.log('Generated chart buffers in memory');
     
     return {
-      barChartPath,
-      cumulativeChartPath,
+      barChartBuffer,
+      cumulativeChartBuffer,
       success: true
     };
   } catch (error) {
@@ -599,8 +589,8 @@ export const generateTransactionGraphs = async (transactions) => {
   }
 };
 
-// Create a bar chart
-async function createBarChart(labels, data, title, xAxisLabel, yAxisLabel, outputPath) {
+// Create a bar chart (in memory, no file saving)
+async function createBarChart(labels, data, title, xAxisLabel, yAxisLabel) {
   const width = 800;
   const height = 500;
   
@@ -656,14 +646,12 @@ async function createBarChart(labels, data, title, xAxisLabel, yAxisLabel, outpu
     }
   };
   
-  const image = await chartJSNodeCanvas.renderToBuffer(configuration);
-  await fs.writeFile(outputPath, image);
-  
-  return outputPath;
+  // Return the buffer directly without saving to file
+  return await chartJSNodeCanvas.renderToBuffer(configuration);
 }
 
-// Create a line chart
-async function createLineChart(labels, data, title, xAxisLabel, yAxisLabel, outputPath) {
+// Create a line chart (in memory, no file saving)
+async function createLineChart(labels, data, title, xAxisLabel, yAxisLabel) {
   const width = 800;
   const height = 500;
   
@@ -721,14 +709,12 @@ async function createLineChart(labels, data, title, xAxisLabel, yAxisLabel, outp
     }
   };
   
-  const image = await chartJSNodeCanvas.renderToBuffer(configuration);
-  await fs.writeFile(outputPath, image);
-  
-  return outputPath;
+  // Return the buffer directly without saving to file
+  return await chartJSNodeCanvas.renderToBuffer(configuration);
 }
 
-// Send email with graph attachments
-export const sendGraphsByEmail = async (recipientEmail, graphPaths, transactions) => {
+// Send email with graph attachments (now accepts buffers instead of file paths)
+export const sendGraphsByEmail = async (recipientEmail, graphBuffers, transactions) => {
   try {
     console.log(`Sending graphs to ${recipientEmail}...`);
     
@@ -746,7 +732,7 @@ export const sendGraphsByEmail = async (recipientEmail, graphPaths, transactions
       return `- Date: ${new Date(tx.timestamp).toLocaleString()}, Amount: ${ethers.formatEther(tx.amount.toString())} ETH, Hash: ${tx.hash.substring(0, 10)}...`;
     }).join('\n');
     
-    // Email content
+    // Email content with buffer attachments
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: recipientEmail,
@@ -761,10 +747,18 @@ ${transactionSummary}
 
 The graphs are attached to this email.
       `,
-      attachments: graphPaths.map(graphPath => ({
-        filename: path.basename(graphPath),
-        path: graphPath
-      }))
+      attachments: [
+        {
+          filename: 'transactions_by_date.png',
+          content: graphBuffers.barChartBuffer,
+          encoding: 'binary'
+        },
+        {
+          filename: 'cumulative_spending.png',
+          content: graphBuffers.cumulativeChartBuffer,
+          encoding: 'binary'
+        }
+      ]
     };
     
     // Send email
