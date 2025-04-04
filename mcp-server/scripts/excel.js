@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 import { ethers } from 'ethers';
 import path from 'path';
 import fetch from 'node-fetch';
+import nodemailer from 'nodemailer';
+import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
+import fs from 'fs/promises';
 
 // Force OpenSSL legacy provider for Node.js 18+
 try {
@@ -395,7 +398,7 @@ export const getTransactionsByTimeframe = async (address, chainId, month, year) 
 };
 
 // Generate Excel file for transactions
-export const generateTransactionExcel = async (address, chainId, month, year) => {
+export const generateTransactionExcel = async (address, chainId, month, year, options = {}) => {
   try {
     // Get transactions for the specified timeframe from block explorer
     const transactions = await getTransactionsByTimeframe(address, chainId, month, year);
@@ -442,12 +445,31 @@ export const generateTransactionExcel = async (address, chainId, month, year) =>
       // Construct the Google Sheets URL
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}`;
       
+      // Generate graphs if requested
+      let graphsResult = null;
+      let emailResult = null;
+      
+      if (options.generateGraphs) {
+        graphsResult = await generateTransactionGraphs(transactions);
+        
+        // Send email with graphs if email is provided
+        if (options.email && graphsResult.success) {
+          emailResult = await sendGraphsByEmail(
+            options.email,
+            [graphsResult.barChartPath, graphsResult.cumulativeChartPath],
+            transactions
+          );
+        }
+      }
+      
       return {
         success: true,
         message: `Generated report with ${transactions.length} transactions`,
         transactions,
         reportUrl: sheetUrl,
-        count: transactions.length
+        count: transactions.length,
+        graphs: graphsResult,
+        email: emailResult
       };
     } catch (error) {
       console.error('Error working with Google Sheets:', error);
@@ -498,4 +520,266 @@ function getProviderUrl(chainId) {
   };
   
   return providers[chainId] || providers['1']; // Default to mainnet
-} 
+}
+
+// Generate graphs from transaction data
+export const generateTransactionGraphs = async (transactions) => {
+  try {
+    console.log('Generating transaction graphs...');
+    const outputDir = path.join(process.cwd(), 'reports', 'graphs');
+    
+    // Create output directory if it doesn't exist
+    try {
+      await fs.mkdir(outputDir, { recursive: true });
+    } catch (err) {
+      if (err.code !== 'EEXIST') throw err;
+    }
+    
+    // Sort transactions by timestamp (oldest first for cumulative chart)
+    const sortedTransactions = [...transactions].sort((a, b) => a.timestamp - b.timestamp);
+    
+    // Prepare data for the bar chart (transactions by date)
+    const dateGroups = {};
+    transactions.forEach(tx => {
+      // Group by date (ignore time)
+      const date = new Date(tx.timestamp).toISOString().split('T')[0];
+      if (!dateGroups[date]) {
+        dateGroups[date] = 0;
+      }
+      dateGroups[date]++;
+    });
+    
+    const barChartLabels = Object.keys(dateGroups).sort();
+    const barChartData = barChartLabels.map(date => dateGroups[date]);
+    
+    // Prepare data for cumulative spending graph
+    let cumulativeAmount = 0;
+    const cumulativeData = sortedTransactions.map(tx => {
+      const amount = parseFloat(ethers.formatEther(tx.amount.toString()));
+      cumulativeAmount += amount;
+      return {
+        date: new Date(tx.timestamp).toISOString().split('T')[0],
+        amount: cumulativeAmount
+      };
+    });
+    
+    // Create bar chart
+    const barChartPath = await createBarChart(
+      barChartLabels,
+      barChartData,
+      'Transactions by Date',
+      'Date',
+      'Number of Transactions',
+      path.join(outputDir, 'transactions_by_date.png')
+    );
+    
+    // Create cumulative spending chart
+    const cumulativeChartPath = await createLineChart(
+      cumulativeData.map(d => d.date),
+      cumulativeData.map(d => d.amount),
+      'Cumulative ETH Spent',
+      'Date',
+      'Cumulative ETH',
+      path.join(outputDir, 'cumulative_spending.png')
+    );
+    
+    console.log(`Created charts at ${barChartPath} and ${cumulativeChartPath}`);
+    
+    return {
+      barChartPath,
+      cumulativeChartPath,
+      success: true
+    };
+  } catch (error) {
+    console.error('Error generating graphs:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+// Create a bar chart
+async function createBarChart(labels, data, title, xAxisLabel, yAxisLabel, outputPath) {
+  const width = 800;
+  const height = 500;
+  
+  const chartCallback = (ChartJS) => {
+    ChartJS.defaults.font.family = 'Arial';
+    ChartJS.defaults.font.size = 14;
+    ChartJS.defaults.color = '#666';
+  };
+  
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, chartCallback });
+  
+  const configuration = {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: yAxisLabel,
+        data: data,
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgb(54, 162, 235)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: title,
+          font: {
+            size: 18
+          }
+        },
+        legend: {
+          display: true,
+          position: 'top'
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: xAxisLabel
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: yAxisLabel
+          },
+          beginAtZero: true
+        }
+      }
+    }
+  };
+  
+  const image = await chartJSNodeCanvas.renderToBuffer(configuration);
+  await fs.writeFile(outputPath, image);
+  
+  return outputPath;
+}
+
+// Create a line chart
+async function createLineChart(labels, data, title, xAxisLabel, yAxisLabel, outputPath) {
+  const width = 800;
+  const height = 500;
+  
+  const chartCallback = (ChartJS) => {
+    ChartJS.defaults.font.family = 'Arial';
+    ChartJS.defaults.font.size = 14;
+    ChartJS.defaults.color = '#666';
+  };
+  
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height, chartCallback });
+  
+  const configuration = {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: yAxisLabel,
+        data: data,
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: true
+      }]
+    },
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: title,
+          font: {
+            size: 18
+          }
+        },
+        legend: {
+          display: true,
+          position: 'top'
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: xAxisLabel
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: yAxisLabel
+          },
+          beginAtZero: true
+        }
+      }
+    }
+  };
+  
+  const image = await chartJSNodeCanvas.renderToBuffer(configuration);
+  await fs.writeFile(outputPath, image);
+  
+  return outputPath;
+}
+
+// Send email with graph attachments
+export const sendGraphsByEmail = async (recipientEmail, graphPaths, transactions) => {
+  try {
+    console.log(`Sending graphs to ${recipientEmail}...`);
+    
+    // Create a transporter
+    const transporter = nodemailer.createTransport({
+      service: process.env.EMAIL_SERVICE || 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+      }
+    });
+    
+    // Format transaction summary
+    const transactionSummary = transactions.map(tx => {
+      return `- Date: ${new Date(tx.timestamp).toLocaleString()}, Amount: ${ethers.formatEther(tx.amount.toString())} ETH, Hash: ${tx.hash.substring(0, 10)}...`;
+    }).join('\n');
+    
+    // Email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: recipientEmail,
+      subject: 'Transaction Graphs Report',
+      text: `
+Transaction Report
+
+Here are your transaction graphs as requested. We found ${transactions.length} transactions.
+
+Transaction Summary:
+${transactionSummary}
+
+The graphs are attached to this email.
+      `,
+      attachments: graphPaths.map(graphPath => ({
+        filename: path.basename(graphPath),
+        path: graphPath
+      }))
+    };
+    
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Email sent: ${info.messageId}`);
+    
+    return {
+      success: true,
+      messageId: info.messageId
+    };
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}; 
