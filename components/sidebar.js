@@ -84,10 +84,10 @@ export function initSidebar(callbacks = {}) {
     // Append sidebar to the document body
     document.body.appendChild(sidebar);
     
-    // Add Google Font
+    // Add Google Fonts
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&display=swap';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap';
     document.head.appendChild(fontLink);
     
     // Add CSS directly to ensure it's applied
@@ -103,7 +103,7 @@ export function initSidebar(callbacks = {}) {
             padding: 15px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
             z-index: 1000;
-            font-family: 'Quicksand', sans-serif;
+            font-family: 'Poppins', sans-serif;
             backdrop-filter: blur(5px);
             border: 2px solid rgba(100, 180, 255, 0.3);
             clip-path: polygon(
@@ -127,6 +127,7 @@ export function initSidebar(callbacks = {}) {
             border-bottom: 2px solid rgba(100, 180, 255, 0.5);
             font-weight: 700;
             color: #7DF9FF;
+            font-family: 'Poppins', sans-serif;
         }
         
         .sub-heading {
@@ -135,6 +136,7 @@ export function initSidebar(callbacks = {}) {
             margin-bottom: 8px;
             color: #A0E6FF;
             font-weight: 600;
+            font-family: 'Poppins', sans-serif;
         }
         
         .sidebar-button {
@@ -159,7 +161,7 @@ export function initSidebar(callbacks = {}) {
         }
         
         .wallet-button {
-            background-color: #FDBA74;
+            background-color: #FDBA74; /* Lighter orange for Metamask */
             color: #333333;
         }
         
