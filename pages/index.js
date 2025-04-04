@@ -6,22 +6,12 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
 import { loadAIAgent } from "../components/aiagent.js";
-import { spawn1inchUnicorn } from "../components/oneinch.js";
-
-// At the top of your file, before the component
-// Add this if you remove globals.css
-const globalStyles = {
-  html: {
-    padding: 0,
-    margin: 0,
-    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif",
-    boxSizing: "border-box"
-  }
-};
+import dynamic from 'next/dynamic';
+const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
+const MetamaskShortcut = dynamic(() => import('../components/metamask_shortcut'), { ssr: false });
 
 export default function Home() {
   const mountRef = useRef(null);
-  const [sceneRef, setSceneRef] = useState(null);
 
   // Component level variables for animation and scene
   let walkingSpeed = 0.05;
@@ -38,13 +28,28 @@ export default function Home() {
   let animations = {}; // Dictionary to store animations
   let currentAnimation = null;
 
+  // Add these state variables
+  const [showShortcutPopup, setShowShortcutPopup] = useState(false);
+  const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
+
   useEffect(() => {
     // Exit early if the ref isn't set
     if (!mountRef.current) return;
 
     // Scene setup
     scene = new THREE.Scene();
-    scene.background = new THREE.Color("#eeeee4"); // Light blue background (sky blue)
+    
+    // Load video background
+    const videoElement = document.createElement('video');
+    videoElement.src = '/assets/nite3.mp4';
+    videoElement.loop = true;
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    videoElement.autoplay = true;
+    videoElement.play();
+    
+    const backgroundTexture = new THREE.VideoTexture(videoElement);
+    scene.background = backgroundTexture;
 
     // Camera setup
     camera = new THREE.PerspectiveCamera(
@@ -70,13 +75,8 @@ export default function Home() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Enable panning, but configure which buttons do what
-    controls.enablePan = true;
-    controls.mouseButtons = {
-      LEFT: THREE.MOUSE.ROTATE,
-      MIDDLE: THREE.MOUSE.PAN,
-      RIGHT: THREE.MOUSE.NONE // Disable right-click functionality
-    };
+    // Disable right-click panning
+    controls.enablePan = false;
 
     // Force the controls to orbit around the center of the room
     controls.target.set(0, 1, 0); // Set target to center of room, at reasonable height
@@ -98,9 +98,9 @@ export default function Home() {
     scene.add(directionalLight2);
 
     // Room dimensions
-    const roomWidth = 10;
+    const roomWidth = 7;
     const roomHeight = 3.5;
-    const roomDepth = 10;
+    const roomDepth = 7;
 
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
@@ -315,21 +315,18 @@ export default function Home() {
     }
 
     // Initialize the sidebar with callbacks
+    console.log("Initializing sidebar with callbacks");
     initSidebar({
       'metamask-button': () => {
-        console.log("Metamask button clicked");
-        // This will now spawn the Metamask wolf
+        console.log("Metamask button clicked callback executed");
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");
-        // Add Gmail functionality here
       },
       'oneinch-button': () => {
         console.log("1inch button clicked");
-        // Add 1inch functionality to spawn the unicorn
-        spawn1inchUnicorn(scene);
       }
-    }, scene); // Pass the scene object here
+    });
 
     // Add right-click event listener for movement
     function onRightClick(event) {
@@ -416,8 +413,50 @@ export default function Home() {
 
     animate(0);
 
-    // Store the scene reference in state
-    setSceneRef(scene);
+    // Add click event handler for 3D objects
+    function onClick(event) {
+      // Calculate mouse position in normalized device coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      
+      // Update the raycaster
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Find all intersected objects
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      
+      if (intersects.length > 0) {
+        // Find the first clickable object
+        let clickableObject = null;
+        
+        for (let i = 0; i < intersects.length; i++) {
+          const object = intersects[i].object;
+          let parent = object;
+          
+          // Traverse up to find a parent with userData
+          while (parent && !parent.userData?.clickable) {
+            parent = parent.parent;
+          }
+          
+          if (parent && parent.userData?.clickable) {
+            clickableObject = parent;
+            break;
+          }
+        }
+        
+        if (clickableObject) {
+          console.log('Clicked on:', clickableObject.userData.type);
+          
+          // Handle different clickable objects
+          if (clickableObject.userData.type === 'airConditioner') {
+            setShowShortcutPopup(true);
+          }
+        }
+      }
+    }
+    
+    // Register the click event handler
+    renderer.domElement.addEventListener('click', onClick);
 
     // Cleanup function
     return () => {
@@ -430,21 +469,38 @@ export default function Home() {
         mountRef.current.removeChild(renderer.domElement);
       }
       renderer.dispose();
+      renderer.domElement.removeEventListener('click', onClick);
     };
   }, []);
 
+  // Handle dropping a button on the shortcut popup
+  const handleShortcutDrop = (buttonId) => {
+    console.log('Button dropped:', buttonId);
+    setShowShortcutPopup(false);
+    
+    // Show the appropriate shortcut based on the button
+    if (buttonId === 'metamask-button') {
+      setShowMetamaskShortcut(true);
+    }
+    // Add handlers for other buttons if needed
+  };
+
   return (
     <>
-      <style jsx global>{`
-        html, body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-        }
-        * { box-sizing: border-box; }
-      `}</style>
-      <div style={{ width: "100%", height: "100vh" }} ref={mountRef}></div>
+      <div ref={mountRef} style={{ width: "100%", height: "100vh" }}></div>
+      
+      {showShortcutPopup && (
+        <Shortcut 
+          onClose={() => setShowShortcutPopup(false)} 
+          onDrop={handleShortcutDrop} 
+        />
+      )}
+      
+      {showMetamaskShortcut && (
+        <MetamaskShortcut 
+          onClose={() => setShowMetamaskShortcut(false)} 
+        />
+      )}
     </>
   );
 }

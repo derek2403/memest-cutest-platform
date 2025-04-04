@@ -1,9 +1,7 @@
 import { initMetaWallet } from './metawallet.js';
-import { spawnMetamaskWolf } from './metawallet';
-import { spawn1inchUnicorn } from './oneinch';
 
 // Create and initialize the sidebar with three buttons
-function initSidebar(callbacks = {}, scene) {
+export function initSidebar(callbacks = {}) {
     // Create sidebar container
     const sidebar = document.createElement('div');
     sidebar.id = 'sidebar';
@@ -27,11 +25,6 @@ function initSidebar(callbacks = {}, scene) {
             // Call the appropriate callback if it exists
             if (callbacks[data.id]) {
                 callbacks[data.id]();
-            }
-            
-            // Only spawn the Metamask wolf for the Metamask button
-            if (data.id === 'metamask-button' && scene) {
-                spawnMetamaskWolf(scene);
             }
         });
         sidebar.appendChild(button);
@@ -95,8 +88,89 @@ function initSidebar(callbacks = {}, scene) {
     `;
     document.head.appendChild(style);
 
+    // Make buttons draggable
+    const buttons = document.querySelectorAll('.sidebar-button');
+    buttons.forEach(button => {
+        button.setAttribute('draggable', 'true');
+        
+        button.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', button.id);
+            console.log('Dragging button:', button.id);
+        });
+    });
+
+    // Add click handler for metamask button
+    const metamaskButton = document.getElementById('metamask-button');
+    if (metamaskButton) {
+        metamaskButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log("Metamask button clicked, creating draggable icon");
+            
+            // Remove any existing draggable icon
+            const existingIcon = document.getElementById('draggable-metamask-icon');
+            if (existingIcon) {
+                existingIcon.parentNode.removeChild(existingIcon);
+            }
+            
+            // Create a draggable icon
+            const icon = document.createElement('img');
+            icon.src = '/icon/metamask.png';
+            icon.id = 'draggable-metamask-icon';
+            icon.style.position = 'fixed'; // Use fixed instead of absolute
+            icon.style.left = `${e.clientX - 25}px`; // Center icon on cursor
+            icon.style.top = `${e.clientY - 25}px`;
+            icon.style.width = '50px';
+            icon.style.height = '50px';
+            icon.style.cursor = 'grab';
+            icon.style.zIndex = '2000';
+            icon.style.pointerEvents = 'none'; // Allow mouse events to pass through initially
+            
+            // Add the icon to the body
+            document.body.appendChild(icon);
+            console.log("Icon created and added to body", icon);
+            
+            // After a short delay, make the icon interactive
+            setTimeout(() => {
+                if (icon.parentNode) {
+                    icon.style.pointerEvents = 'auto';
+                    icon.setAttribute('draggable', 'true');
+                }
+            }, 100);
+            
+            // Move the icon with the mouse until dropped
+            const moveIcon = (moveEvent) => {
+                if (icon.parentNode) {
+                    icon.style.left = `${moveEvent.clientX - 25}px`;
+                    icon.style.top = `${moveEvent.clientY - 25}px`;
+                }
+            };
+            
+            document.addEventListener('mousemove', moveIcon);
+            
+            // Handle drop or click elsewhere
+            const handleDrop = () => {
+                document.removeEventListener('mousemove', moveIcon);
+                document.removeEventListener('mouseup', handleDrop);
+                
+                // If the icon is not dropped on a valid target after a delay, remove it
+                setTimeout(() => {
+                    const iconElement = document.getElementById('draggable-metamask-icon');
+                    if (iconElement && iconElement.parentNode) {
+                        iconElement.parentNode.removeChild(iconElement);
+                    }
+                }, 100);
+            };
+            
+            document.addEventListener('mouseup', handleDrop);
+            
+            // Call the original callback
+            if (callbacks && callbacks['metamask-button']) {
+                callbacks['metamask-button']();
+            }
+        });
+    } else {
+        console.error("Metamask button not found in the DOM");
+    }
+
     return sidebar;
 }
-
-// Export the initialization function
-export { initSidebar };

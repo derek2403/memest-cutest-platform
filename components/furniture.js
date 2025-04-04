@@ -55,7 +55,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the couch in the room - adjusted for 6x6 room
-      model.position.set(-2, 0, 1.5); // Centered more in the room
+      model.position.set(-2.7, 0, 1.5); // Centered more in the room
       
       // You can rotate the couch if needed
       model.rotation.y = Math.PI / 2; // Rotate 90 degrees
@@ -79,7 +79,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           });
           
           // Position the low table in front of the couch - adjusted for 6x6 room
-          lowTable.position.set(0.5, 0, 1.5); // Centered in front of couch
+          lowTable.position.set(-0.5, 0.1, 1.5); // Centered in front of couch
           
           // Rotate the table
           lowTable.rotation.y = Math.PI / 2; // 45 degrees rotation
@@ -103,7 +103,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
               });
               
               // Position the cactus on the low table - adjusted for 6x6 room
-              cactus.position.set(0.5, 0.6, 1.5); // Centered on table
+              cactus.position.set(-0.5, 0.6, 1.5); // Centered on table
               
               scene.add(cactus);
               console.log("Small cactus loaded successfully");
@@ -136,7 +136,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
               });
               
               // Position the book set on the low table - adjusted for 6x6 room
-              bookSet.position.set(0.5, 0.9, 2.3); // Adjusted position on table
+              bookSet.position.set(-0.5, 0.9, 2.3); // Adjusted position on table
               
               // Increase the rotation of the books for more visual interest
               bookSet.rotation.y = Math.PI / 3; // 60 degrees rotation
@@ -200,7 +200,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the rug - adjusted for 6x6 room
-      rug.position.set(-1.5, 0.1, 0.5); // Centered in the living area
+      rug.position.set(-0.5, 0, 1.5); // Centered in the living area
       
       // Rotate the rug
       rug.rotation.y = 1.6;
@@ -236,7 +236,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the bed in the room - adjusted for 6x6 room
-      bed.position.set(-1.5, 0, -2.2); // Moved toward the back wall
+      bed.position.set(-2, 0, -2.5); // Moved toward the back wall
       
       // Rotate the bed
       bed.rotation.y = Math.PI / 2;
@@ -310,8 +310,8 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
         }
       });
       
-      // Position the cabinet next to the bed - adjusted for 6x6 room
-      cabinet.position.set(-2.5, 0, -1); // Moved closer to the bed
+      // Position the bed cabinet next to the bed - adjusted for 6x6 room
+      cabinet.position.set(-3, 0, -1); // Moved closer to the bed
       
       // Rotate the cabinet
       cabinet.rotation.y = Math.PI / 2;
@@ -335,7 +335,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           });
           
           // Position the picture frame on top of the cabinet - adjusted for 6x6 room
-          cabinetPicture.position.set(-2.5, 1, -1); // Adjusted to match new cabinet position
+          cabinetPicture.position.set(-3, 1, -1); // Adjusted to match new cabinet position
           
           // Rotate the picture frame to match the cabinet's orientation
           cabinetPicture.rotation.y = Math.PI / 2;
@@ -405,7 +405,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       console.error("Error loading couch wall picture frame:", error);
     }
   );
-
+//AC
   // Load the air conditioner model
   const airConditionerLoader = new FBXLoader();
   airConditionerLoader.load(
@@ -431,6 +431,10 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       
       // Scale the model if needed (adjust these values based on the model size)
       fbx.scale.set(0.015, 0.015, 0.015);
+      
+      // Make the air conditioner clickable
+      fbx.userData.clickable = true;
+      fbx.userData.type = 'airConditioner';
 
       scene.add(fbx);
       console.log("Air conditioner loaded successfully");
@@ -569,7 +573,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the medium table against the right wall - adjusted for 6x6 room
-      mediumTable.position.set(2, 0, -2); // Moved to fit in the 6x6 room
+      mediumTable.position.set(2, 0, -2.5); // Moved to fit in the 6x6 room
       
       // Rotate the table to face into the room
       mediumTable.rotation.y = -Math.PI / 2; // Rotate to face left (into the room)
