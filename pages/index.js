@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
 
@@ -20,6 +21,8 @@ export default function Home() {
   let animationFrameId = null;
   let scene, camera, renderer;
   let lastTimeClicked = 0;
+  let animations = {}; // Dictionary to store animations
+  let currentAnimation = null;
 
   useEffect(() => {
     // Exit early if the ref isn't set
@@ -159,60 +162,84 @@ export default function Home() {
 
     // Wolf loading and movement functions
     function loadWolf() {
-      console.log("Loading metamask model (GLTF)...");
-      const loader = new GLTFLoader();
+      console.log("Loading wolf model (FBX)...");
+      const fbxLoader = new FBXLoader();
+      const textureLoader = new THREE.TextureLoader();
 
-      loader.load(
-        "/wolf/metamask.glb",
-        (gltf) => {
-          console.log("Metamask model loaded:", gltf);
-          wolf = gltf.scene;
+      // Load the base model with idle animation
+      fbxLoader.load(
+        "/models/idling.fbx",
+        (fbx) => {
+          console.log("Wolf model loaded:", fbx);
+          wolf = fbx;
 
-          // Scale the model to a reasonable size for the room
-          wolf.scale.set(0.5, 0.5, 0.5); // Adjust scale as needed for this model
+          // Scale the model to a reasonable size
+          wolf.scale.set(0.01, 0.01, 0.01);
 
           // Position the model in the center of the room
           wolf.position.set(0, 0, 0);
-
-          // Disable shadows for the model
-          wolf.traverse((node) => {
-            if (node.isMesh) {
-              node.castShadow = false;
-              node.receiveShadow = false;
-              console.log("Mesh properties:", node.name);
+          
+          // Apply texture to all meshes with a slightly lighter orange tint
+          const texture = textureLoader.load('/models/shaded.png');
+          
+          wolf.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              // Create a standard material with skinning support and lighter orange tint
+              const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                skinning: true,
+                color: new THREE.Color('#ffb38a'), // About 15% lighter than #ff9966
+                emissive: new THREE.Color('#000000'), // No emissive effect
+                emissiveIntensity: 0 // Turn off emissive
+              });
+              child.material = material;
+              
+              // Disable shadows for performance
+              child.castShadow = false;
+              child.receiveShadow = false;
+              console.log("Mesh properties:", child.name);
             }
           });
-
-          // Set up animation mixer if the model has animations
+          
+          // Set up animation mixer
           mixer = new THREE.AnimationMixer(wolf);
-
-          if (gltf.animations && gltf.animations.length > 0) {
-            console.log("Model has animations:", gltf.animations.length);
-            console.log(
-              "Animation names:",
-              gltf.animations.map((a) => a.name)
-            );
-
-            // Use the first animation (likely to be idle)
-            const animation = gltf.animations[0];
-            walkAction = mixer.clipAction(animation);
-            walkAction.play();
-
-            // Don't pause initially to show some animation while standing
-            console.log("Animation set up");
-          } else {
-            console.log("No animations found in model");
-          }
-
+          
+          // Store the idle animation
+          const idleAnim = mixer.clipAction(fbx.animations[0]);
+          animations['idle'] = idleAnim;
+          currentAnimation = 'idle';
+          idleAnim.play();
+          
           // Add to scene
           scene.add(wolf);
-          console.log("Metamask added to scene at position:", wolf.position);
-
+          console.log("Wolf added to scene at position:", wolf.position);
+          
           // Make sure model is visible
           wolf.visible = true;
-
+          
           // Force render to update the scene
           renderer.render(scene, camera);
+          
+          // Load the walking animation
+          fbxLoader.load(
+            "/models/walking.fbx",
+            (walkFbx) => {
+              console.log("Walk animation loaded");
+              
+              // Extract animation and add to our animations dictionary
+              const walkAnim = mixer.clipAction(walkFbx.animations[0]);
+              animations['walk'] = walkAnim;
+            },
+            (xhr) => {
+              console.log(
+                "Loading walk animation progress:",
+                (xhr.loaded / xhr.total) * 100 + "% loaded"
+              );
+            },
+            (error) => {
+              console.error("Error loading walk animation:", error);
+            }
+          );
         },
         (xhr) => {
           console.log(
@@ -226,6 +253,32 @@ export default function Home() {
       );
     }
 
+    /**
+     * Play a specific animation with crossfade
+     * @param {string} name Animation name ('idle' or 'walk')
+     * @param {number} fadeTime Duration of the crossfade in seconds
+     */
+    function playAnimation(name, fadeTime = 0.5) {
+      if (!mixer || !animations[name] || currentAnimation === name) return;
+      
+      const toPlay = animations[name];
+      
+      // If there's a current animation, crossfade to the new one
+      if (currentAnimation && animations[currentAnimation]) {
+        const fromAnim = animations[currentAnimation];
+        toPlay.reset();
+        toPlay.setEffectiveTimeScale(1);
+        toPlay.setEffectiveWeight(1);
+        toPlay.crossFadeFrom(fromAnim, fadeTime, true);
+        toPlay.play();
+      } else {
+        // Just play the animation directly
+        toPlay.play();
+      }
+      
+      currentAnimation = name;
+    }
+
     function updateWolfPosition(delta) {
       if (wolf && isWalking) {
         // Calculate direction and distance to target
@@ -237,7 +290,13 @@ export default function Home() {
         // If we're close enough to the target, stop walking
         if (distance < 0.1) {
           isWalking = false;
+          playAnimation('idle'); // Switch to idle animation
           return;
+        }
+
+        // Make sure walk animation is playing
+        if (currentAnimation !== 'walk') {
+          playAnimation('walk');
         }
 
         // Move the wolf towards the target
@@ -252,6 +311,9 @@ export default function Home() {
         if (mixer) {
           mixer.update(delta);
         }
+      } else if (mixer) {
+        // Keep updating mixer even when not walking for idle animation
+        mixer.update(delta);
       }
     }
 
@@ -328,6 +390,7 @@ export default function Home() {
 
         // Start walking
         isWalking = true;
+        playAnimation('walk');
         console.log("Started walking to: ", targetPosition);
       } else {
         console.log("No intersection with floor detected");
