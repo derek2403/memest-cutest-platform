@@ -4,6 +4,7 @@ import styles from '../styles/Shortcut.module.css';
 
 export default function Shortcut({ onClose, onDrop }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [inputMessage, setInputMessage] = useState('');
   const popupRef = useRef(null);
 
   const handleDragOver = (e) => {
@@ -183,6 +184,48 @@ export default function Shortcut({ onClose, onDrop }) {
     };
   }, [onClose]);
 
+  // Handle send button click
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
+    
+    console.log("Message sent:", inputMessage);
+    
+    // Create a container for the workflow popup if it doesn't exist
+    let container = document.getElementById('workflow-popup-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'workflow-popup-container';
+      document.body.appendChild(container);
+    }
+    
+    // Import and render the workflow popup component
+    import('./WorkflowPopup').then(module => {
+      const WorkflowPopup = module.default;
+      
+      // Render the workflow popup component
+      const root = ReactDOM.createRoot(container);
+      root.render(
+        <WorkflowPopup 
+          initialInput={inputMessage}
+          onClose={() => {
+            // Clean up when closed
+            if (container && container.parentNode) {
+              container.parentNode.removeChild(container);
+            }
+          }} 
+        />
+      );
+    }).catch(err => {
+      console.error("Error loading WorkflowPopup:", err);
+    });
+    
+    // Clear the input field
+    setInputMessage('');
+    
+    // Close the shortcut popup
+    onClose();
+  };
+
   return (
     <div className={styles.overlay}>
       <div 
@@ -223,10 +266,18 @@ export default function Shortcut({ onClose, onDrop }) {
         <div className={styles.chatInputContainer}>
           <input 
             type="text" 
-            placeholder="Type a message..." 
+            placeholder="Type a workflow..." 
             className={styles.chatInput}
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />
-          <button className={styles.sendButton}>Send</button>
+          <button 
+            className={styles.sendButton}
+            onClick={handleSendMessage}
+          >
+            Send
+          </button>
         </div>
       </div>
     </div>
