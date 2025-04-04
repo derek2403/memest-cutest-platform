@@ -1,5 +1,6 @@
 import { initMetaWallet } from './metawallet.js';
 import { spawnMetamaskWolf } from './metawallet';
+import { spawn1inchUnicorn } from './oneinch';
 
 // Create and initialize the sidebar with three buttons
 function initSidebar(callbacks = {}, scene) {
