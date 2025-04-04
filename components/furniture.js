@@ -236,7 +236,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the bed in the room - adjusted for 6x6 room
-      bed.position.set(-2, 0, -2.5); // Moved toward the back wall
+      bed.position.set(-2, 0, -2.6); // Moved toward the back wall
       
       // Rotate the bed
       bed.rotation.y = Math.PI / 2;
@@ -244,44 +244,6 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       scene.add(bed);
       console.log("Double bed loaded successfully");
 
-      // Load a pillow or blanket to place on top of the bed
-      const bedPillowLoader = new GLTFLoader();
-      bedPillowLoader.load(
-        "/gltf/pillow_B.gltf", // You can replace with another item like 'blanket.gltf' if available
-        (gltf) => {
-          const bedPillow = gltf.scene;
-
-          // Disable shadows for the model
-          bedPillow.traverse((node) => {
-            if (node.isMesh) {
-              node.castShadow = false;
-              node.receiveShadow = false;
-            }
-          });
-          
-          // Position the pillow on top of the bed - adjusted for 6x6 room
-          bedPillow.position.set(-1.5, 0.6, -1.5); // Adjusted to match new bed position
-          
-          // Rotate the pillow to match the bed's orientation
-          bedPillow.rotation.y = Math.PI / 2;
-
-          // Scale the pillow if needed
-          bedPillow.scale.set(1.2, 1.2, 1.2);
-
-          scene.add(bedPillow);
-          console.log("Bed pillow loaded successfully");
-        },
-        (progress) => {
-          console.log(
-            "Loading bed pillow progress:",
-            (progress.loaded / progress.total) * 100,
-            "%"
-          );
-        },
-        (error) => {
-          console.error("Error loading bed pillow:", error);
-        }
-      );
     },
     (progress) => {
       console.log(
@@ -432,10 +394,6 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       // Scale the model if needed (adjust these values based on the model size)
       fbx.scale.set(0.015, 0.015, 0.015);
       
-      // Make the air conditioner clickable
-      fbx.userData.clickable = true;
-      fbx.userData.type = 'airConditioner';
-
       scene.add(fbx);
       console.log("Air conditioner loaded successfully");
     },
@@ -692,6 +650,88 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
     },
     (error) => {
       console.error('Error loading wooden stool chair:', error);
+    }
+  );
+
+  // Load the drawers model
+  const drawersLoader = new FBXLoader();
+  drawersLoader.load(
+    '/fbx/drawers/drawerb.fbx',
+    (fbx) => {
+      // Disable shadows for the model and add material
+      fbx.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = false;
+          node.receiveShadow = false;
+          
+          // Add a material to the drawers
+          node.material = new THREE.MeshStandardMaterial({
+            color: 0xd2c8b5, // Light wood/beige color
+            roughness: 0.7,
+            metalness: 0.1, // Mostly non-metallic
+          });
+          
+          // Make each mesh in the drawers clickable
+          node.userData.clickable = true;
+          node.userData.type = 'airConditioner'; // Use the same type that shortcut.js is looking for
+        }
+      });
+      
+      // Position the drawers beside the laptop on the medium table
+      fbx.position.set(2.6, 1.4, -3.1); // On the table next to the laptop
+      
+      // Rotate the drawers to face the same direction as the laptop
+      fbx.rotation.y = -Math.PI / 40; // Facing the same direction as the laptop
+      
+      // Make the drawers much smaller to fit on the table
+      fbx.scale.set(0.002, 0.002, 0.002); // Significantly smaller scale
+      
+      // Make the entire model clickable with the same type that shortcut.js is looking for
+      fbx.userData.clickable = true;
+      fbx.userData.type = 'airConditioner'; // Use the same type that shortcut.js is looking for
+      
+      // Add name property for easier identification in raycaster
+      fbx.name = 'airConditioner'; // Use the same name that shortcut.js might be looking for
+
+      scene.add(fbx);
+      console.log("Drawers loaded successfully");
+    },
+    (progress) => {
+      console.log(
+        "Loading drawers progress:",
+        (progress.loaded / progress.total) * 100,
+        "%"
+      );
+    },
+    (error) => {
+      console.error("Error loading drawers model:", error);
+    }
+  );
+
+  // Add unicorn image to the left wall
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load(
+    "/assets/unicorn.png",
+    (texture) => {
+      const geometry = new THREE.PlaneGeometry(1.9, 1); // Adjust size as needed
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide
+      });
+      const unicornPlane = new THREE.Mesh(geometry, material);
+      
+      // Position on left wall
+      unicornPlane.position.set(-roomWidth/2 + 0.23, 2.2, 1.5);
+      
+      // Rotate to face into the room
+      unicornPlane.rotation.y = Math.PI / 2;
+      
+      scene.add(unicornPlane);
+      console.log("Unicorn image added to left wall");
+    },
+    undefined,
+    (error) => {
+      console.error("Error loading unicorn image:", error);
     }
   );
 } 
