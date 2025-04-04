@@ -707,4 +707,31 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       console.error("Error loading drawers model:", error);
     }
   );
+
+  // Add unicorn image to the left wall
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load(
+    "/assets/unicorn.png",
+    (texture) => {
+      const geometry = new THREE.PlaneGeometry(1.9, 1); // Adjust size as needed
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide
+      });
+      const unicornPlane = new THREE.Mesh(geometry, material);
+      
+      // Position on left wall
+      unicornPlane.position.set(-roomWidth/2 + 0.23, 2.2, 1.5);
+      
+      // Rotate to face into the room
+      unicornPlane.rotation.y = Math.PI / 2;
+      
+      scene.add(unicornPlane);
+      console.log("Unicorn image added to left wall");
+    },
+    undefined,
+    (error) => {
+      console.error("Error loading unicorn image:", error);
+    }
+  );
 } 
