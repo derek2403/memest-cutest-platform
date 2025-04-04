@@ -50,27 +50,19 @@ const FlowChart = ({ workflow }) => {
   );
 };
 
-// Example workflows to choose from
+// Example workflows
 const EXAMPLE_WORKFLOWS = [
   {
-    title: "MetaMask Notifications",
-    text: "For each transaction in MetaMask notify in Gmail and record in Google Sheets"
+    title: 'MetaMask Transaction Tracker',
+    text: 'For each transaction in MetaMask notify in Gmail then record in Google Sheets'
   },
   {
-    title: "Token Swap with 1inch",
-    text: "For each transaction in MetaMask notify in Gmail and record in Google Sheets and swap all tokens to Solana on 1inch"
+    title: 'Token Swap Tracker',
+    text: 'For each transaction in MetaMask swap all tokens to Solana on 1inch'
   },
   {
-    title: "Approval Workflow",
-    text: "If transaction > 30USD then get approval from Gmail then execute transaction in MetaMask"
-  },
-  {
-    title: "Bridge to Polygon",
-    text: "When token price drops below $50 on 1inch then swap ETH to Polygon and notify in Gmail"
-  },
-  {
-    title: "Token Receiving Flow",
-    text: "For each receiving token on MetaMask swap all to Solana on 1inch"
+    title: 'Automated Reports',
+    text: 'Every Monday at 9 AM, collect data from Google Sheets and send a report to Gmail'
   }
 ];
 
@@ -100,32 +92,85 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
     setWorkflowLoading(true);
 
     try {
-      // Local parsing instead of API call
-      // Simple parsing logic to create workflow nodes and arrows
-      const parts = workflowInput.split(/\s+and\s+|,\s+then\s+|,\s+|then\s+/gi).filter(part => part.trim());
+      // Enhanced parsing logic to create workflow nodes and arrows
       const workflow = [];
+      const input = workflowInput.trim();
       
-      if (parts.length === 0) {
-        throw new Error("Could not parse workflow text. Please try a different format.");
-      }
+      // Add Start node
+      workflow.push({
+        type: 'node',
+        number: 1,
+        content: 'Start'
+      });
       
-      parts.forEach((part, index) => {
-        // Add a node
+      // First, identify potential triggers/actions by specific keywords
+      const parts = [];
+      
+      if (input.includes('For each transaction in')) {
+        // Add MetaMask as second node with connection label
         workflow.push({
-          type: 'node',
-          number: index + 1,
-          content: part.trim()
+          type: 'arrow',
+          number: 1,
+          content: 'For each transaction in'
         });
         
-        // Add an arrow after each node except the last
-        if (index < parts.length - 1) {
+        workflow.push({
+          type: 'node',
+          number: 2,
+          content: 'MetaMask'
+        });
+        
+        // Check for Gmail notification
+        if (input.includes('notify in Gmail')) {
+          workflow.push({
+            type: 'arrow',
+            number: 2,
+            content: 'Notify in'
+          });
+          
+          workflow.push({
+            type: 'node',
+            number: 3,
+            content: 'Gmail'
+          });
+        }
+        
+        // Check for Google Sheets recording
+        if (input.includes('record in Google Sheets')) {
+          workflow.push({
+            type: 'arrow',
+            number: 3,
+            content: 'Record in'
+          });
+          
+          workflow.push({
+            type: 'node',
+            number: 4,
+            content: 'Google Sheets'
+          });
+        }
+      } else {
+        // Fallback to simple parsing for other cases
+        const basicParts = input.split(/\s+and\s+|,\s+then\s+|,\s+|then\s+/gi).filter(part => part.trim());
+        
+        if (basicParts.length === 0) {
+          throw new Error("Could not parse workflow text. Please try a different format.");
+        }
+        
+        basicParts.forEach((part, index) => {
           workflow.push({
             type: 'arrow',
             number: index + 1,
-            content: 'then'
+            content: index === 0 ? 'Start with' : 'then'
           });
-        }
-      });
+          
+          workflow.push({
+            type: 'node',
+            number: index + 2,
+            content: part.trim()
+          });
+        });
+      }
       
       // Wait a bit to simulate processing time
       setTimeout(() => {
@@ -213,20 +258,20 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
                   {/* Action Buttons */}
                   <div className={styles.actionButtons}>
                     <button 
-                      className={styles.approveButton}
-                      onClick={() => {
-                        setWorkflowApproved(true);
-                      }}
-                    >
-                      Approve Workflow
-                    </button>
-                    <button 
                       className={styles.tryAgainButton}
                       onClick={() => {
                         setWorkflowParsed([]);
                       }}
                     >
                       Try Again
+                    </button>
+                    <button 
+                      className={styles.approveButton}
+                      onClick={() => {
+                        setWorkflowApproved(true);
+                      }}
+                    >
+                      Approve Workflow
                     </button>
                   </div>
                 </div>
