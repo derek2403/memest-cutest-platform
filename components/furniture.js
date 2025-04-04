@@ -389,7 +389,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       fbx.position.set(0, roomHeight - 1, -roomDepth/2 + 0.1); // Top of back wall
       
       // Scale the model if needed (adjust these values based on the model size)
-      fbx.scale.set(0.01, 0.01, 0.01);
+      fbx.scale.set(0.015, 0.015, 0.015);
       
       scene.add(fbx);
       console.log('Air conditioner loaded successfully');
