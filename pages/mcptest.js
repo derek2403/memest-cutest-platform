@@ -1,17 +1,26 @@
-import { useState } from 'react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useChainId, useSendTransaction } from 'wagmi';
-import { parseEther } from 'viem';
-import { Geist, Geist_Mono } from "next/font/google";
+import { useState, useEffect } from 'react';
+import { Inter, Roboto_Mono } from "next/font/google";
 import { ethers } from 'ethers';
+import dynamic from 'next/dynamic';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Dynamically import wallet components with SSR disabled
+const ConnectButton = dynamic(
+  () => import('@rainbow-me/rainbowkit').then(mod => mod.ConnectButton),
+  { ssr: false }
+);
+
+const WalletComponents = dynamic(
+  () => import('../components/WalletComponents').then(mod => mod.default),
+  { ssr: false }
+);
+
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const robotoMono = Roboto_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -19,8 +28,7 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { isConnected, address } = useAccount();
-  const chainId = useChainId();
+  const [mounted, setMounted] = useState(false);
   
   // Transaction states
   const [recipient, setRecipient] = useState('');
@@ -37,6 +45,25 @@ export default function Home() {
   const [reportEmail, setReportEmail] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailResult, setEmailResult] = useState(null);
+  
+  // Client-side wallet state
+  const [walletData, setWalletData] = useState({
+    isConnected: false,
+    address: '',
+    chainId: 1
+  });
+  
+  // Client-side initialization
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Update wallet data when WalletComponents is loaded
+  const updateWalletData = (data) => {
+    if (data) {
+      setWalletData(data);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +108,7 @@ export default function Home() {
         body: JSON.stringify({
           to: recipient,
           amount,
-          chainId,
+          chainId: walletData.chainId,
           email, // Include email for approval
         }),
       });
@@ -131,8 +158,8 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          address, // Current connected wallet address
-          chainId,
+          address: walletData.address, // Current connected wallet address
+          chainId: walletData.chainId,
           month,
           year
         }),
@@ -173,7 +200,7 @@ export default function Home() {
       84532: 'https://sepolia.basescan.org',
       // Add more chains as needed
     };
-    return explorers[chainId] || 'https://etherscan.io';
+    return explorers[walletData.chainId] || 'https://etherscan.io';
   };
   
   // Generate array of month names for dropdown
@@ -208,8 +235,8 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          address,
-          chainId,
+          address: walletData.address,
+          chainId: walletData.chainId,
           month,
           year,
           email: reportEmail || 'derekliew0@gmail.com' // Default email if not provided
@@ -229,10 +256,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+    <div className={`min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12 ${inter.variable} ${robotoMono.variable}`}>
       <div className="absolute top-0 right-0 p-4">
-        <ConnectButton />
+        {mounted && <ConnectButton />}
       </div>
+      
+      {mounted && <WalletComponents onLoad={updateWalletData} />}
       
       <div className="relative py-3 sm:max-w-xl sm:mx-auto">
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
@@ -242,7 +271,7 @@ export default function Home() {
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <h2 className="text-2xl font-bold mb-8">Email Verification</h2>
                 
-                {!isConnected ? (
+                {!walletData.isConnected ? (
                   <div className="text-center py-4">
                     <p className="text-gray-600 mb-4">Please connect your wallet first</p>
                   </div>
@@ -283,7 +312,7 @@ export default function Home() {
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <h2 className="text-2xl font-bold mb-8">Send Transaction</h2>
                 
-                {!isConnected ? (
+                {!walletData.isConnected ? (
                   <div className="text-center py-4">
                     <p className="text-gray-600 mb-4">Please connect your wallet first</p>
                   </div>
@@ -373,7 +402,7 @@ export default function Home() {
               <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
                 <h2 className="text-2xl font-bold mb-8">Transaction Report</h2>
                 
-                {!isConnected ? (
+                {!walletData.isConnected ? (
                   <div className="text-center py-4">
                     <p className="text-gray-600 mb-4">Please connect your wallet first</p>
                   </div>
@@ -414,7 +443,7 @@ export default function Home() {
                     </div>
                     <div className="flex items-center justify-center">
                       <p className="text-sm text-gray-600">
-                        Connected Chain ID: {chainId}
+                        Connected Chain ID: {walletData.chainId}
                       </p>
                     </div>
                     <button

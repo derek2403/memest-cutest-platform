@@ -1,10 +1,4 @@
 {
-  "dependencies": {
-    "next": "^14.1.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "three": "^0.175.0"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,15 +6,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "three": "^0.175.0",
     "@heroui/react": "^2.7.5",
     "@rainbow-me/rainbowkit": "^2.2.4",
     "@tanstack/react-query": "^5.71.10",
     "autoprefixer": "^10.4.21",
     "ethers": "^6.13.5",
     "framer-motion": "^12.6.3",
-    "next": "15.2.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "viem": "^2.25.0",
     "wagmi": "^2.14.16"
   },
@@ -30,10 +25,11 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "tailwindcss": "^3.4.17",
-    "@next/swc-win32-x64-msvc": "^15.2.4",
-    "@tailwindcss/postcss": "^4.1.2",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^4.1.2"
+    "postcss": "^8.5.3"
+  },
+  "optionalDependencies": {
+    "@next/swc-darwin-arm64": "^14.1.0",
+    "@next/swc-darwin-x64": "^14.1.0",
+    "@next/swc-win32-x64-msvc": "^14.1.0"
   }
 }
