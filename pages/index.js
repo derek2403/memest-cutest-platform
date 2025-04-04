@@ -7,6 +7,7 @@ import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
 import { loadAIAgent } from "../components/aiagent.js";
 import { spawn1inchUnicorn } from "../components/oneinch.js";
+import { spawnMetamaskWolf } from "../components/metawallet.js";
 import dynamic from 'next/dynamic';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/metamask_shortcut'), { ssr: false });
@@ -1515,6 +1516,7 @@ export default function Home() {
       'metamask-button': () => {
         console.log("Metamask button clicked");
         // This will now spawn the Metamask wolf
+        spawnMetamaskWolf(scene);
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");

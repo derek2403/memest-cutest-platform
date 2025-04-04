@@ -375,7 +375,7 @@ export function spawnMetamaskWolf(scene) {
   
   // Load the Metamask wolf model with the correct path
   gltfLoader.load(
-    "/models/metamask_wolf/metamask_wolf.glb", // Updated path to locate in models folder
+    "/models/metamask_wolf/metamask_wolf.glb",
     (gltf) => {
       // Success callback
       console.log("Metamask wolf model loaded successfully");
