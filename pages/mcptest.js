@@ -33,6 +33,11 @@ export default function Home() {
   const [reportStatus, setReportStatus] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
 
+  // Add state for email input and loading
+  const [reportEmail, setReportEmail] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailResult, setEmailResult] = useState(null);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -190,6 +195,38 @@ export default function Home() {
   // Years for dropdown (current year and 2 previous years)
   const currentYear = new Date().getFullYear();
   const years = [currentYear, currentYear - 1, currentYear - 2];
+
+  // Add a handler for sending the email report with graphs
+  const handleEmailReport = async () => {
+    setEmailLoading(true);
+    setEmailResult(null);
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/transactions/graphs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address,
+          chainId,
+          month,
+          year,
+          email: reportEmail || 'derekliew0@gmail.com' // Default email if not provided
+        }),
+      });
+      
+      const result = await response.json();
+      setEmailResult(result);
+    } catch (error) {
+      setEmailResult({
+        success: false,
+        error: error.message
+      });
+    } finally {
+      setEmailLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
@@ -467,6 +504,45 @@ export default function Home() {
                         </div>
                       </div>
                     )}
+                    
+                    {/* Add Email Report with Graphs section - moved to after transactions display */}
+                    <div className="mt-6 p-4 border border-blue-100 rounded-md bg-blue-50">
+                      <h3 className="font-bold text-blue-700 mb-3">Email Report with Graphs</h3>
+                      <div className="flex space-x-2">
+                        <input
+                          type="email"
+                          value={reportEmail}
+                          onChange={(e) => setReportEmail(e.target.value)}
+                          placeholder="your@email.com"
+                          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                        <button
+                          onClick={handleEmailReport}
+                          disabled={emailLoading}
+                          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                        >
+                          {emailLoading ? (
+                            <>
+                              <span className="inline-block animate-spin mr-2">↻</span>
+                              Sending...
+                            </>
+                          ) : (
+                            'Send Graphs'
+                          )}
+                        </button>
+                      </div>
+                      
+                      {emailResult && (
+                        <div className={`mt-3 p-3 rounded-md ${emailResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          <p className="font-medium">
+                            {emailResult.success 
+                              ? `Graphs were sent to ${reportEmail || 'derekliew0@gmail.com'}` 
+                              : `Failed to send graphs: ${emailResult.error}`
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
                 
