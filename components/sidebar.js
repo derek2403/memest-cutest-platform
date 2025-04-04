@@ -36,7 +36,7 @@ export function initSidebar(callbacks = {}) {
     // Add Google Font
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Quicksand:wght@400;700&display=swap';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&display=swap';
     document.head.appendChild(fontLink);
     
     // Add CSS directly to ensure it's applied
@@ -49,27 +49,31 @@ export function initSidebar(callbacks = {}) {
             width: auto;
             height: auto;
             min-width: 120px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border-radius: 10px;
-            padding: 12px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
             z-index: 1000;
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Baloo 2', cursive;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         #sidebar button {
             display: block;
             width: 100%;
-            padding: 10px 15px;
-            margin-bottom: 8px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
-            font-family: 'Nunito', sans-serif;
-            font-weight: 700;
-            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Baloo 2', cursive;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
             text-align: center;
             white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
         #sidebar button:last-child {
@@ -77,13 +81,22 @@ export function initSidebar(callbacks = {}) {
         }
         
         #sidebar button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
         }
         
         #sidebar button:active {
-            transform: translateY(0);
+            transform: translateY(1px);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        #sidebar {
+            animation: fadeIn 0.4s ease-out;
         }
     `;
     document.head.appendChild(style);
@@ -124,9 +137,49 @@ export function initSidebar(callbacks = {}) {
             icon.style.cursor = 'grab';
             icon.style.zIndex = '2000';
             icon.style.pointerEvents = 'none'; // Allow mouse events to pass through initially
+            icon.style.borderRadius = '10px';
+            icon.style.boxShadow = '0 3px 10px rgba(0, 0, 0, 0.2)';
             
-            // Add the icon to the body
+            // Create glow effect
+            const glow = document.createElement('div');
+            glow.style.position = 'fixed';
+            glow.style.left = `${e.clientX - 25}px`; // Match icon position
+            glow.style.top = `${e.clientY - 25}px`;
+            glow.style.width = '50px';
+            glow.style.height = '50px';
+            glow.style.zIndex = '1999';
+            glow.style.background = 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)';
+            glow.style.borderRadius = '10px';
+            glow.style.pointerEvents = 'none';
+            glow.id = 'draggable-metamask-glow';
+            
+            // Create glow animation
+            const glowKeyframes = document.createElement('style');
+            glowKeyframes.textContent = `
+                @keyframes pulse {
+                    0% { transform: scale(1); opacity: 0.7; }
+                    50% { transform: scale(1.2); opacity: 0.3; }
+                    100% { transform: scale(1); opacity: 0.7; }
+                }
+                #draggable-metamask-glow {
+                    animation: pulse 2s infinite;
+                }
+            `;
+            document.head.appendChild(glowKeyframes);
+            
+            // Add the elements to the body
+            document.body.appendChild(glow);
             document.body.appendChild(icon);
+            
+            // Update glow position with icon
+            const moveGlow = (moveEvent) => {
+                if (glow.parentNode) {
+                    glow.style.left = `${moveEvent.clientX - 25}px`;
+                    glow.style.top = `${moveEvent.clientY - 25}px`;
+                }
+            };
+            document.addEventListener('mousemove', moveGlow);
+            
             console.log("Icon created and added to body", icon);
             
             // After a short delay, make the icon interactive
@@ -150,13 +203,18 @@ export function initSidebar(callbacks = {}) {
             // Handle drop or click elsewhere
             const handleDrop = () => {
                 document.removeEventListener('mousemove', moveIcon);
+                document.removeEventListener('mousemove', moveGlow);
                 document.removeEventListener('mouseup', handleDrop);
                 
                 // If the icon is not dropped on a valid target after a delay, remove it
                 setTimeout(() => {
                     const iconElement = document.getElementById('draggable-metamask-icon');
+                    const glowElement = document.getElementById('draggable-metamask-glow');
                     if (iconElement && iconElement.parentNode) {
                         iconElement.parentNode.removeChild(iconElement);
+                    }
+                    if (glowElement && glowElement.parentNode) {
+                        glowElement.parentNode.removeChild(glowElement);
                     }
                 }, 100);
             };

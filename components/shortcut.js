@@ -193,14 +193,23 @@ export default function Shortcut({ onClose, onDrop }) {
         onDrop={handleDrop}
       >
         <div className={styles.header}>
-          <h3>Drag a shortcut here</h3>
+          <h2 className={styles.title}>Drag a shortcut here</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
         <div className={styles.iconRow}>
-          <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
-          <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
-          <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
+          <div className={styles.logoContainer}>
+            <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
+            <div className={styles.logoGlow}></div>
+          </div>
+          <div className={styles.logoContainer}>
+            <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
+            <div className={styles.logoGlow}></div>
+          </div>
+          <div className={styles.logoContainer}>
+            <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
+            <div className={styles.logoGlow}></div>
+          </div>
         </div>
         
         <div className={styles.content}>
@@ -209,6 +218,15 @@ export default function Shortcut({ onClose, onDrop }) {
           ) : (
             <p>Drag a button from the sidebar to create a shortcut</p>
           )}
+        </div>
+        
+        <div className={styles.chatInputContainer}>
+          <input 
+            type="text" 
+            placeholder="Type a message..." 
+            className={styles.chatInput}
+          />
+          <button className={styles.sendButton}>Send</button>
         </div>
       </div>
     </div>
