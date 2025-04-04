@@ -5,6 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
+import { loadAIAgent } from "../components/aiagent.js";
 
 export default function Home() {
   const mountRef = useRef(null);
@@ -161,109 +162,40 @@ export default function Home() {
     loadFurniture(scene, roomWidth, roomHeight, roomDepth);
 
     // Load AI Agent by default
-    loadAIAgent();
+    loadAIAgent(scene, {
+      onAgentLoaded: (data) => {
+        aiAgent = data.agent;
+        mixer = data.mixer;
+        animations = data.animations;
+        currentAnimation = 'idle';
+        console.log("AI Agent loaded and ready");
+      }
+    });
 
     // AI Agent loading and movement functions
-    function loadAIAgent() {
-      // If the agent already exists, just reset its position
-      if (aiAgent) {
-        console.log("AI Agent already exists, resetting position");
-        aiAgent.position.set(0, 0, 0);
-        aiAgent.visible = true;
-        isAgentWalking = false;
-        playAnimation('idle');
-        return;
+    function removeExistingAgents() {
+      if (scene) {
+        // Find all objects that might be AI agents
+        const agentsToRemove = [];
+        scene.traverse((object) => {
+          // Check if this is an AI agent by looking for specific properties
+          if (object.userData && object.userData.isAIAgent) {
+            agentsToRemove.push(object);
+          }
+        });
+        
+        // Remove all found agents
+        agentsToRemove.forEach(agent => {
+          console.log("Removing existing AI agent from scene");
+          scene.remove(agent);
+        });
+        
+        // Reset the aiAgent variable
+        aiAgent = null;
+        mixer = null;
+        animations = {};
+        currentAnimation = null;
       }
-      
-      console.log("Loading AI Agent model (FBX)...");
-      const fbxLoader = new FBXLoader();
-      const textureLoader = new THREE.TextureLoader();
-
-      // Load the base model with idle animation
-      fbxLoader.load(
-        "/models/idling.fbx",
-        (fbx) => {
-          console.log("AI Agent model loaded:", fbx);
-          aiAgent = fbx;
-
-          // Scale the model to a reasonable size
-          aiAgent.scale.set(0.01, 0.01, 0.01);
-
-          // Position the model in the center of the room
-          aiAgent.position.set(0, 0, 0);
-          
-          // Apply texture to all meshes with a slightly lighter orange tint
-          const texture = textureLoader.load('/models/shaded.png');
-          
-          aiAgent.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              // Create a standard material with skinning support and lighter orange tint
-              const material = new THREE.MeshStandardMaterial({
-                map: texture,
-                skinning: true,
-                color: new THREE.Color('#ffb38a'), // About 15% lighter than #ff9966
-                emissive: new THREE.Color('#000000'), // No emissive effect
-                emissiveIntensity: 0 // Turn off emissive
-              });
-              child.material = material;
-              
-              // Disable shadows for performance
-              child.castShadow = false;
-              child.receiveShadow = false;
-              console.log("Mesh properties:", child.name);
-            }
-          });
-          
-          // Set up animation mixer
-          mixer = new THREE.AnimationMixer(aiAgent);
-          
-          // Store the idle animation
-          const idleAnim = mixer.clipAction(fbx.animations[0]);
-          animations['idle'] = idleAnim;
-          currentAnimation = 'idle';
-          idleAnim.play();
-          
-          // Add to scene
-          scene.add(aiAgent);
-          console.log("AI Agent added to scene at position:", aiAgent.position);
-          
-          // Make sure model is visible
-          aiAgent.visible = true;
-          
-          // Force render to update the scene
-          renderer.render(scene, camera);
-          
-          // Load the walking animation
-          fbxLoader.load(
-            "/models/walking.fbx",
-            (walkFbx) => {
-              console.log("Walk animation loaded");
-              
-              // Extract animation and add to our animations dictionary
-              const walkAnim = mixer.clipAction(walkFbx.animations[0]);
-              animations['walk'] = walkAnim;
-            },
-            (xhr) => {
-              console.log(
-                "Loading walk animation progress:",
-                (xhr.loaded / xhr.total) * 100 + "% loaded"
-              );
-            },
-            (error) => {
-              console.error("Error loading walk animation:", error);
-            }
-          );
-        },
-        (xhr) => {
-          console.log(
-            "Loading progress:",
-            (xhr.loaded / xhr.total) * 100 + "% loaded"
-          );
-        },
-        (error) => {
-          console.error("Error loading model:", error);
-        }
-      );
     }
 
     /**
@@ -335,7 +267,15 @@ export default function Home() {
       console.log("Spawn AI Agent button clicked");
       if (!aiAgent) {
         console.log("AI Agent not loaded yet, loading now...");
-        loadAIAgent();
+        loadAIAgent(scene, {
+          onAgentLoaded: (data) => {
+            aiAgent = data.agent;
+            mixer = data.mixer;
+            animations = data.animations;
+            currentAnimation = 'idle';
+            console.log("AI Agent loaded and ready");
+          }
+        });
       } else {
         console.log(
           "AI Agent already loaded, making visible and resetting position"
