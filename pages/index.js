@@ -60,6 +60,42 @@ export default function Home() {
         new THREE.Vector3(1.142, 0, -3.423),
         new THREE.Vector3(1.200, 0, -0.710)
       ]
+    },
+    {
+      // Living room table area
+      points: [
+        new THREE.Vector3(0.18249943220364717, 0, 0.4219197930921914),
+        new THREE.Vector3(-1.232898461053765, 0, 0.3622733604177472),
+        new THREE.Vector3(-1.2637572087925983, 0, 2.731600609061),
+        new THREE.Vector3(0.27887298226970775, 0, 2.7167017095035195)
+      ]
+    },
+    {
+      // Sofa area
+      points: [
+        new THREE.Vector3(-1.9942509933239285, 0, 2.8505197760793695),
+        new THREE.Vector3(-3.451115247625434, 0, 2.946173082552176),
+        new THREE.Vector3(-3.4329254395296758, 0, 0.10421278535787085),
+        new THREE.Vector3(-1.9447783550794147, 0, 0.17249754939718953)
+      ]
+    },
+    {
+      // Table lamp area
+      points: [
+        new THREE.Vector3(-2.436873051520765, 0, 0.14620636452125985),
+        new THREE.Vector3(-3.4330058552740788, 0, 0.008880845803213577),
+        new THREE.Vector3(-3.4385544489786533, 0, -1.8812060427940032),
+        new THREE.Vector3(-2.4361083017537257, 0, -1.9682776175330825)
+      ]
+    },
+    {
+      // Bed area
+      points: [
+        new THREE.Vector3(-3.407952893312852, 0, -1.6851876393965608),
+        new THREE.Vector3(-3.283868548414369, 0, -3.3235582801304817),
+        new THREE.Vector3(-0.5329127465405925, 0, -3.250640748699036),
+        new THREE.Vector3(-0.5516397159820063, 0, -1.8236901963583096)
+      ]
     }
     // More furniture obstacles can be added here
   ];
