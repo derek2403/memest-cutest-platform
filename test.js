@@ -87,15 +87,48 @@ async function checkAllowance(
       outputs: [{ name: "", type: "uint256" }],
       type: "function",
     },
+    {
+      constant: false,
+      inputs: [
+        { name: "_spender", type: "address" },
+        { name: "_value", type: "uint256" },
+      ],
+      name: "approve",
+      outputs: [{ name: "", type: "bool" }],
+      type: "function",
+    },
   ];
 
   const contract = new web3.eth.Contract(minABI, tokenAddress);
   const allowance = await contract.methods
     .allowance(walletAddress, spenderAddress)
     .call();
+
+  // Add 20% buffer to required amount to account for safety deposits
+  const requiredWithBuffer =
+    (BigInt(requiredAmount) * BigInt(120)) / BigInt(100);
+
   console.log(`Current allowance: ${allowance}`);
-  console.log(`Required allowance: ${requiredAmount}`);
-  return BigInt(allowance) >= BigInt(requiredAmount);
+  console.log(`Required amount (with safety buffer): ${requiredWithBuffer}`);
+
+  if (BigInt(allowance) < requiredWithBuffer) {
+    console.log("Insufficient allowance. Approving tokens...");
+    // Approve a larger amount to handle safety deposits
+    const approveAmount = (
+      (BigInt(requiredAmount) * BigInt(150)) /
+      BigInt(100)
+    ).toString(); // 50% buffer
+    const tx = await contract.methods
+      .approve(spenderAddress, approveAmount)
+      .send({
+        from: walletAddress,
+        gas: 100000,
+      });
+    console.log("Approval transaction:", tx.transactionHash);
+    return true;
+  }
+
+  return BigInt(allowance) >= requiredWithBuffer;
 }
 
 async function checkLiquidity(
@@ -149,25 +182,30 @@ async function main() {
   const amount = "1000000000000000"; // 0.001 ETH
   const INCH_ROUTER = "0x1111111254eeb25477b68fb85ed929f73a960582";
 
-  // Use the native ETH addresses
-  const srcToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"; // Native ETH
-  const dstToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"; // Native ETH
+  // Use WETH addresses instead of native ETH
+  const srcToken = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // WETH on Arbitrum
+  const dstToken = "0x4200000000000000000000000000000000000006"; // WETH on Optimism
 
   console.log("Performing pre-flight checks...");
 
-  // Check balance
-  const hasBalance = await checkBalance(web3, srcToken, walletAddress, amount);
+  // Check balance (still check native ETH since we'll need it for wrapping)
+  const hasBalance = await checkBalance(
+    web3,
+    "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", // Check native ETH balance
+    walletAddress,
+    amount
+  );
   if (!hasBalance) {
-    throw new Error("Insufficient source token balance");
+    throw new Error("Insufficient ETH balance");
   }
   console.log("✅ Balance check passed");
 
-  await sleep(1100); // Add delay between API calls
+  await sleep(1100);
 
-  // Check allowance
+  // Check allowance for WETH
   const hasAllowance = await checkAllowance(
     web3,
-    srcToken,
+    srcToken, // WETH address
     walletAddress,
     INCH_ROUTER,
     amount
@@ -177,16 +215,16 @@ async function main() {
   }
   console.log("✅ Allowance check passed");
 
-  await sleep(1100); // Add delay between API calls
+  await sleep(1100);
 
-  // Check liquidity
+  // Check liquidity with WETH addresses
   const hasLiquidity = await checkLiquidity(
     sdk,
     amount,
     NetworkEnum.ARBITRUM,
     NetworkEnum.OPTIMISM,
-    srcToken,
-    dstToken,
+    srcToken, // WETH on Arbitrum
+    dstToken, // WETH on Optimism
     walletAddress
   );
   if (!hasLiquidity) {
@@ -194,9 +232,9 @@ async function main() {
   }
   console.log("✅ Liquidity check passed");
 
-  await sleep(1100); // Add delay between API calls
+  await sleep(1100);
 
-  // Continue with the original code...
+  // Get quote with WETH addresses
   const quote = await sdk.getQuote({
     amount,
     srcChainId: NetworkEnum.ARBITRUM,
