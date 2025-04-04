@@ -3,6 +3,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useChainId, useSendTransaction } from 'wagmi';
 import { parseEther } from 'viem';
 import { Geist, Geist_Mono } from "next/font/google";
+import { ethers } from 'ethers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,16 +19,19 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const chainId = useChainId();
   
   // Transaction states
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [txStatus, setTxStatus] = useState(null);
-//
-  // Wagmi hooks for sending transaction
-  const { sendTransaction, isPending, isSuccess, data: hash } = useSendTransaction();
+  
+  // Report states
+  const [month, setMonth] = useState('');
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [reportStatus, setReportStatus] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -103,6 +107,45 @@ export default function Home() {
     }
   };
 
+  const handleGenerateReport = async (e) => {
+    e.preventDefault();
+    setReportLoading(true);
+    setReportStatus(null);
+    
+    try {
+      // Validate month input
+      if (!month) {
+        setReportStatus({ error: 'Please select a month' });
+        setReportLoading(false);
+        return;
+      }
+      
+      const response = await fetch('http://localhost:3001/transactions/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address, // Current connected wallet address
+          chainId,
+          month,
+          year
+        }),
+      });
+      
+      const data = await response.json();
+      
+      setReportStatus(data);
+    } catch (error) {
+      setReportStatus({ 
+        success: false, 
+        error: error.message || 'Failed to generate report' 
+      });
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const checkVerificationStatus = async () => {
     try {
       const response = await fetch(`http://localhost:3001/email/status?email=${email}`);
@@ -127,6 +170,26 @@ export default function Home() {
     };
     return explorers[chainId] || 'https://etherscan.io';
   };
+  
+  // Generate array of month names for dropdown
+  const months = [
+    { value: '1', label: 'January' },
+    { value: '2', label: 'February' },
+    { value: '3', label: 'March' },
+    { value: '4', label: 'April' },
+    { value: '5', label: 'May' },
+    { value: '6', label: 'June' },
+    { value: '7', label: 'July' },
+    { value: '8', label: 'August' },
+    { value: '9', label: 'September' },
+    { value: '10', label: 'October' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'December' }
+  ];
+  
+  // Years for dropdown (current year and 2 previous years)
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear, currentYear - 1, currentYear - 2];
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
@@ -265,6 +328,151 @@ export default function Home() {
                 {txStatus?.error && (
                   <div className="mt-4 p-4 rounded-md bg-red-50 text-red-700">
                     {txStatus.error}
+                  </div>
+                )}
+              </div>
+              
+              {/* Transaction Report Section */}
+              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                <h2 className="text-2xl font-bold mb-8">Transaction Report</h2>
+                
+                {!isConnected ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600 mb-4">Please connect your wallet first</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleGenerateReport} className="space-y-6">
+                    <div className="flex space-x-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Month
+                        </label>
+                        <select
+                          value={month}
+                          onChange={(e) => setMonth(e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          required
+                        >
+                          <option value="">Select Month</option>
+                          {months.map(m => (
+                            <option key={m.value} value={m.value}>{m.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Year
+                        </label>
+                        <select
+                          value={year}
+                          onChange={(e) => setYear(e.target.value)}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                          required
+                        >
+                          {years.map(y => (
+                            <option key={y} value={y}>{y}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <p className="text-sm text-gray-600">
+                        Connected Chain ID: {chainId}
+                      </p>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={reportLoading}
+                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
+                    >
+                      {reportLoading ? 'Generating...' : 'Generate Report'}
+                    </button>
+                  </form>
+                )}
+                
+                {/* Report Status Display */}
+                {reportStatus?.success && (
+                  <div className="mt-4 p-4 rounded-md bg-green-50 text-green-700">
+                    <p className="mb-2">{reportStatus.message}</p>
+                    
+                    {reportStatus.error && (
+                      <div className="mb-4 p-4 rounded-md bg-yellow-50 text-yellow-700 mt-3">
+                        <p className="font-medium">{reportStatus.error}</p>
+                        {reportStatus.setupInstructions && (
+                          <div className="mt-3">
+                            <p className="font-medium">Setup Instructions:</p>
+                            <pre className="mt-2 whitespace-pre-wrap text-sm bg-yellow-100 p-3 rounded">
+                              {reportStatus.setupInstructions}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {reportStatus.reportUrl && (
+                      <div className="mt-3">
+                        <p className="font-bold mb-2">Your report is ready:</p>
+                        <a
+                          href={reportStatus.reportUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full text-center py-2 px-4 border border-transparent rounded-md shadow-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          Open Google Sheet Report
+                        </a>
+                        <div className="mt-2 text-xs text-center text-gray-500 break-all">
+                          <span className="font-medium">Link:</span> {reportStatus.reportUrl}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {reportStatus.fallback && !reportStatus.setupInstructions && (
+                      <p className="text-sm mt-2 text-yellow-600">
+                        Note: Using sample data - actual Google Sheet update failed. Check server logs for details.
+                      </p>
+                    )}
+                    
+                    {reportStatus.transactions && reportStatus.transactions.length > 0 && (
+                      <div className="mt-4">
+                        <h3 className="font-medium mb-2">Sample Transactions:</h3>
+                        <div className="bg-white rounded-md shadow overflow-hidden">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tx Hash</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {reportStatus.transactions.map((tx, index) => (
+                                <tr key={index}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {new Date(tx.timestamp).toLocaleString()}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {typeof tx.amount === 'bigint' 
+                                      ? ethers.formatEther(tx.amount) 
+                                      : typeof tx.amount === 'string' 
+                                        ? ethers.formatEther(tx.amount) 
+                                        : tx.amount} ETH
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-[200px]">
+                                    {tx.hash}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {reportStatus?.error && !reportStatus?.success && (
+                  <div className="mt-4 p-4 rounded-md bg-red-50 text-red-700">
+                    <p>{reportStatus.error || reportStatus.message}</p>
                   </div>
                 )}
               </div>
