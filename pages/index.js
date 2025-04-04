@@ -52,49 +52,54 @@ export default function Home() {
   // Execute the cross-chain swap
   async function executeSwap() {
     try {
+      console.log("🚀 Starting swap process...");
       setStatus("Preparing swap...");
 
       // Switch to Arbitrum if not already on it
       if (chainId !== 42161) {
+        console.log("⚠️ Not on Arbitrum, switching networks...");
         try {
           await window.ethereum.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: "0xA4B1" }], // Arbitrum chainId in hex
           });
-          setStatus("Switched to Arbitrum");
 
-          // Update chainId after switch
+          // Wait for the network to switch and update chainId
           const provider = new ethers.BrowserProvider(window.ethereum);
           const network = await provider.getNetwork();
           setChainId(Number(network.chainId));
+
+          console.log("✅ Successfully switched to Arbitrum");
         } catch (switchError) {
           // This error code indicates that the chain has not been added to MetaMask
           if (switchError.code === 4902) {
-            await window.ethereum.request({
-              method: "wallet_addEthereumChain",
-              params: [
-                {
-                  chainId: "0xA4B1",
-                  chainName: "Arbitrum One",
-                  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
-                  rpcUrls: ["https://arb1.arbitrum.io/rpc"],
-                  blockExplorerUrls: ["https://arbiscan.io/"],
-                },
-              ],
-            });
-
-            // Try switching again after adding
-            await window.ethereum.request({
-              method: "wallet_switchEthereumChain",
-              params: [{ chainId: "0xA4B1" }],
-            });
-
-            // Update chainId after switch
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const network = await provider.getNetwork();
-            setChainId(Number(network.chainId));
+            try {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [
+                  {
+                    chainId: "0xA4B1",
+                    chainName: "Arbitrum One",
+                    nativeCurrency: {
+                      name: "ETH",
+                      symbol: "ETH",
+                      decimals: 18,
+                    },
+                    rpcUrls: ["https://arb1.arbitrum.io/rpc"],
+                    blockExplorerUrls: ["https://arbiscan.io/"],
+                  },
+                ],
+              });
+              // Try switching again after adding
+              await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: "0xA4B1" }],
+              });
+            } catch (addError) {
+              throw new Error("Failed to add Arbitrum network to MetaMask");
+            }
           } else {
-            throw switchError;
+            throw new Error("Failed to switch to Arbitrum network");
           }
         }
       }
@@ -102,31 +107,16 @@ export default function Home() {
       // Get the provider and signer
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
+      console.log("✅ Got signer from provider");
 
-      // Approve WETH contract (example)
-      const WETH_ADDRESS = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
-      const ROUTER_ADDRESS = "0x1111111254eeb25477b68fb85ed929f73a960582";
-      const SETTLEMENT_ADDRESS = "0xa7bcb4eac8964306f9e3764f67db6a7af6ddf99a";
+      setStatus("Preparing swap with native ETH...");
+      console.log("📡 Calling API to execute swap...");
 
-      // ERC20 ABI for approve function
-      const erc20Abi = [
-        "function approve(address spender, uint256 amount) external returns (bool)",
-      ];
-
-      const wethContract = new ethers.Contract(WETH_ADDRESS, erc20Abi, signer);
-
-      setStatus("Approving WETH...");
-      // Approve max uint256
-      const tx1 = await wethContract.approve(ROUTER_ADDRESS, ethers.MaxUint256);
-      await tx1.wait();
-
-      const tx2 = await wethContract.approve(
-        SETTLEMENT_ADDRESS,
-        ethers.MaxUint256
+      // Increased amount from 0.001 to 0.01 ETH
+      const amount = "10000000000000000"; // 0.01 ETH
+      console.log(
+        `💰 Preparing swap with amount: ${ethers.formatEther(amount)} ETH/WETH`
       );
-      await tx2.wait();
-
-      setStatus("Approvals complete! Executing swap...");
 
       // Call the API to execute the swap
       const response = await fetch("/api/executeSwap", {
@@ -136,19 +126,31 @@ export default function Home() {
         },
         body: JSON.stringify({
           walletAddress: account,
+          useNativeEth: true,
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      console.log("📡 API response received");
       const data = await response.json();
+      console.log("📊 API response data:", data);
 
       if (data.success) {
+        console.log(`🎉 Swap executed! Status: ${data.status}`);
         setStatus(`Swap executed! Status: ${data.status}`);
         setTxHash(data.orderHash);
       } else {
+        console.error("❌ Swap failed:", data.error, data.details);
         throw new Error(data.error || "Swap failed");
       }
     } catch (error) {
-      console.error(error);
+      console.error("❌ Swap execution error:", error);
       setStatus("Swap failed: " + error.message);
     }
   }
