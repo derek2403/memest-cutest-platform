@@ -92,9 +92,9 @@ export default function Home() {
       // Bed area
       points: [
         new THREE.Vector3(-3.407952893312852, 0, -1.6851876393965608),
-        new THREE.Vector3(-3.283868548414369, 0, -3.3235582801304817),
-        new THREE.Vector3(-0.5329127465405925, 0, -3.250640748699036),
-        new THREE.Vector3(-0.5516397159820063, 0, -1.8236901963583096)
+        new THREE.Vector3(-3.483868548414369, 0, -3.3235582801304817),
+        new THREE.Vector3(-0.5329127465405925, 0, -3.320640748699036),
+        new THREE.Vector3(-0.5316397159820063, 0, -1.6836901963583096)
       ]
     }
     // More furniture obstacles can be added here
