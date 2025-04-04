@@ -12,6 +12,10 @@
     "lint": "next lint"
   },
   "devDependencies": {
-    "@next/swc-win32-x64-msvc": "^15.2.4"
+    "@next/swc-win32-x64-msvc": "^15.2.4",
+    "@tailwindcss/postcss": "^4.1.2",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.2"
   }
 }
