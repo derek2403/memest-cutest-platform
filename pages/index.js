@@ -6,12 +6,25 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
 import { loadAIAgent } from "../components/aiagent.js";
+import { spawn1inchUnicorn } from "../components/oneinch.js";
 import dynamic from 'next/dynamic';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/metamask_shortcut'), { ssr: false });
 
+// At the top of your file, before the component
+// Add this if you remove globals.css
+const globalStyles = {
+  html: {
+    padding: 0,
+    margin: 0,
+    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif",
+    boxSizing: "border-box"
+  }
+};
+
 export default function Home() {
   const mountRef = useRef(null);
+  const [sceneRef, setSceneRef] = useState(null);
 
   // Component level variables for animation and scene
   let walkingSpeed = 0.05;
@@ -75,8 +88,13 @@ export default function Home() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Disable right-click panning
-    controls.enablePan = false;
+    // Enable panning, but configure which buttons do what
+    controls.enablePan = true;
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: THREE.MOUSE.NONE // Disable right-click functionality
+    };
 
     // Force the controls to orbit around the center of the room
     controls.target.set(0, 1, 0); // Set target to center of room, at reasonable height
@@ -318,15 +336,18 @@ export default function Home() {
     console.log("Initializing sidebar with callbacks");
     initSidebar({
       'metamask-button': () => {
-        console.log("Metamask button clicked callback executed");
+        console.log("Metamask button clicked");
+        // This will now spawn the Metamask wolf
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");
       },
       'oneinch-button': () => {
         console.log("1inch button clicked");
+        // Add 1inch functionality to spawn the unicorn
+        spawn1inchUnicorn(scene);
       }
-    });
+    }, scene); // Pass the scene object here
 
     // Add right-click event listener for movement
     function onRightClick(event) {
@@ -413,6 +434,9 @@ export default function Home() {
 
     animate(0);
 
+    // Store the scene reference in state
+    setSceneRef(scene);
+
     // Add click event handler for 3D objects
     function onClick(event) {
       // Calculate mouse position in normalized device coordinates
@@ -462,6 +486,7 @@ export default function Home() {
     return () => {
       window.removeEventListener("resize", handleResize);
       renderer.domElement.removeEventListener("contextmenu", onRightClick);
+      renderer.domElement.removeEventListener('click', onClick);
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
@@ -469,7 +494,6 @@ export default function Home() {
         mountRef.current.removeChild(renderer.domElement);
       }
       renderer.dispose();
-      renderer.domElement.removeEventListener('click', onClick);
     };
   }, []);
 
@@ -487,7 +511,16 @@ export default function Home() {
 
   return (
     <>
-      <div ref={mountRef} style={{ width: "100%", height: "100vh" }}></div>
+      <style jsx global>{`
+        html, body {
+          padding: 0;
+          margin: 0;
+          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+        }
+        * { box-sizing: border-box; }
+      `}</style>
+      <div style={{ width: "100%", height: "100vh" }} ref={mountRef}></div>
       
       {showShortcutPopup && (
         <Shortcut 
