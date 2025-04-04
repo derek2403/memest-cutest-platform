@@ -70,6 +70,32 @@ export default function Home() {
     leftWall.position.set(-roomWidth/2, roomHeight/2, 0);
     leftWall.receiveShadow = true;
     scene.add(leftWall);
+    
+    // Create a window cutout in the left wall
+    const windowWidth = 1.2;
+    const windowHeight = 1.3;
+    const windowX = -roomWidth/2 + 0.01; // Slightly in front of the wall
+    const windowY = 2.1; // Height position
+    const windowZ = -2; // Same Z position as the bed and window frame
+    
+    // Create a white glass for the window
+    const windowGlassGeometry = new THREE.PlaneGeometry(windowWidth, windowHeight);
+    const windowGlassMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xFA5F55, // Pure white color
+      transparent: true,
+      opacity: 0.8, // More opaque
+      transmission: 0.2, // Less transmission for white appearance
+      roughness: 0.05,
+      metalness: 0.0,
+      clearcoat: 1.0,
+      side: THREE.DoubleSide
+    });
+    
+    const windowGlass = new THREE.Mesh(windowGlassGeometry, windowGlassMaterial);
+    windowGlass.position.set(windowX, windowY, windowZ);
+    windowGlass.rotation.y = Math.PI / 2; // Same rotation as the wall
+    windowGlass.receiveShadow = true;
+    scene.add(windowGlass);
 
     // Back wall (slightly darker color)
     const backWallGeometry = new THREE.PlaneGeometry(roomWidth, roomHeight);
