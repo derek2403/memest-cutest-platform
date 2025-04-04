@@ -55,7 +55,14 @@ export default function Home() {
 
   const handleTransaction = async (e) => {
     e.preventDefault();
+    setTxStatus(null);
     try {
+      // First, check if email exists
+      if (!email) {
+        setTxStatus({ error: 'Please enter an email for transaction approval' });
+        return;
+      }
+      
       // Validate transaction with backend
       const response = await fetch('http://localhost:3001/transaction', {
         method: 'POST',
@@ -66,6 +73,7 @@ export default function Home() {
           to: recipient,
           amount,
           chainId,
+          email, // Include email for approval
         }),
       });
       
@@ -75,13 +83,21 @@ export default function Home() {
         return;
       }
 
-      // Send transaction using wagmi
-      sendTransaction({
-        to: recipient,
-        value: parseEther(amount),
-        chainId,
-      });
+      // If transaction approval email was sent
+      if (data.message && data.message.includes('pending approval')) {
+        setTxStatus({ 
+          pending: true, 
+          message: 'Transaction pending email approval. Please check your email and click "Approve" to execute the transaction.' 
+        });
+        return;
+      }
       
+      // If we get here, it means the backend processed the transaction immediately
+      setTxStatus({
+        success: true,
+        message: 'Transaction submitted',
+        data
+      });
     } catch (error) {
       setTxStatus({ error: error.message });
     }
@@ -164,10 +180,28 @@ export default function Home() {
               </div>
 
               {/* Transaction Section */}
-              {isConnected && (
-                <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
-                  <h2 className="text-2xl font-bold mb-8">Send Transaction</h2>
+              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                <h2 className="text-2xl font-bold mb-8">Send Transaction</h2>
+                
+                {!isConnected ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600 mb-4">Please connect your wallet first</p>
+                  </div>
+                ) : (
                   <form onSubmit={handleTransaction} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Email for Transaction Approval
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        placeholder="your@email.com"
+                        required
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         Recipient Address
@@ -197,34 +231,43 @@ export default function Home() {
                     </div>
                     <button
                       type="submit"
-                      disabled={isPending}
+                      disabled={loading || txStatus?.pending}
                       className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                     >
-                      {isPending ? 'Sending...' : 'Send'}
+                      {loading || txStatus?.pending ? 'Sending...' : 'Send'}
                     </button>
                   </form>
+                )}
 
-                  {isSuccess && (
-                    <div className="mt-4 p-4 rounded-md bg-green-50 text-green-700">
-                      <p>Transaction successful!</p>
+                {/* Transaction Status Display */}
+                {txStatus?.pending && (
+                  <div className="mt-4 p-4 rounded-md bg-yellow-50 text-yellow-700">
+                    <p>{txStatus.message}</p>
+                  </div>
+                )}
+
+                {txStatus?.success && (
+                  <div className="mt-4 p-4 rounded-md bg-green-50 text-green-700">
+                    <p>{txStatus.message}</p>
+                    {txStatus.data?.hash && (
                       <a
-                        href={`${getBlockExplorerUrl()}/tx/${hash}`}
+                        href={`${getBlockExplorerUrl()}/tx/${txStatus.data.hash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-green-600 hover:text-green-500 underline"
                       >
                         View on Explorer
                       </a>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
 
-                  {txStatus?.error && (
-                    <div className="mt-4 p-4 rounded-md bg-red-50 text-red-700">
-                      {txStatus.error}
-                    </div>
-                  )}
-                </div>
-              )}
+                {txStatus?.error && (
+                  <div className="mt-4 p-4 rounded-md bg-red-50 text-red-700">
+                    {txStatus.error}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
