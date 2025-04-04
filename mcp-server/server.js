@@ -4,13 +4,31 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { handleEmailVerification, verifyToken, isEmailVerified, sendTransactionApprovalEmail, verifyTransactionToken } from './scripts/email.js';
 import { handleTransaction, executeTransaction } from './scripts/wallet.js';
+import { generateTransactionExcel, addTransactionToSheet } from './scripts/excel.js';
 
 // Load environment variables
 dotenv.config();
 
+// Custom JSON serializer to handle BigInt values
+const jsonSerializer = (req, res, next) => {
+  // Replace the default JSON serializer with one that can handle BigInt
+  const originalJson = res.json;
+  
+  res.json = function(obj) {
+    return originalJson.call(this, JSON.parse(
+      JSON.stringify(obj, (key, value) => 
+        typeof value === 'bigint' ? value.toString() : value
+      )
+    ));
+  };
+  
+  next();
+};
+
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(jsonSerializer); // Add the custom serializer middleware
 
 // Email verification endpoint - initiates verification process
 app.post('/email', async (req, res) => {
@@ -94,6 +112,17 @@ app.get('/transaction/verify', async (req, res) => {
     // Execute the transaction using the private key
     const executionResult = await executeTransaction(verificationResult.transaction);
     
+    // If successful, add to the spreadsheet
+    if (executionResult.success) {
+      // Add transaction details to the spreadsheet
+      const transaction = {
+        ...verificationResult.transaction,
+        hash: executionResult.hash,
+        timestamp: Date.now()
+      };
+      await addTransactionToSheet(transaction);
+    }
+    
     // Return execution result
     return res.json({
       success: executionResult.success,
@@ -115,6 +144,46 @@ app.get('/transaction/verify', async (req, res) => {
     success: false,
     message: 'Invalid action specified in token'
   });
+});
+
+// Generate transaction report
+app.post('/transactions/report', async (req, res) => {
+  const { address, chainId, month, year } = req.body;
+  
+  if (!chainId) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Chain ID is required' 
+    });
+  }
+  
+  try {
+    console.log(`Generating transaction report for address: ${address || 'using private key wallet'}, chain: ${chainId}, month: ${month}, year: ${year}`);
+    const result = await generateTransactionExcel(address, chainId, month, year);
+    
+    // Log the result for debugging
+    console.log(`Report generation result: success=${result.success}, transactions=${result.count || 0}`);
+    if (result.reportUrl) {
+      console.log(`Report URL: ${result.reportUrl}`);
+    }
+    
+    return res.json(result);
+  } catch (error) {
+    console.error('Error generating report:', error);
+    
+    // Even if there's an error, try to return a URL
+    const reportUrl = process.env.GOOGLE_SHEET_ID ? 
+      `https://docs.google.com/spreadsheets/d/${process.env.GOOGLE_SHEET_ID}` : 
+      null;
+    
+    return res.json({
+      success: true, // Return success to show the report anyway
+      message: 'Error generating report but you can still view the spreadsheet',
+      error: error.message,
+      reportUrl: reportUrl,
+      fallback: true
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3001;
