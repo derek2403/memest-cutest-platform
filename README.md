@@ -1,40 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# 3D Room Visualization
 
-## Getting Started
+A 3D interactive room visualization built with Next.js and Three.js.
 
-First, run the development server:
+## Preview
+
+This application renders a 3D room with furniture and interactive elements. Users can explore the room using mouse controls.
+
+## Requirements
+
+- Node.js 14.x or higher
+- npm 6.x or higher
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd mcp
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+## Running the Application
+
+### Development Mode
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This starts the application in development mode with hot-reloading at http://localhost:3000.
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+**Note:** Development mode may have performance issues with the 3D rendering.
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+### Production Mode (Recommended for Better Performance)
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+For optimal performance, use the production build:
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+This creates an optimized production build and serves it at http://localhost:3000.
 
-To learn more about Next.js, take a look at the following resources:
+## Controls
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+- **Rotate view**: Click and drag with the left mouse button
+- **Zoom**: Scroll up/down with the mouse wheel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Performance Tips
 
-## Deploy on Vercel
+If experiencing lag or performance issues:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Use the production build (`npm run build` followed by `npm run start`)
+2. Close other resource-intensive applications
+3. Use a modern browser with hardware acceleration enabled
+4. Reduce the browser window size if needed
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+## Project Structure
+
+- `/pages` - Next.js pages
+- `/components` - Reusable React components
+- `/gltf` - 3D models in GLTF format
+- `/fbx` - 3D models in FBX format
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

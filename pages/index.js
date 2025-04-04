@@ -1,26 +1,35 @@
-import React, { useEffect, useRef } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { initSidebar } from '../components/sidebar.js';
-import { loadFurniture } from '../components/furniture.js';
+import React, { useEffect, useRef } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { initSidebar } from "../components/sidebar.js";
+import { loadFurniture } from "../components/furniture.js";
 
 export default function Home() {
   const mountRef = useRef(null);
-  
+
   useEffect(() => {
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#eeeee4'); // Light blue background (sky blue)
+    scene.background = new THREE.Color("#eeeee4"); // Light blue background (sky blue)
 
     // Camera setup
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
     camera.position.set(5, 5, 5);
     camera.lookAt(0, 0, 0);
 
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Renderer setup with optimizations
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: "high-performance",
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = false;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
     mountRef.current.appendChild(renderer.domElement);
 
     // Controls
@@ -33,13 +42,13 @@ export default function Home() {
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     directionalLight.position.set(5, 10, 5);
-    directionalLight.castShadow = true;
+    directionalLight.castShadow = false;
     scene.add(directionalLight);
 
     // Add a second directional light from another angle
     const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight2.position.set(-5, 8, -5);
-    directionalLight2.castShadow = true;
+    directionalLight2.castShadow = false;
     scene.add(directionalLight2);
 
     // Room dimensions
@@ -49,66 +58,72 @@ export default function Home() {
 
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
-    const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: new THREE.Color('#d8d9d8'),  // Changed to a lighter gray color
-        side: THREE.DoubleSide 
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#d8d9d8"), // Changed to a lighter gray color
+      side: THREE.DoubleSide,
     });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0;
-    floor.receiveShadow = true;
+    floor.receiveShadow = false;
     scene.add(floor);
 
     // Left wall (light blue color)
     const leftWallGeometry = new THREE.PlaneGeometry(roomDepth, roomHeight);
-    const leftWallMaterial = new THREE.MeshStandardMaterial({ 
-        color: new THREE.Color('#6d99c7'),  // Using string format with THREE.Color
-        side: THREE.DoubleSide 
+    const leftWallMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#6d99c7"), // Using string format with THREE.Color
+      side: THREE.DoubleSide,
     });
     const leftWall = new THREE.Mesh(leftWallGeometry, leftWallMaterial);
     leftWall.rotation.y = Math.PI / 2;
-    leftWall.position.set(-roomWidth/2, roomHeight/2, 0);
-    leftWall.receiveShadow = true;
+    leftWall.position.set(-roomWidth / 2, roomHeight / 2, 0);
+    leftWall.receiveShadow = false;
     scene.add(leftWall);
-    
+
     // Create a window cutout in the left wall
     const windowWidth = 1.2;
     const windowHeight = 1.3;
-    const windowX = -roomWidth/2 + 0.01; // Slightly in front of the wall
+    const windowX = -roomWidth / 2 + 0.01; // Slightly in front of the wall
     const windowY = 2.1; // Height position
     const windowZ = -2; // Same Z position as the bed and window frame
-    
+
     // Create a white glass for the window
-    const windowGlassGeometry = new THREE.PlaneGeometry(windowWidth, windowHeight);
+    const windowGlassGeometry = new THREE.PlaneGeometry(
+      windowWidth,
+      windowHeight
+    );
     const windowGlassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xFA5F55, // Pure white color
+      color: 0xfa5f55, // Pure white color
       transparent: true,
       opacity: 0.8, // More opaque
       transmission: 0.2, // Less transmission for white appearance
       roughness: 0.05,
       metalness: 0.0,
       clearcoat: 1.0,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
-    
-    const windowGlass = new THREE.Mesh(windowGlassGeometry, windowGlassMaterial);
+
+    const windowGlass = new THREE.Mesh(
+      windowGlassGeometry,
+      windowGlassMaterial
+    );
     windowGlass.position.set(windowX, windowY, windowZ);
     windowGlass.rotation.y = Math.PI / 2; // Same rotation as the wall
-    windowGlass.receiveShadow = true;
+    windowGlass.receiveShadow = false;
     scene.add(windowGlass);
 
     // Back wall (slightly darker color)
     const backWallGeometry = new THREE.PlaneGeometry(roomWidth, roomHeight);
-    const backWallMaterial = new THREE.MeshStandardMaterial({ 
-        color: new THREE.Color('#f0f0f0'),  // Changed to a slightly darker white/light gray
-        side: THREE.DoubleSide,
-        emissive: new THREE.Color('#222222'), // Darker emissive for contrast
-        roughness: 0.7,
-        metalness: 0.1
+    const backWallMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#f0f0f0"), // Changed to a slightly darker white/light gray
+      side: THREE.DoubleSide,
+      emissive: new THREE.Color("#222222"), // Darker emissive for contrast
+      roughness: 0.7,
+      metalness: 0.1,
     });
     const backWall = new THREE.Mesh(backWallGeometry, backWallMaterial);
-    backWall.position.set(0, roomHeight/2, -roomDepth/2);
-    backWall.receiveShadow = true;
+    backWall.position.set(0, roomHeight / 2, -roomDepth / 2);
+    backWall.receiveShadow = false;
     scene.add(backWall);
 
     // Load all furniture
@@ -119,31 +134,40 @@ export default function Home() {
 
     // Handle window resize
     const handleResize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     };
-    
-    window.addEventListener('resize', handleResize);
 
-    // Animation loop
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
+    window.addEventListener("resize", handleResize);
+
+    // Animation loop with performance optimizations
+    let lastFrameTime = 0;
+    const targetFPS = 30; // Lower FPS for better performance
+    const frameInterval = 1000 / targetFPS;
+
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+
+      // Throttle renders to target FPS
+      const deltaTime = currentTime - lastFrameTime;
+      if (deltaTime < frameInterval) return;
+
+      lastFrameTime = currentTime - (deltaTime % frameInterval);
+
+      controls.update();
+      renderer.render(scene, camera);
     }
 
-    animate();
-    
+    animate(0);
+
     // Cleanup function
     return () => {
-        window.removeEventListener('resize', handleResize);
-        mountRef.current.removeChild(renderer.domElement);
-        renderer.dispose();
+      window.removeEventListener("resize", handleResize);
+      mountRef.current.removeChild(renderer.domElement);
+      renderer.dispose();
     };
   }, []);
 
-  return (
-    <div ref={mountRef} style={{ width: '100%', height: '100vh' }}></div>
-  );
+  return <div ref={mountRef} style={{ width: "100%", height: "100vh" }}></div>;
 }
