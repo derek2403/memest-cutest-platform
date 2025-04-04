@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -6,22 +6,9 @@ import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
 import { loadAIAgent } from "../components/aiagent.js";
-import { spawn1inchUnicorn } from "../components/oneinch.js";
-
-// At the top of your file, before the component
-// Add this if you remove globals.css
-const globalStyles = {
-  html: {
-    padding: 0,
-    margin: 0,
-    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif",
-    boxSizing: "border-box"
-  }
-};
 
 export default function Home() {
   const mountRef = useRef(null);
-  const [sceneRef, setSceneRef] = useState(null);
 
   // Component level variables for animation and scene
   let walkingSpeed = 0.05;
@@ -44,7 +31,18 @@ export default function Home() {
 
     // Scene setup
     scene = new THREE.Scene();
-    scene.background = new THREE.Color("#eeeee4"); // Light blue background (sky blue)
+    
+    // Load video background
+    const videoElement = document.createElement('video');
+    videoElement.src = '/assets/nite3.mp4';
+    videoElement.loop = true;
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    videoElement.autoplay = true;
+    videoElement.play();
+    
+    const backgroundTexture = new THREE.VideoTexture(videoElement);
+    scene.background = backgroundTexture;
 
     // Camera setup
     camera = new THREE.PerspectiveCamera(
@@ -93,9 +91,9 @@ export default function Home() {
     scene.add(directionalLight2);
 
     // Room dimensions
-    const roomWidth = 10;
+    const roomWidth = 6;
     const roomHeight = 3.5;
-    const roomDepth = 10;
+    const roomDepth = 6;
 
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
@@ -313,7 +311,7 @@ export default function Home() {
     initSidebar({
       'metamask-button': () => {
         console.log("Metamask button clicked");
-        // This will now spawn the Metamask wolf
+        // Add Metamask functionality here
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");
@@ -321,10 +319,9 @@ export default function Home() {
       },
       'oneinch-button': () => {
         console.log("1inch button clicked");
-        // Add 1inch functionality to spawn the unicorn
-        spawn1inchUnicorn(scene);
+        // Add 1inch functionality here
       }
-    }, scene); // Pass the scene object here
+    });
 
     // Add right-click event listener for movement
     function onRightClick(event) {
@@ -411,9 +408,6 @@ export default function Home() {
 
     animate(0);
 
-    // Store the scene reference in state
-    setSceneRef(scene);
-
     // Cleanup function
     return () => {
       window.removeEventListener("resize", handleResize);
@@ -428,18 +422,5 @@ export default function Home() {
     };
   }, []);
 
-  return (
-    <>
-      <style jsx global>{`
-        html, body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-        }
-        * { box-sizing: border-box; }
-      `}</style>
-      <div style={{ width: "100%", height: "100vh" }} ref={mountRef}></div>
-    </>
-  );
+  return <div ref={mountRef} style={{ width: "100%", height: "100vh" }}></div>;
 }
