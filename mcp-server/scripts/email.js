@@ -2,12 +2,15 @@
 import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
+import { ethers } from 'ethers';
 
 // Load environment variables
 dotenv.config();
 
 // Store verification tokens with expiry times
 const verificationTokens = new Map();
+// Store transaction approval tokens
+const transactionTokens = new Map();
 
 // Configure nodemailer
 const transporter = nodemailer.createTransport({
@@ -69,6 +72,114 @@ export async function sendVerificationEmail(email) {
       error: error.message,
     };
   }
+}
+
+// Send transaction approval email
+export async function sendTransactionApprovalEmail(email, transactionData) {
+  if (!email) {
+    return {
+      success: false,
+      message: 'Email is required',
+    };
+  }
+  
+  try {
+    const approveToken = uuidv4();
+    const ignoreToken = uuidv4();
+    
+    // Store transaction data with tokens
+    transactionTokens.set(approveToken, {
+      email,
+      transaction: transactionData,
+      expires: Date.now() + TOKEN_EXPIRY,
+      action: 'approve'
+    });
+    
+    transactionTokens.set(ignoreToken, {
+      email,
+      transaction: transactionData,
+      expires: Date.now() + TOKEN_EXPIRY,
+      action: 'ignore'
+    });
+    
+    const approveUrl = `${process.env.APP_URL || 'http://localhost:3001'}/transaction/verify?token=${approveToken}`;
+    const ignoreUrl = `${process.env.APP_URL || 'http://localhost:3001'}/transaction/verify?token=${ignoreToken}`;
+    
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Transaction Approval Request',
+      html: `
+        <h1>Transaction Approval</h1>
+        <p>A transaction is made with the wallet ${transactionData.from || 'Unknown'}</p>
+        <p>Transaction details:</p>
+        <ul>
+          <li>To: ${transactionData.to}</li>
+          <li>Amount: ${ethers.formatEther(transactionData.amount)} ETH</li>
+          <li>Chain ID: ${transactionData.chainId}</li>
+        </ul>
+        <p><a href="${approveUrl}">Approve this transaction</a>, or <a href="${ignoreUrl}">click here to ignore</a></p>
+        <p>This approval request will expire in 30 minutes.</p>
+      `,
+    };
+    
+    await transporter.sendMail(mailOptions);
+    
+    return {
+      success: true,
+      message: 'Transaction approval email sent',
+      email,
+      approveToken,
+      ignoreToken,
+    };
+  } catch (error) {
+    console.error('Error sending transaction approval email:', error);
+    return {
+      success: false,
+      message: 'Failed to send transaction approval email',
+      error: error.message,
+    };
+  }
+}
+
+// Verify transaction token
+export function verifyTransactionToken(token) {
+  if (!token) {
+    return {
+      success: false,
+      message: 'Token is required',
+    };
+  }
+  
+  if (!transactionTokens.has(token)) {
+    return {
+      success: false,
+      message: 'Invalid token',
+    };
+  }
+  
+  const tokenData = transactionTokens.get(token);
+  
+  if (tokenData.expires < Date.now()) {
+    transactionTokens.delete(token);
+    return {
+      success: false,
+      message: 'Token expired',
+    };
+  }
+  
+  // Clone the transaction data to avoid modifying the original
+  const result = {
+    success: true,
+    action: tokenData.action,
+    transaction: { ...tokenData.transaction },
+    email: tokenData.email
+  };
+  
+  // Clean up token after use
+  transactionTokens.delete(token);
+  
+  return result;
 }
 
 // Verify token
