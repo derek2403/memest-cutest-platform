@@ -94,11 +94,21 @@ export function loadAIAgent(scene, callbacks = {}) {
       const idleAction = mixer.clipAction(fbx.animations[0]);
       idleAction.play();
       
+      // Store references globally for dialog system
+      window.mixer = mixer;
+      window.animations = {
+        idle: idleAction
+      };
+      window.currentAnimation = 'idle';
+      
       // Load walking animation
       fbxLoader.load(
         "/models/ai-agent/walking.fbx",
         (walkFbx) => {
           const walkAction = mixer.clipAction(walkFbx.animations[0]);
+          
+          // Add walking animation to global animations
+          window.animations.walk = walkAction;
           
           // Store references to the agent and animations
           if (callbacks.onAgentLoaded) {
