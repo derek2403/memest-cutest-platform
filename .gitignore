@@ -48,3 +48,4 @@ package-lock.json
 node_modules/
 .next/
 *.log
+ref.ts

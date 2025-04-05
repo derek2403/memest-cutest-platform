@@ -1,4 +1,8 @@
 {
+  "name": "memest-cutest-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,19 +13,23 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@heroui/react": "^2.7.5",
-    "@rainbow-me/rainbowkit": "^2.2.4",
-    "@tanstack/react-query": "^5.71.10",
     "anthropic": "^0.0.0",
 
     "autoprefixer": "^10.4.21",
-    "ethers": "^6.13.5",
     "framer-motion": "^12.6.3",
     "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "three": "^0.175.0",
+    "@1inch/cross-chain-sdk": "^0.1.13",
+    "@1inch/fusion-sdk": "^2.2.3",
+    "@rainbow-me/rainbowkit": "^2.2.4",
+    "@tanstack/react-query": "^5.71.10",
+    "dotenv": "^16.4.7",
     "viem": "^2.25.0",
-    "wagmi": "^2.14.16"
+    "wagmi": "^2.14.16",
+    "ethers": "^6.13.3",
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -35,5 +43,9 @@
     "@next/swc-darwin-arm64": "^14.1.0",
     "@next/swc-darwin-x64": "^14.1.0",
     "@next/swc-win32-x64-msvc": "^14.1.0"
+    "tailwindcss": "^4",
+    "@types/node": "^22.7.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
   }
 }
