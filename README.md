@@ -5,7 +5,7 @@ _A gamified, cross-app based Model Context Protocol platform running in a TEE_
 
 We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
 
-We’ve deployed a **live demonstration of Memest Cutest Platform** at [**(Link Coming Soon)**](#).
+We’ve deployed a **live demonstration of Memest Cutest Platform** at [**(https://22a8-111-235-226-130.ngrok-free.app/)**](#).
 
 ---
 
