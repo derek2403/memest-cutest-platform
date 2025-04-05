@@ -1,4 +1,5 @@
-import { initMetaWallet } from './metawallet.js';
+// Remove this import since it's causing an error
+// import { initMetaWallet } from './metawallet.js';
 
 // Create and initialize the sidebar with hierarchical structure
 export function initSidebar(callbacks = {}, scene) {
@@ -48,7 +49,7 @@ export function initSidebar(callbacks = {}, scene) {
     // Add click handler directly here for consistency
     metamaskButton.addEventListener('click', () => {
         console.log("Metamask button clicked directly");
-        if (callbacks['metamask-button']) {
+        if (callbacks && typeof callbacks['metamask-button'] === 'function') {
             console.log("Executing Metamask callback");
             callbacks['metamask-button']();
         } else {

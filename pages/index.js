@@ -2006,8 +2006,13 @@ export default function Home() {
     initSidebar({
       'metamask-button': () => {
         console.log("Metamask button clicked");
-        // This will now spawn the Metamask wolf
-        spawnMetamaskWolf(scene);
+        // Check if the function exists before calling it
+        if (typeof spawnMetamaskWolf === 'function') {
+          spawnMetamaskWolf(scene);
+        } else {
+          console.error("spawnMetamaskWolf function is not available");
+          // Fallback behavior if needed
+        }
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");

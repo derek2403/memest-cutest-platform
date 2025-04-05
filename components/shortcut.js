@@ -238,9 +238,6 @@ export default function Shortcut({ onClose, onDrop }) {
       <div 
         ref={popupRef}
         className={`${styles.popup} ${isDraggingOver ? styles.dragOver : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
       >
         <div className={styles.header}>
           <h2 className={styles.title}>Drag a shortcut here</h2>
@@ -278,12 +275,20 @@ export default function Shortcut({ onClose, onDrop }) {
             </div>
           </div>
           
-          <div className={styles.mainInstructions}>
-            {isDraggingOver ? (
-              <p>Drop to create shortcut</p>
-            ) : (
-              <p>Drag a button from the sidebar to create a shortcut</p>
-            )}
+          {/* Specific drop zone box */}
+          <div 
+            className={`${styles.dropZoneBox} ${isDraggingOver ? styles.dropZoneActive : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className={styles.mainInstructions}>
+              {isDraggingOver ? (
+                <p>Drop to create shortcut</p>
+              ) : (
+                <p>Drag a button to create a shortcut</p>
+              )}
+            </div>
           </div>
           
           <div className={styles.alternativeMethod}>
@@ -328,6 +333,177 @@ export default function Shortcut({ onClose, onDrop }) {
             </button>
           </div>
         </div>
+
+        {/* Add inline styles to override the module CSS */}
+        <style jsx global>{`
+          .${styles.overlay} {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          
+          .${styles.popup} {
+            width: 500px !important;
+            max-width: 95vw !important;
+            min-height: 50px !important;
+            padding: 20px 30px 30px 30px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background-color: white !important;
+            border-radius: 20px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+          }
+          
+          .${styles.header} {
+            margin-bottom: 15px !important;
+            background-color: #f0f3f9 !important;
+            border-radius: 12px !important;
+            padding: 15px 20px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+          }
+          
+          .${styles.title} {
+            font-size: 22px !important;
+            margin: 0 !important;
+            color: #333a52 !important;
+            font-weight: 600 !important;
+            font-family: 'Poppins', sans-serif !important;
+            position: relative !important;
+            display: inline-block !important;
+          }
+          
+          .${styles.title}::after {
+            content: '' !important;
+            position: absolute !important;
+            bottom: -4px !important;
+            left: 0 !important;
+            width: 40px !important;
+            height: 3px !important;
+            background: #6c63ff !important;
+            border-radius: 3px !important;
+          }
+          
+          .${styles.closeButton} {
+            background: none !important;
+            border: none !important;
+            font-size: 24px !important;
+            color: #6e7891 !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+          }
+          
+          .${styles.content} {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+          }
+          
+          .${styles.iconRow} {
+            margin: 15px 0 !important;
+            justify-content: space-around !important;
+            display: flex !important;
+          }
+          
+          .${styles.logoContainer} {
+            margin: 0 5px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) !important;
+          }
+          
+          .${styles.shortcutIcon} {
+            width: 50px !important;
+            height: 50px !important;
+            transition: transform 0.2s ease !important;
+            object-fit: contain !important;
+          }
+          
+          .${styles.shortcutIcon}:hover {
+            transform: scale(1.1) !important;
+          }
+          
+          .${styles.dropZoneBox} {
+            border: 2px dashed #6e7891 !important;
+            border-radius: 16px !important;
+            padding: 30px 15px !important;
+            margin: 15px auto !important;
+            width: 90% !important;
+            height: 150px !important;
+            text-align: center !important;
+            transition: all 0.3s ease !important;
+            background-color: #f0f7ff !important;
+            cursor: pointer !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          
+          .${styles.dropZoneActive} {
+            border-color: #4a9eff !important;
+            background-color: rgba(74, 158, 255, 0.1) !important;
+            transform: scale(1.02) !important;
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3) !important;
+          }
+          
+          .${styles.mainInstructions} {
+            text-align: center !important;
+            padding: 0 !important;
+          }
+          
+          .${styles.mainInstructions} p {
+            font-size: 18px !important;
+            line-height: 1.5 !important;
+            margin: 0 !important;
+            color: #4a7bff !important;
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 500 !important;
+          }
+          
+          .${styles.dropZoneActive} .${styles.mainInstructions} p {
+            color: #4a9eff !important;
+            transform: scale(1.05) !important;
+          }
+          
+          .${styles.alternativeMethod} {
+            margin-top: 20px !important;
+            text-align: center !important;
+            padding: 10px 0 !important;
+            border-top: 1px solid rgba(110, 120, 145, 0.15) !important;
+          }
+          
+          .${styles.alternativeMethod} p {
+            font-size: 16px !important;
+            margin: 10px 0 !important;
+            color: #6e7891 !important;
+            font-family: 'Poppins', sans-serif !important;
+          }
+          
+          .${styles.aiMethodButton} {
+            padding: 10px 24px !important;
+            font-size: 16px !important;
+            margin-top: 10px !important;
+            border-radius: 30px !important;
+            transition: all 0.2s ease !important;
+            background-color: #6c63ff !important;
+            color: white !important;
+            border: none !important;
+            font-family: 'Poppins', sans-serif !important;
+            font-weight: 500 !important;
+            box-shadow: 0 4px 10px rgba(108, 99, 255, 0.3) !important;
+          }
+          
+          .${styles.aiMethodButton}:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 15px rgba(108, 99, 255, 0.4) !important;
+          }
+        `}</style>
       </div>
     </div>
   );

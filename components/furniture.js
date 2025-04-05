@@ -236,7 +236,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the bed in the room - adjusted for 6x6 room
-      bed.position.set(-2, 0, -2.6); // Moved toward the back wall
+      bed.position.set(-2, 0, -2.2); // Moved toward the back wall
       
       // Rotate the bed
       bed.rotation.y = Math.PI / 2;
@@ -273,7 +273,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the bed cabinet next to the bed - adjusted for 6x6 room
-      cabinet.position.set(-3, 0, -1); // Moved closer to the bed
+      cabinet.position.set(-3, 0, -0.8); // Moved closer to the bed
       
       // Rotate the cabinet
       cabinet.rotation.y = Math.PI / 2;
@@ -297,7 +297,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           });
           
           // Position the picture frame on top of the cabinet - adjusted for 6x6 room
-          cabinetPicture.position.set(-3, 1, -1); // Adjusted to match new cabinet position
+          cabinetPicture.position.set(-3, 1, -0.8); // Adjusted to match new cabinet position
           
           // Rotate the picture frame to match the cabinet's orientation
           cabinetPicture.rotation.y = Math.PI / 2;
@@ -348,7 +348,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the picture frame on the wall above the couch - adjusted for 6x6 room
-      couchWallPicture.position.set(-3.5, 2.2, 1.5); // Adjusted to be above the couch
+      couchWallPicture.position.set(-3.4, 2.2, 1.5); // Adjusted to be above the couch
       
       // Rotate the picture frame to face into the room
       couchWallPicture.rotation.y = Math.PI / 2;
@@ -721,7 +721,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       const unicornPlane = new THREE.Mesh(geometry, material);
       
       // Position on left wall
-      unicornPlane.position.set(-roomWidth/2 + 0.23, 2.2, 1.5);
+      unicornPlane.position.set(-roomWidth/2 + 0.27, 2.2, 1.5);
       
       // Rotate to face into the room
       unicornPlane.rotation.y = Math.PI / 2;
