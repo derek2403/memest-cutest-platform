@@ -16,24 +16,25 @@ const COORDINATES = {
   ),
 
   oneinch: new THREE.Vector3(
-    0.9843086503678045,
+    0.9316894864631875,
     0, // Essentially zero
-    3.0370184733685843
+    2.367221419907647
   ),
+
   polygon: new THREE.Vector3(
     -0.822410210531122,
     0, // Raised higher above the table
     0.6046197241590376
   ),
   celo: new THREE.Vector3(
-    -0.5519415662663658,
+    0.3830632560763707,
     0, // Raised higher above the floor
-    1.29011611383365059
+    1.3030098321365784
   ),
   spreadsheet: new THREE.Vector3(
-    1.438805815944017,     // Same x as Gmail
+    1.3090969471423244,     // Same x as Gmail
     0,                     // Same height as Gmail
-    -1.9091312277057521    // Slightly different z to place it beside Gmail
+    -0.41   // Slightly different z to place it beside Gmail
   ),
 };
 
@@ -93,7 +94,7 @@ export default function CaseSelector({ onSelectCase }) {
           if (!obstacle || !obstacle.points) continue;
           
           // Create a bounding box for the obstacle
-          const boundingBox = getExpandedBoundingBox(obstacle.points, 0.3); // With small buffer
+          const boundingBox = getExpandedBoundingBox(obstacle.points, 0.5); // Increased buffer from 0.3 to 0.5 for better detection
           
           // Check if the direct path intersects with this obstacle's bounding box
           if (doesPathIntersectBoundingBox(startPosition, targetPosition, boundingBox)) {
@@ -118,26 +119,37 @@ export default function CaseSelector({ onSelectCase }) {
       
       // Function to check if a path intersects with a bounding box
       function doesPathIntersectBoundingBox(pointA, pointB, boundingBox) {
-        // Check if either end point is inside the bounding box
+        // Add a small detection buffer to make the bounding box slightly larger for intersection testing
+        const detectionBuffer = 0.2;
+        
+        // Expand the bounding box slightly for intersection detection
+        const expandedBox = {
+          minX: boundingBox.minX - detectionBuffer,
+          maxX: boundingBox.maxX + detectionBuffer,
+          minZ: boundingBox.minZ - detectionBuffer,
+          maxZ: boundingBox.maxZ + detectionBuffer
+        };
+        
+        // Check if either end point is inside the expanded bounding box
         const isAInside = (
-          pointA.x >= boundingBox.minX && pointA.x <= boundingBox.maxX &&
-          pointA.z >= boundingBox.minZ && pointA.z <= boundingBox.maxZ
+          pointA.x >= expandedBox.minX && pointA.x <= expandedBox.maxX &&
+          pointA.z >= expandedBox.minZ && pointA.z <= expandedBox.maxZ
         );
         
         const isBInside = (
-          pointB.x >= boundingBox.minX && pointB.x <= boundingBox.maxX &&
-          pointB.z >= boundingBox.minZ && pointB.z <= boundingBox.maxZ
+          pointB.x >= expandedBox.minX && pointB.x <= expandedBox.maxX &&
+          pointB.z >= expandedBox.minZ && pointB.z <= expandedBox.maxZ
         );
         
         // If either point is inside, there's an intersection
         if (isAInside || isBInside) return true;
         
-        // Get the line segments of the bounding box
+        // Get the line segments of the expanded bounding box
         const segments = [
-          { a: {x: boundingBox.minX, z: boundingBox.minZ}, b: {x: boundingBox.maxX, z: boundingBox.minZ} }, // Top
-          { a: {x: boundingBox.maxX, z: boundingBox.minZ}, b: {x: boundingBox.maxX, z: boundingBox.maxZ} }, // Right
-          { a: {x: boundingBox.maxX, z: boundingBox.maxZ}, b: {x: boundingBox.minX, z: boundingBox.maxZ} }, // Bottom
-          { a: {x: boundingBox.minX, z: boundingBox.maxZ}, b: {x: boundingBox.minX, z: boundingBox.minZ} }  // Left
+          { a: {x: expandedBox.minX, z: expandedBox.minZ}, b: {x: expandedBox.maxX, z: expandedBox.minZ} }, // Top
+          { a: {x: expandedBox.maxX, z: expandedBox.minZ}, b: {x: expandedBox.maxX, z: expandedBox.maxZ} }, // Right
+          { a: {x: expandedBox.maxX, z: expandedBox.maxZ}, b: {x: expandedBox.minX, z: expandedBox.maxZ} }, // Bottom
+          { a: {x: expandedBox.minX, z: expandedBox.maxZ}, b: {x: expandedBox.minX, z: expandedBox.minZ} }  // Left
         ];
         
         // Check if the path intersects with any of the box's edges
@@ -214,7 +226,7 @@ export default function CaseSelector({ onSelectCase }) {
       // Function to find a path around an obstacle
       function findPathAroundObstacle(start, end, boundingBox) {
         // Create waypoints to navigate around the obstacle
-        const extraBuffer = 0.5; // Extra space for safety
+        const extraBuffer = 1.5; // Increased buffer for better obstacle avoidance
         
         // Calculate the Manhattan distance for each possible path
         const topDistance = 
@@ -244,30 +256,63 @@ export default function CaseSelector({ onSelectCase }) {
         // Find the shortest path
         const minDistance = Math.min(topDistance, bottomDistance, leftDistance, rightDistance);
         
+        // Create two-point paths with larger buffers for safety
         if (minDistance === topDistance) {
           // Go around the top of the obstacle
-          return [
-            new THREE.Vector3(start.x, 0, boundingBox.minZ - extraBuffer),
-            new THREE.Vector3(end.x, 0, boundingBox.minZ - extraBuffer)
-          ];
+          const waypoint1 = new THREE.Vector3(start.x, 0, boundingBox.minZ - extraBuffer);
+          const waypoint2 = new THREE.Vector3(end.x, 0, boundingBox.minZ - extraBuffer);
+          
+          // Add an additional corner waypoint if needed for sharper turns
+          if (Math.abs(start.x - end.x) > 1.0) {
+            return [
+              waypoint1,
+              waypoint2
+            ];
+          } else {
+            return [waypoint1];
+          }
         } else if (minDistance === bottomDistance) {
           // Go around the bottom of the obstacle
-          return [
-            new THREE.Vector3(start.x, 0, boundingBox.maxZ + extraBuffer),
-            new THREE.Vector3(end.x, 0, boundingBox.maxZ + extraBuffer)
-          ];
+          const waypoint1 = new THREE.Vector3(start.x, 0, boundingBox.maxZ + extraBuffer);
+          const waypoint2 = new THREE.Vector3(end.x, 0, boundingBox.maxZ + extraBuffer);
+          
+          // Add an additional corner waypoint if needed for sharper turns
+          if (Math.abs(start.x - end.x) > 1.0) {
+            return [
+              waypoint1,
+              waypoint2
+            ];
+          } else {
+            return [waypoint1];
+          }
         } else if (minDistance === leftDistance) {
           // Go around the left side of the obstacle
-          return [
-            new THREE.Vector3(boundingBox.minX - extraBuffer, 0, start.z),
-            new THREE.Vector3(boundingBox.minX - extraBuffer, 0, end.z)
-          ];
+          const waypoint1 = new THREE.Vector3(boundingBox.minX - extraBuffer, 0, start.z);
+          const waypoint2 = new THREE.Vector3(boundingBox.minX - extraBuffer, 0, end.z);
+          
+          // Add an additional corner waypoint if needed for sharper turns
+          if (Math.abs(start.z - end.z) > 1.0) {
+            return [
+              waypoint1,
+              waypoint2
+            ];
+          } else {
+            return [waypoint1];
+          }
         } else {
           // Go around the right side of the obstacle
-          return [
-            new THREE.Vector3(boundingBox.maxX + extraBuffer, 0, start.z),
-            new THREE.Vector3(boundingBox.maxX + extraBuffer, 0, end.z)
-          ];
+          const waypoint1 = new THREE.Vector3(boundingBox.maxX + extraBuffer, 0, start.z);
+          const waypoint2 = new THREE.Vector3(boundingBox.maxX + extraBuffer, 0, end.z);
+          
+          // Add an additional corner waypoint if needed for sharper turns
+          if (Math.abs(start.z - end.z) > 1.0) {
+            return [
+              waypoint1,
+              waypoint2
+            ];
+          } else {
+            return [waypoint1];
+          }
         }
       }
       
