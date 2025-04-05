@@ -2083,7 +2083,12 @@ export default function Home() {
     console.log("Initializing sidebar with callbacks");
     initSidebar({
       'metamask-button': () => {
-        console.log("Metamask button clicked");
+        console.log("Metamask button clicked in index.js callback");
+        if (!scene) {
+          console.error("Scene is undefined in Metamask callback");
+          return;
+        }
+        console.log("About to spawn Metamask wolf with scene:", scene);
         // This will now spawn the Metamask wolf
         spawnMetamaskWolf(scene);
       },

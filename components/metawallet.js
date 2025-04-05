@@ -363,6 +363,14 @@ let metamaskWolfModel = null;
 
 // Function to load and place the Metamask wolf model
 export function spawnMetamaskWolf(scene) {
+  // Check if scene is valid
+  if (!scene) {
+    console.error("No scene provided to spawnMetamaskWolf function");
+    return;
+  }
+  
+  console.log("spawnMetamaskWolf called with scene:", scene);
+  
   // If model already exists, just toggle visibility instead of reloading
   if (metamaskWolfLoaded && metamaskWolfModel) {
     metamaskWolfModel.visible = !metamaskWolfModel.visible;
@@ -373,12 +381,16 @@ export function spawnMetamaskWolf(scene) {
   console.log("Loading Metamask wolf model...");
   const gltfLoader = new GLTFLoader();
   
+  // Log the full path being used
+  const modelPath = "/models/metamask_wolf/metamask_wolf.glb";
+  console.log("Loading model from path:", modelPath);
+  
   // Load the Metamask wolf model with the correct path
   gltfLoader.load(
-    "/models/metamask_wolf/metamask_wolf.glb",
+    modelPath,
     (gltf) => {
       // Success callback
-      console.log("Metamask wolf model loaded successfully");
+      console.log("Metamask wolf model loaded successfully", gltf);
       
       // Get the model
       const model = gltf.scene;

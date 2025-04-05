@@ -1,7 +1,14 @@
 import { initMetaWallet } from './metawallet.js';
 
 // Create and initialize the sidebar with hierarchical structure
-export function initSidebar(callbacks = {}) {
+export function initSidebar(callbacks = {}, scene) {
+    // Store the scene reference for use in callbacks
+    if (!scene) {
+        console.error("Scene object not provided to initSidebar");
+    } else {
+        console.log("Scene object received in initSidebar", scene);
+    }
+    
     // Create sidebar container
     const sidebar = document.createElement('div');
     sidebar.id = 'sidebar';
@@ -36,6 +43,17 @@ export function initSidebar(callbacks = {}) {
     const metamaskText = document.createElement('span');
     metamaskText.textContent = 'Metamask';
     metamaskButton.appendChild(metamaskText);
+    
+    // Add click handler directly here for consistency
+    metamaskButton.addEventListener('click', () => {
+        console.log("Metamask button clicked directly");
+        if (callbacks['metamask-button']) {
+            console.log("Executing Metamask callback");
+            callbacks['metamask-button']();
+        } else {
+            console.warn("No Metamask callback found");
+        }
+    });
     
     sidebar.appendChild(metamaskButton);
     
@@ -74,11 +92,15 @@ export function initSidebar(callbacks = {}) {
         buttonText.style.color = '#FFFFFF';
         button.appendChild(buttonText);
         
+        // Add click event listener with more detailed logging
         button.addEventListener('click', () => {
             console.log(`${data.text} button clicked`);
             // Call the appropriate callback if it exists
             if (callbacks[data.id]) {
+                console.log(`Executing callback for ${data.id}`);
                 callbacks[data.id]();
+            } else {
+                console.warn(`No callback found for ${data.id}`);
             }
         });
         sidebar.appendChild(button);
@@ -191,112 +213,6 @@ export function initSidebar(callbacks = {}) {
         }
     `;
     document.head.appendChild(style);
-
-    // Add click handler for metamask button
-    const metamaskButtonEl = document.getElementById('metamask-button');
-    if (metamaskButtonEl) {
-        metamaskButtonEl.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log("Metamask button clicked, creating draggable icon");
-            
-            // Remove any existing draggable icon
-            const existingIcon = document.getElementById('draggable-metamask-icon');
-            if (existingIcon) {
-                existingIcon.parentNode.removeChild(existingIcon);
-            }
-            
-            // Create a draggable icon
-            const icon = document.createElement('img');
-            icon.src = '/icon/metamask.png';
-            icon.id = 'draggable-metamask-icon';
-            icon.style.position = 'fixed'; // Use fixed instead of absolute
-            icon.style.left = `${e.clientX - 25}px`; // Center icon on cursor
-            icon.style.top = `${e.clientY - 25}px`;
-            icon.style.width = '50px';
-            icon.style.height = '50px';
-            icon.style.cursor = 'grab';
-            icon.style.zIndex = '2000';
-            icon.style.pointerEvents = 'none'; // Allow mouse events to pass through initially
-
-            icon.style.filter = 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))';
-
-            
-            // Create glow animation
-            const glowKeyframes = document.createElement('style');
-            glowKeyframes.textContent = `
-                @keyframes pulse {
-                    0% { transform: scale(1); opacity: 0.7; }
-                    50% { transform: scale(1.2); opacity: 0.3; }
-                    100% { transform: scale(1); opacity: 0.7; }
-                }
-                #draggable-metamask-glow {
-                    animation: pulse 2s infinite;
-                }
-            `;
-            document.head.appendChild(glowKeyframes);
-            
-            // Add the elements to the body
-            document.body.appendChild(glow);
-            document.body.appendChild(icon);
-            
-            // Update glow position with icon
-            const moveGlow = (moveEvent) => {
-                if (glow.parentNode) {
-                    glow.style.left = `${moveEvent.clientX - 25}px`;
-                    glow.style.top = `${moveEvent.clientY - 25}px`;
-                }
-            };
-            document.addEventListener('mousemove', moveGlow);
-            
-            console.log("Icon created and added to body", icon);
-            
-            // After a short delay, make the icon interactive
-            setTimeout(() => {
-                if (icon.parentNode) {
-                    icon.style.pointerEvents = 'auto';
-                    icon.setAttribute('draggable', 'true');
-                }
-            }, 100);
-            
-            // Move the icon with the mouse until dropped
-            const moveIcon = (moveEvent) => {
-                if (icon.parentNode) {
-                    icon.style.left = `${moveEvent.clientX - 25}px`;
-                    icon.style.top = `${moveEvent.clientY - 25}px`;
-                }
-            };
-            
-            document.addEventListener('mousemove', moveIcon);
-            
-            // Handle drop or click elsewhere
-            const handleDrop = () => {
-                document.removeEventListener('mousemove', moveIcon);
-                document.removeEventListener('mousemove', moveGlow);
-                document.removeEventListener('mouseup', handleDrop);
-                
-                // If the icon is not dropped on a valid target after a delay, remove it
-                setTimeout(() => {
-                    const iconElement = document.getElementById('draggable-metamask-icon');
-                    const glowElement = document.getElementById('draggable-metamask-glow');
-                    if (iconElement && iconElement.parentNode) {
-                        iconElement.parentNode.removeChild(iconElement);
-                    }
-                    if (glowElement && glowElement.parentNode) {
-                        glowElement.parentNode.removeChild(glowElement);
-                    }
-                }, 100);
-            };
-            
-            document.addEventListener('mouseup', handleDrop);
-            
-            // Call the original callback
-            if (callbacks && callbacks['metamask-button']) {
-                callbacks['metamask-button']();
-            }
-        });
-    } else {
-        console.error("Metamask button not found in the DOM");
-    }
 
     return sidebar;
 }
