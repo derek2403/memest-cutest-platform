@@ -75,7 +75,7 @@ export default function CaseSelector({ onSelectCase }) {
         // Adjust animation speed based on agent's stride length
         // This helps synchronize steps with actual movement distance
         const strideLength = 0.5; // Estimated length of one step in the walk animation
-        const walkSpeed = 1.3; // Base animation speed multiplier - increased to make feet move faster
+        const walkSpeed = 1.2; // Base animation speed multiplier - increased to make feet move faster
         
         if (window.animations.walk.timeScale !== undefined) {
           window.animations.walk.timeScale = walkSpeed;
@@ -231,6 +231,25 @@ export default function CaseSelector({ onSelectCase }) {
           maxX: maxX + buffer,
           maxZ: maxZ + buffer
         };
+      }
+      
+      // Function to make the agent face towards a model's center or a specific item direction
+      function faceItemDirection(currentPosition, modelName) {
+        // Define facing directions for each model/item (angles in radians)
+        const ITEM_FACING_DIRECTIONS = {
+          gmail: Math.PI, // Face gmail screen (backwards/south)
+          metamask: Math.PI * 1.00, // Face metamask interface (southwest)
+          oneinch: Math.PI * 2, // Face oneinch display (west)
+          polygon: Math.PI * 2, // Face polygon object (northwest)
+          celo: Math.PI * -0.5, // Face celo object (north)
+          spreadsheet: Math.PI * 0.85 // Face spreadsheet screen (west-southwest)
+        };
+        
+        // Set the rotation to face the item
+        if (window.aiAgent && window.aiAgent.rotation && ITEM_FACING_DIRECTIONS[modelName] !== undefined) {
+          window.aiAgent.rotation.y = ITEM_FACING_DIRECTIONS[modelName];
+          console.log(`Agent now facing ${modelName} with angle ${ITEM_FACING_DIRECTIONS[modelName]}`);
+        }
       }
       
       // Function to find a path around an obstacle
@@ -420,6 +439,16 @@ export default function CaseSelector({ onSelectCase }) {
           // Arrived at final destination
           window.aiAgent.position.copy(targetPosition);
           window.isAgentWalking = false;
+          
+          // Make the agent face towards the item at the destination
+          // Find which model this position corresponds to
+          for (const [modelName, coords] of Object.entries(COORDINATES)) {
+            if (coords.x === targetPosition.x && coords.z === targetPosition.z) {
+              console.log(`Found destination model: ${modelName}`);
+              faceItemDirection(targetPosition, modelName);
+              break;
+            }
+          }
           
           // Switch to idle animation
           if (window.animations && window.animations.idle) {
