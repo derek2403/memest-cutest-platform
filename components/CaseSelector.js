@@ -655,198 +655,84 @@ export default function CaseSelector({ onSelectCase }) {
     }
     return '';
   };
-  
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',  // Update position to be at the top since the Fox button is gone
-        left: '20px',  // Keep the left alignment
-        background: 'rgba(0, 0, 0, 0.8)',
-        padding: '15px',
-        borderRadius: '8px',
-        color: 'white',
-        zIndex: 1000,
-        fontFamily: 'Arial, sans-serif',
-        width: '250px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-      }}
-    >
-      <h3 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: 'bold', color: '#ff9800' }}>
-        Agent Path Selector
-      </h3>
+
+  // Function to start a movement case by number
+  const startCaseMovement = (caseNum) => {
+    // Stop any running case first
+    if (isActive) {
+      setIsActive(false);
+      setMovementQueue([]);
+    }
+    
+    // Small delay to ensure clean state before starting new case
+    setTimeout(() => {
+      setCurrentCase(caseNum);
+      setIsActive(true);
+      setCaseInput(caseNum.toString());
       
-      {!isActive ? (
-        <div>
-          <div style={{ marginBottom: '12px', fontSize: '13px' }}>
-            Choose a movement pattern:
-          </div>
+      const pattern = MOVEMENT_PATTERNS[caseNum];
+      if (pattern) {
+        console.log(`Starting Case ${caseNum}: ${CASE_DESCRIPTIONS[caseNum]}`);
+        const coordinates = pattern.map(modelName => COORDINATES[modelName]);
+        setMovementQueue(coordinates);
+        
+        // Start movement with the first target
+        if (coordinates.length > 0) {
+          console.log("First target:", coordinates[0]);
           
-          {Object.entries(CASE_DESCRIPTIONS).map(([caseNumber, description]) => (
-            <div 
-              key={caseNumber}
-              style={{
-                padding: '8px 10px',
-                marginBottom: '8px',
-                borderRadius: '4px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onClick={() => {
-                // Parse the case number from the key
-                const caseNum = parseInt(caseNumber, 10);
-                // Stop any running case first
-                if (isActive) {
-                  setIsActive(false);
-                  setMovementQueue([]);
-                  // Small delay to ensure clean state before starting new case
-                  setTimeout(() => {
-                    // Instead of calling handleSubmit, implement the logic directly with the known case number
-                    setCurrentCase(caseNum);
-                    setIsActive(true);
-                    setCaseInput(caseNum.toString());
-                    
-                    const pattern = MOVEMENT_PATTERNS[caseNum];
-                    if (pattern) {
-                      console.log(`Starting Case ${caseNum}: ${CASE_DESCRIPTIONS[caseNum]}`);
-                      const coordinates = pattern.map(modelName => COORDINATES[modelName]);
-                      setMovementQueue(coordinates);
-                      
-                      // Start movement with the first target
-                      if (coordinates.length > 0) {
-                        console.log("First target:", coordinates[0]);
-                        
-                        // Try direct teleport first for more reliable positioning
-                        if (!teleportAgentTo(coordinates[0])) {
-                          // Fall back to navigator if teleport fails
-                          onSelectCase(coordinates[0]);
-                          
-                          // Force dispatch of the arrival event if it's not happening automatically
-                          setTimeout(() => {
-                            if (window.aiAgent && coordinates[0]) {
-                              // Check if agent is close enough to target
-                              const distance = window.aiAgent.position.distanceTo(coordinates[0]);
-                              if (distance > 0.5) {
-                                console.log("Agent didn't reach first target, manually moving to it");
-                                // Force agent to first position
-                                if (window.aiAgent) {
-                                  window.aiAgent.position.set(coordinates[0].x, 0, coordinates[0].z);
-                                }
-                              }
-                              // After ensuring agent is at position, trigger arrival event
-                              window.dispatchEvent(new CustomEvent('agentArrivedAtDestination'));
-                            }
-                          }, 5000); // Check after 5 seconds and force if needed
-                        }
-                      }
-                    }
-                  }, 200);
-                } else {
-                  // Direct case selection without going through handleSubmit
-                  setCurrentCase(caseNum);
-                  setIsActive(true);
-                  setCaseInput(caseNum.toString());
-                  
-                  const pattern = MOVEMENT_PATTERNS[caseNum];
-                  if (pattern) {
-                    console.log(`Starting Case ${caseNum}: ${CASE_DESCRIPTIONS[caseNum]}`);
-                    const coordinates = pattern.map(modelName => COORDINATES[modelName]);
-                    setMovementQueue(coordinates);
-                    
-                    // Start movement with the first target
-                    if (coordinates.length > 0) {
-                      console.log("First target:", coordinates[0]);
-                      
-                      // Try direct teleport first for more reliable positioning
-                      if (!teleportAgentTo(coordinates[0])) {
-                        // Fall back to navigator if teleport fails
-                        onSelectCase(coordinates[0]);
-                        
-                        // Force dispatch of the arrival event if it's not happening automatically
-                        setTimeout(() => {
-                          if (window.aiAgent && coordinates[0]) {
-                            // Check if agent is close enough to target
-                            const distance = window.aiAgent.position.distanceTo(coordinates[0]);
-                            if (distance > 0.5) {
-                              console.log("Agent didn't reach first target, manually moving to it");
-                              // Force agent to first position
-                              if (window.aiAgent) {
-                                window.aiAgent.position.set(coordinates[0].x, 0, coordinates[0].z);
-                              }
-                            }
-                            // After ensuring agent is at position, trigger arrival event
-                            window.dispatchEvent(new CustomEvent('agentArrivedAtDestination'));
-                          }
-                        }, 5000); // Check after 5 seconds and force if needed
-                      }
-                    }
+          // Try direct teleport first for more reliable positioning
+          if (!teleportAgentTo(coordinates[0])) {
+            // Fall back to navigator if teleport fails
+            onSelectCase(coordinates[0]);
+            
+            // Force dispatch of the arrival event if it's not happening automatically
+            setTimeout(() => {
+              if (window.aiAgent && coordinates[0]) {
+                // Check if agent is close enough to target
+                const distance = window.aiAgent.position.distanceTo(coordinates[0]);
+                if (distance > 0.5) {
+                  console.log("Agent didn't reach first target, manually moving to it");
+                  // Force agent to first position
+                  if (window.aiAgent) {
+                    window.aiAgent.position.set(coordinates[0].x, 0, coordinates[0].z);
                   }
                 }
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 152, 0, 0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              }}
-            >
-              <div style={{ fontSize: '14px', fontWeight: 'bold' }}>Case {caseNumber}</div>
-              <div style={{ fontSize: '12px', color: '#ccc' }}>{description}</div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div>
-          <div style={{ 
-            marginBottom: '10px',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            color: '#4CAF50'
-          }}>
-            Running: Case {currentCase}
-          </div>
-          <div style={{ 
-            marginBottom: '12px',
-            fontSize: '12px',
-            color: '#ccc',
-            backgroundColor: 'rgba(0,0,0,0.3)',
-            padding: '8px',
-            borderRadius: '4px'
-          }}>
-            Path: {CASE_DESCRIPTIONS[currentCase]}
-          </div>
-          <div style={{ marginBottom: '12px', fontSize: '13px' }}>
-            Remaining: {movementQueue.length} moves
-          </div>
-          <button
-            onClick={handleStop}
-            style={{
-              width: '100%',
-              padding: '8px',
-              backgroundColor: '#f44336',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              fontWeight: 'bold',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#d32f2f';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#f44336';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            Stop Movement
-          </button>
-        </div>
-      )}
-    </div>
-  );
+                // After ensuring agent is at position, trigger arrival event
+                window.dispatchEvent(new CustomEvent('agentArrivedAtDestination'));
+              }
+            }, 5000); // Check after 5 seconds and force if needed
+          }
+        }
+      }
+    }, 200);
+  };
+
+  // Listen for keyboard presses to trigger case selection
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Only handle number keys 1-4
+      const key = event.key;
+      if (key >= '1' && key <= '4') {
+        const caseNum = parseInt(key, 10);
+        console.log(`Key ${key} pressed - triggering Case ${caseNum}`);
+        startCaseMovement(caseNum);
+      } else if (key === 'Escape' && isActive) {
+        // Stop movement when Escape key is pressed
+        console.log('Escape key pressed - stopping movement');
+        handleStop();
+      }
+    };
+
+    // Add keyboard event listener
+    window.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup function to remove event listener
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isActive, movementQueue]); // Include dependencies to ensure access to current state
+
+  // Return null to render nothing - UI is completely hidden
+  // All keyboard functionality still works through the useEffect hooks
+  return null;
 } 
