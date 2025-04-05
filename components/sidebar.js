@@ -44,13 +44,15 @@ export function initSidebar(callbacks = {}, scene) {
     metamaskButton.appendChild(metamaskIcon);
     const metamaskText = document.createElement('span');
     metamaskText.textContent = 'Metamask';
+    metamaskText.className = 'button-text';
     metamaskButton.appendChild(metamaskText);
     
     // Create tick indicator for Metamask
     const metamaskTick = document.createElement('span');
     metamaskTick.className = 'plugin-tick';
     metamaskTick.innerHTML = '✓';
-    metamaskTick.style.display = 'none'; // Hidden by default
+    metamaskTick.style.visibility = 'hidden'; // Hidden by default (using visibility instead of display)
+    metamaskTick.style.opacity = '0';
     metamaskTick.dataset.plugin = 'metamask'; // Add plugin name reference
     metamaskButton.appendChild(metamaskTick);
     
@@ -91,6 +93,7 @@ export function initSidebar(callbacks = {}, scene) {
         button.appendChild(icon);
         const buttonText = document.createElement('span');
         buttonText.textContent = data.text;
+        buttonText.className = 'button-text';
         buttonText.style.color = '#FFFFFF';
         button.appendChild(buttonText);
         
@@ -98,7 +101,8 @@ export function initSidebar(callbacks = {}, scene) {
         const tick = document.createElement('span');
         tick.className = 'plugin-tick';
         tick.innerHTML = '✓';
-        tick.style.display = 'none'; // Hidden by default
+        tick.style.visibility = 'hidden'; // Hidden by default (using visibility instead of display)
+        tick.style.opacity = '0';
         tick.dataset.plugin = data.plugin; // Store plugin name for reference
         button.appendChild(tick);
         
@@ -126,7 +130,7 @@ export function initSidebar(callbacks = {}, scene) {
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 220px;
+            width: 240px;
             background-color: #1a1f2e;
             border-radius: 12px;
             padding: 15px;
@@ -181,8 +185,9 @@ export function initSidebar(callbacks = {}, scene) {
         .sidebar-button {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px 15px 10px 12px;
             margin-bottom: 10px;
             border: none !important;
             border-radius: 30px;
@@ -194,6 +199,9 @@ export function initSidebar(callbacks = {}, scene) {
             text-align: left;
             box-shadow: none !important;
             outline: none !important;
+            position: relative;
+            min-height: 44px;
+            overflow: hidden;
         }
         
         .wallet-button {
@@ -212,14 +220,32 @@ export function initSidebar(callbacks = {}, scene) {
             height: 24px;
             margin-right: 10px;
             object-fit: contain;
+            flex-shrink: 0;
+        }
+        
+        .button-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            padding-right: 25px; /* Reserve space for tick */
+            color: #FFFFFF;
         }
         
         .plugin-tick {
-            margin-left: auto;
-            color: #4CAF50;
-            font-weight: bold;
-            font-size: 20px; 
-            padding-right: 5px;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4CFF50;
+            font-weight: 900;
+            font-size: 22px;
+            text-shadow: 0 0 5px rgba(76, 255, 80, 0.7);
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .sidebar-button:hover {
@@ -276,16 +302,14 @@ export function initSidebar(callbacks = {}, scene) {
             return;
         }
         
-        // Log current plugins state
-        console.log("Current plugins in room:", JSON.stringify(window.pluginsInRoom));
-        
         // Update all plugins ticks using data-plugin attribute
         document.querySelectorAll('.plugin-tick[data-plugin]').forEach(tick => {
             const plugin = tick.dataset.plugin;
             if (window.pluginsInRoom.hasOwnProperty(plugin)) {
                 const isVisible = window.pluginsInRoom[plugin];
-                tick.style.display = isVisible ? 'inline' : 'none';
-                console.log(`Plugin ${plugin} tick visibility: ${isVisible}`);
+                // Use visibility instead of display to maintain layout
+                tick.style.visibility = isVisible ? 'visible' : 'hidden';
+                tick.style.opacity = isVisible ? '1' : '0';
             }
         });
     };
