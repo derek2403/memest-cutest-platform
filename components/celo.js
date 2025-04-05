@@ -41,6 +41,9 @@ export function spawnCeloModel(scene) {
         1.29011611383365059,
       );
       
+      // Rotate the model 270 degrees around Y axis
+      model.rotation.y = Math.PI / 2; // 270 degrees (same as 3π/2 clockwise)
+      
       // Make sure model casts and receives shadows
       model.traverse((node) => {
         if (node.isMesh) {
