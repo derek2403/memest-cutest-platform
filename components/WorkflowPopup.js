@@ -10,10 +10,10 @@ const NETWORKS = {
     rpcUrl: "https://polygon-amoy.g.alchemy.com/v2/FgSucpeM2ptJ9lxAtCUQ5AqtJl4W8kzN"
   },
   CELO_TESTNET: {
-    name: "Celo Alfajores Testnet",
-    contractAddress: "0x74544b05aE0F30028bBf35CACE0114Faf0E794cc",
-    chainId: "44787", // Celo Testnet chainId
-    rpcUrl: "https://alfajores-forno.celo-testnet.org"
+    name: "Celo Mainnet",
+    contractAddress: "0x35643527da0fe2251445dcd77d313ad280a50fe4",
+    chainId: "42220", // Celo Testnet chainId
+    rpcUrl: "https://celo-mainnet.g.alchemy.com/v2/FgSucpeM2ptJ9lxAtCUQ5AqtJl4W8kzN"
   }
 };
 
@@ -417,6 +417,19 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
             {isEventMonitoring 
               ? "Where to receive event notifications" 
               : "For signing transactions"}
+          </p>
+        </div>
+        
+        {/* Contract Address field - always show */}
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Contract Address</label>
+          <input
+            type="text"
+            placeholder="Enter contract address"
+            className={styles.inputField}
+          />
+          <p className={styles.inputHelp}>
+            The address of the contract to interact with
           </p>
         </div>
         
