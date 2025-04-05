@@ -4,6 +4,12 @@ import * as THREE from 'three';
 export default function StarField() {
 	const canvasRef = useRef(null);
 
+	// Add zoom control variables
+	let zoomSpeed = 2.0; // Increased default speed multiplier (was 1.0)
+	let targetZoomSpeed = 2.0; // Increased default target speed (was 1.0)
+	const zoomAcceleration = 0.1; // Increased acceleration (was 0.05)
+	const maxZoomSpeed = 8.0; // Increased maximum zoom speed (was 5.0)
+
 	useEffect(() => {
 		if (!canvasRef.current) return;
 
@@ -26,7 +32,7 @@ export default function StarField() {
 		
 		// Background star class
 		class BackgroundStar {
-			constructor(size = Math.random() + 0.5) {
+			constructor(size = Math.random() * 0.3 + 0.2) {
 				this.size = size;
 				this.relativeSpeed = 1;
 				this.color = generateStarColor();
@@ -47,7 +53,7 @@ export default function StarField() {
 				this.traveled = 1;
 				
 				// Glow properties
-				this.maxGlow = Number((Math.random() * 4 + 2).toFixed(2));
+				this.maxGlow = Number((Math.random() * 3 + 1.5).toFixed(2));
 				this.glowTo = 0.5;
 				this.glow = 1.5;
 				
@@ -66,17 +72,18 @@ export default function StarField() {
 			}
 			
 			update(delta) {
-				this.relativeSpeed += this.traveled / (window.innerWidth ** 2);
+				// Apply increased zoom speed to movement
+				this.relativeSpeed += (this.traveled / (window.innerWidth ** 2)) * zoomSpeed * 1.5; // Added multiplier
 				
 				const dirX = Math.cos(this.angle) * this.relativeSpeed;
 				const dirY = Math.sin(this.angle) * this.relativeSpeed;
 				
 				this.traveled += Math.hypot(dirX * delta, dirY * delta);
 				
-				// Update position
-				this.mesh.position.x += dirX * delta;
-				this.mesh.position.y += dirY * delta;
-				this.mesh.position.z += 0.1 * delta;
+				// Update position with increased zoom factor
+				this.mesh.position.x += dirX * delta * zoomSpeed;
+				this.mesh.position.y += dirY * delta * zoomSpeed;
+				this.mesh.position.z += 0.2 * delta * zoomSpeed; // Increased z-movement (was 0.1)
 				
 				// Update glow
 				this.glow += this.glowTo * delta;
@@ -112,7 +119,7 @@ export default function StarField() {
 		// Foreground star class
 		class Star {
 			constructor() {
-				this.size = Math.random() + 1;
+				this.size = Math.random() * 0.5 + 0.5;
 				this.relativeSpeed = 20;
 				this.color = generateStarColor();
 				
@@ -144,7 +151,8 @@ export default function StarField() {
 			}
 			
 			update(delta) {
-				this.relativeSpeed += this.traveled ** 2 / (window.innerWidth / 6);
+				// Apply increased zoom speed to movement
+				this.relativeSpeed += (this.traveled ** 2 / (window.innerWidth / 6)) * zoomSpeed * 1.5; // Added multiplier
 				
 				const dirX = Math.cos(this.angle) * this.relativeSpeed;
 				const dirY = Math.sin(this.angle) * this.relativeSpeed;
@@ -153,10 +161,10 @@ export default function StarField() {
 				const prevX = this.mesh.position.x;
 				const prevY = this.mesh.position.y;
 				
-				// Update position
-				this.mesh.position.x += dirX * delta;
-				this.mesh.position.y += dirY * delta;
-				this.mesh.position.z += 0.5 * delta;
+				// Update position with increased zoom factor
+				this.mesh.position.x += dirX * delta * zoomSpeed;
+				this.mesh.position.y += dirY * delta * zoomSpeed;
+				this.mesh.position.z += 0.8 * delta * zoomSpeed; // Increased z-movement (was 0.5)
 				
 				this.traveled += Math.hypot(dirX * delta, dirY * delta);
 				
@@ -173,11 +181,11 @@ export default function StarField() {
 					this.trail.visible = true;
 				} else {
 					this.trail.visible = false;
-					// Adjust size based on distance
+					// Adjust size based on distance with smaller maximum size
 					this.mesh.scale.set(
-						1 + this.traveled / (window.innerWidth / 5),
-						1 + this.traveled / (window.innerWidth / 5),
-						1 + this.traveled / (window.innerWidth / 5)
+						0.6 + this.traveled / (window.innerWidth / 5),
+						0.6 + this.traveled / (window.innerWidth / 5),
+						0.6 + this.traveled / (window.innerWidth / 5)
 					);
 				}
 				
@@ -277,6 +285,18 @@ export default function StarField() {
 		}
 		
 		document.addEventListener("visibilitychange", handleVisibilityChange);
+		
+		// Add mouse wheel event for zoom control with faster acceleration
+		function handleWheel(event) {
+			// Increase or decrease target zoom speed based on wheel direction with larger steps
+			if (event.deltaY < 0) {
+				// Zoom in (speed up)
+				targetZoomSpeed = Math.min(maxZoomSpeed, targetZoomSpeed + 1.0); // Increased step (was 0.5)
+			} else {
+				// Zoom out (slow down)
+				targetZoomSpeed = Math.max(0.5, targetZoomSpeed - 1.0); // Increased step (was 0.5)
+			}
+		}
 		
 		// Cleanup
 		return () => {
