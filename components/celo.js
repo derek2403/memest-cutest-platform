@@ -36,9 +36,9 @@ export function spawnCeloModel(scene) {
       
       // Set the position to the provided coordinates, but raise the y value
       model.position.set(
-        -2.9630740035026912,
-        0.00, // Raised higher above the floor
-        -0.2628115592818347
+        -0.5519415662663658,
+        0.58590545802205797, // Raised higher above the floor
+        1.29011611383365059,
       );
       
       // Make sure model casts and receives shadows

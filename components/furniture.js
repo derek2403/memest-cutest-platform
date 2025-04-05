@@ -88,6 +88,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           console.log("Low table loaded successfully");
           
           // Now load the cactus to place on the table
+          /*
           const cactusLoader = new GLTFLoader();
           cactusLoader.load(
             "/gltf/cactus_small_A.gltf",
@@ -119,6 +120,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
               console.error("Error loading cactus model:", error);
             }
           );
+          */
           
           // Load the book set to place on the table
           const bookSetLoader = new GLTFLoader();
@@ -140,7 +142,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
               });
               
               // Position the book set on the low table - adjusted for 6x6 room
-              bookSet.position.set(-0.5, 0.9, 2.3); // Adjusted position on table
+              bookSet.position.set(-0.5, 0.78, 2.3); // Adjusted position on table, lowered Y position from 0.9 to 0.5
               
               // Increase the rotation of the books for more visual interest
               bookSet.rotation.y = Math.PI / 3; // 60 degrees rotation
