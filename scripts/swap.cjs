@@ -1,4 +1,3 @@
-// Use .cjs extension to force CommonJS mode regardless of package.json settings
 const { Web3 } = require("web3");
 const {
   SDK,
@@ -11,9 +10,9 @@ const { randomBytes } = require("crypto");
 const { PrivateKeyProviderConnector } = require("@1inch/fusion-sdk");
 require("dotenv").config();
 
-const privateKey = process.env.PRIVATE_KEY;
-const rpc = "https://arb1.arbitrum.io/rpc";
-const authKey = process.env.AUTH_KEY;
+const privateKey = process.env.WALLET_KEY;
+const rpc = process.env.RPC_URL;
+const authKey = process.env.DEV_PORTAL_KEY;
 const source = "sdk-tutorial";
 
 // Enhanced logging function with timestamp and optional object details
@@ -33,6 +32,7 @@ function logWithTimestamp(message, obj = null) {
 logWithTimestamp("🔄 Initializing Web3 with RPC:", { rpc });
 const web3 = new Web3(rpc);
 const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
+const val = 8000000000000000;
 
 logWithTimestamp("👤 Using wallet address:", { walletAddress });
 logWithTimestamp("🔑 Auth key configured:", {
@@ -64,7 +64,7 @@ async function main() {
     // estimate
     logWithTimestamp("🚀 Starting cross-chain swap process");
     logWithTimestamp("📊 Getting quote with parameters:", {
-      amount: "1000000000000000", // 0.001 ETH in wei
+      amount: val,
       srcChainId: NetworkEnum.ARBITRUM,
       dstChainId: NetworkEnum.POLYGON,
       srcTokenAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", // WETH on Arbitrum
@@ -72,7 +72,7 @@ async function main() {
     });
 
     const quote = await sdk.getQuote({
-      amount: "1000000000000000", // 0.001 ETH in wei
+      amount: val,
       srcChainId: NetworkEnum.ARBITRUM,
       dstChainId: NetworkEnum.POLYGON,
       enableEstimate: true,
