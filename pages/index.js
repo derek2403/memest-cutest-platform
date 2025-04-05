@@ -1640,7 +1640,7 @@ export default function Home() {
         .connect-button-wrapper {
           position: fixed;
           top: 20px;
-          right: 160px; /* Position to the left of sidebar */
+          right: 250px; /* Increased from 160px to move it left */
           z-index: 1000;
           font-family: 'Baloo 2', cursive;
           background-color: rgba(255, 255, 255, 0.9);
