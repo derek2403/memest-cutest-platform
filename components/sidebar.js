@@ -234,6 +234,7 @@ function makeDraggable(element, buttonId, callbacks, scene) {
             if (isWithinRoom) {
                 // Style the clone to show it's over a valid drop area
                 clone.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.5)';
+                clone.style.border = '2px solid rgba(0, 255, 0, 0.7)';
                 
                 // Add visual highlight to the floor if not already there
                 if (!dropHighlight && scene) {
@@ -242,6 +243,7 @@ function makeDraggable(element, buttonId, callbacks, scene) {
             } else {
                 // Reset clone style
                 clone.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.3)';
+                clone.style.border = 'none';
                 
                 // Remove the floor highlight if it exists
                 removeDropHighlight();
@@ -265,11 +267,12 @@ function makeDraggable(element, buttonId, callbacks, scene) {
     const createDropHighlight = () => {
         if (dropHighlight || !scene) return;
         
-        // Use existing highlight if in scene cache
+        // Clear previously cached highlight to ensure we get the new size
         if (window.cachedDropHighlight) {
-            dropHighlight = window.cachedDropHighlight;
-            dropHighlight.visible = true;
-            return;
+            scene.remove(window.cachedDropHighlight);
+            window.cachedDropHighlight.geometry.dispose();
+            window.cachedDropHighlight.material.dispose();
+            window.cachedDropHighlight = null;
         }
         
         // Check if THREE is available
@@ -279,19 +282,27 @@ function makeDraggable(element, buttonId, callbacks, scene) {
         }
         
         try {
-            const floorSize = 7; // Match your floor size (maxX - minX)
-            const highlightGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
+            // Get canvas dimensions
+            const canvasRect = document.querySelector('canvas').getBoundingClientRect();
+            
+            // Define rectangular boundaries exactly matching the room floor
+            // Using the exact same values as in isWithinRoomBoundary
+            const roomWidth = 7.2;  // Increased from 6.0 to 7.2
+            const roomDepth = 7.2;  // Increased from 6.0 to 7.2
+            
+            // Create plane geometry for the rectangular highlight
+            const highlightGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
             const highlightMaterial = new THREE.MeshBasicMaterial({
                 color: 0x00ff00,
                 transparent: true,
-                opacity: 0.2,
+                opacity: 0.25, // Slightly reduced opacity
                 side: THREE.DoubleSide
             });
             
             dropHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
             
             // Position slightly above the floor to avoid z-fighting
-            dropHighlight.position.set(0, 0.01, 0);
+            dropHighlight.position.set(0, 0.02, 0);
             dropHighlight.rotation.x = -Math.PI / 2; // Rotate to lie flat
             
             // Add to scene
@@ -299,6 +310,8 @@ function makeDraggable(element, buttonId, callbacks, scene) {
             
             // Cache for reuse
             window.cachedDropHighlight = dropHighlight;
+            
+            console.log("Created rectangular drop highlight with dimensions:", roomWidth, "x", roomDepth);
         } catch (error) {
             console.error('Error creating highlight:', error);
         }
@@ -338,9 +351,12 @@ function makeDraggable(element, buttonId, callbacks, scene) {
             dropHighlight = null;
         }
         
-        // Check if the drop position is within the room's bounding box
-        if (isWithinRoomBoundary(e.clientX, e.clientY)) {
-            console.log(`${buttonId} dropped inside room boundary`);
+        // Do a STRICT check if mouse is inside room boundary
+        // Only execute callback if mouse is inside room boundary at the moment of release
+        const isInsideRoom = isWithinRoomBoundary(e.clientX, e.clientY);
+        
+        if (isInsideRoom) {
+            console.log(`${buttonId} dropped inside room boundary - spawning object`);
             
             // Execute the callback for the dropped button
             if (callbacks[buttonId]) {
@@ -350,8 +366,8 @@ function makeDraggable(element, buttonId, callbacks, scene) {
                 console.warn(`No callback found for ${buttonId}`);
             }
         } else {
-            console.log(`${buttonId} dropped outside room boundary`);
-            // No action if dropped outside the room
+            console.log(`${buttonId} dropped OUTSIDE room boundary - NO object spawned`);
+            // No action if dropped outside the room - explicitly preventing spawn
         }
         
         // Reset dragging state
@@ -399,6 +415,7 @@ function makeDraggable(element, buttonId, callbacks, scene) {
         clone.style.pointerEvents = 'none'; // So it doesn't interfere with drop events
         clone.style.opacity = '0.8';
         clone.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.3)';
+        clone.style.border = 'none'; // Initialize border property
         // Use transform for initial positioning
         const x = e.clientX - element.offsetWidth / 2;
         const y = e.clientY - element.offsetHeight / 2;
@@ -467,30 +484,33 @@ function isWithinRoomBoundary(x, y) {
         // Get the bounding rectangle of the canvas
         const canvasRect = canvas.getBoundingClientRect();
         
-        // Simple check if coordinates are within the canvas area
-        const isWithinCanvas = (
-            x >= canvasRect.left &&
-            x <= canvasRect.right &&
-            y >= canvasRect.top &&
-            y <= canvasRect.bottom
+        // Calculate the center of the canvas
+        const centerX = canvasRect.left + (canvasRect.width / 2);
+        const centerY = canvasRect.top + (canvasRect.height / 2);
+        
+        // Define rectangular boundaries exactly matching the room floor
+        // These values are relative to the center of the canvas
+        const roomWidth = canvasRect.width * 0.42;  // Increased from 0.35 to 0.42
+        const roomDepth = canvasRect.height * 0.42; // Increased from 0.35 to 0.42
+        
+        // Calculate boundaries of the rectangle
+        const minX = centerX - roomWidth / 2;
+        const maxX = centerX + roomWidth / 2;
+        const minY = centerY - roomDepth / 2;
+        const maxY = centerY + roomDepth / 2;
+        
+        // Check if point is within the rectangular boundary
+        const isWithinRoom = (
+            x >= minX && 
+            x <= maxX && 
+            y >= minY && 
+            y <= maxY
         );
         
-        // We can add additional checks here if needed
+        // Log the boundary check for debugging
+        console.log(`Room boundary check: x=${x}, y=${y}, room=[${minX},${minY},${maxX},${maxY}], center=[${centerX},${centerY}], result=${isWithinRoom}`);
         
-        // For debugging
-        if (isWithinCanvas) {
-            // Calculate relative position within canvas
-            const relX = (x - canvasRect.left) / canvasRect.width;
-            const relY = (y - canvasRect.top) / canvasRect.height;
-            
-            // Can add more specific boundary checks based on relative position
-            // For example, to exclude edges or specific areas of the room
-            
-            // For now, we'll just use the canvas boundary
-            return true;
-        }
-        
-        return false;
+        return isWithinRoom;
     } catch (error) {
         console.error('Error checking room boundary:', error);
         // Default to false on error
