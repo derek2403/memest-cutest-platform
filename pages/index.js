@@ -17,6 +17,7 @@ import { spawnGmailModel } from "../components/gmail.js";
 import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
 import { spawnIslandModel } from "../components/island.js";
 import dynamic from 'next/dynamic';
+import ConnectWallet from '../components/ConnectWallet';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
 const WorkflowPopup = dynamic(() => import('../components/WorkflowPopup'), { ssr: false });
@@ -2196,36 +2197,17 @@ export default function Home() {
 
   return (
     <>
-      <style jsx global>{`
-        html, body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-        }
-        * { box-sizing: border-box; }
-        
-        .connect-button-wrapper {
-          position: fixed;
-          top: 20px;
-          right: 250px; /* Increased from 160px to move it left */
-          z-index: 1000;
-          font-family: 'Baloo 2', cursive;
-          background-color: rgba(255, 255, 255, 0.9);
-          border-radius: 15px;
-          padding: 5px;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-          backdrop-filter: blur(5px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          animation: fadeIn 0.4s ease-out;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-      <div style={{ width: "100%", height: "100vh" }} ref={mountRef}></div>
+      <ConnectWallet />
+      <div 
+        ref={mountRef} 
+        className="w-full h-screen" 
+        style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          overflow: 'hidden',
+        }}
+      ></div>
       
       {/* Fox Dialog Button - use the modular component */}
       <FoxDialogButton 
