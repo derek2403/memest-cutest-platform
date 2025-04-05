@@ -28,7 +28,7 @@ export function spawn1inchUnicorn(scene) {
       const model = gltf.scene;
       
       // Scale the model appropriately
-      model.scale.set(1, 1, 1); // Adjust scale as needed
+      model.scale.set(0.9, 0.9, 0.9); // Adjust scale as needed
       
       // Set the position to the exact coordinates provided
       model.position.set(

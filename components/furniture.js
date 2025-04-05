@@ -132,6 +132,10 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
                 if (node.isMesh) {
                   node.castShadow = false;
                   node.receiveShadow = false;
+                  
+                  // Make the book mesh clickable
+                  node.userData.clickable = true;
+                  node.userData.type = 'books';
                 }
               });
               
@@ -143,6 +147,10 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
               
               // Scale down the book set to make it smaller
               bookSet.scale.set(0.7, 0.7, 0.7); // 70% of original size
+              
+              // Make the entire book set clickable
+              bookSet.userData.clickable = true;
+              bookSet.userData.type = 'books';
               
               scene.add(bookSet);
               console.log("Book set loaded successfully");
@@ -236,7 +244,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the bed in the room - adjusted for 6x6 room
-      bed.position.set(-2, 0, -2.6); // Moved toward the back wall
+      bed.position.set(-2, 0, -2.2); // Moved toward the back wall
       
       // Rotate the bed
       bed.rotation.y = Math.PI / 2;
@@ -273,7 +281,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the bed cabinet next to the bed - adjusted for 6x6 room
-      cabinet.position.set(-3, 0, -1); // Moved closer to the bed
+      cabinet.position.set(-3, 0, -0.8); // Moved closer to the bed
       
       // Rotate the cabinet
       cabinet.rotation.y = Math.PI / 2;
@@ -297,7 +305,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           });
           
           // Position the picture frame on top of the cabinet - adjusted for 6x6 room
-          cabinetPicture.position.set(-3, 1, -1); // Adjusted to match new cabinet position
+          cabinetPicture.position.set(-3, 1, -0.8); // Adjusted to match new cabinet position
           
           // Rotate the picture frame to match the cabinet's orientation
           cabinetPicture.rotation.y = Math.PI / 2;
@@ -348,7 +356,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the picture frame on the wall above the couch - adjusted for 6x6 room
-      couchWallPicture.position.set(-3.5, 2.2, 1.5); // Adjusted to be above the couch
+      couchWallPicture.position.set(-3.4, 2.2, 1.5); // Adjusted to be above the couch
       
       // Rotate the picture frame to face into the room
       couchWallPicture.rotation.y = Math.PI / 2;
@@ -389,7 +397,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the air conditioner high on the wall - adjusted for larger room
-      fbx.position.set(0, roomHeight - 1, -roomDepth/2 + 0.1); // Top of back wall
+      fbx.position.set(0, roomHeight - 0.9, -roomDepth/2 + 0.3); // Top of back wall
       
       // Scale the model if needed (adjust these values based on the model size)
       fbx.scale.set(0.015, 0.015, 0.015);
@@ -430,7 +438,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the window frame on the left wall above the bed - adjusted for larger room
-      fbx.position.set(-roomWidth/2 + 0.05, 0.7, -2); // Left wall above the bed
+      fbx.position.set(-roomWidth/2 + 0.15, 0.7, -2); // Left wall above the bed
       
       // Scale the model if needed
       fbx.scale.set(0.01, 0.01, 0.01);
@@ -539,76 +547,6 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       scene.add(mediumTable);
       console.log('Medium table loaded successfully');
       
-      // Add a laptop on the table
-      const laptopLoader = new FBXLoader();
-      laptopLoader.load(
-        '/fbx/laptop.fbx', // Make sure this path is correct
-        (fbx) => {
-          console.log('Laptop model loaded, processing...');
-          
-          // Enable shadows for the model and add material
-          fbx.traverse((node) => {
-            if (node.isMesh) {
-              console.log('Found mesh in laptop model:', node.name);
-              node.castShadow = true;
-              node.receiveShadow = true;
-              
-              // Add a simple material to all parts
-              node.material = new THREE.MeshStandardMaterial({
-                color: 0x888888,  // Silver/gray for laptop body
-                roughness: 0.3,
-                metalness: 0.8
-              });
-            }
-          });
-          
-          // Position the laptop on the table - adjusted for 6x6 room
-          fbx.position.set(2, 1.01, -2); // Adjusted to match new table position
-          
-          // Rotate the laptop to face into the room
-          fbx.rotation.y = -Math.PI / 2;
-          
-          // Make the laptop smaller
-          fbx.scale.set(0.0025, 0.0025, 0.0025); // Much smaller scale
-          
-          scene.add(fbx);
-          console.log('Laptop added to scene successfully');
-          
-
-        },
-        (progress) => {
-          console.log('Loading laptop progress:', (progress.loaded / progress.total) * 100, '%');
-        },
-        (error) => {
-          console.error('Error loading laptop model:', error);
-          // Try an alternative model if the laptop fails to load
-          const alternativeLoader = new GLTFLoader();
-          alternativeLoader.load(
-            '/gltf/book_set.gltf', // Use a book set as an alternative
-            (gltf) => {
-              const alternative = gltf.scene;
-              
-              alternative.traverse((node) => {
-                if (node.isMesh) {
-                  node.castShadow = true;
-                  node.receiveShadow = true;
-                }
-              });
-              
-              alternative.position.set(roomWidth/2 - 0.8, 0.75, 0);
-              alternative.rotation.y = -Math.PI / 4;
-              alternative.scale.set(0.5, 0.5, 0.5); // Smaller scale
-              
-              scene.add(alternative);
-              console.log('Alternative item (book set) loaded successfully');
-            },
-            null,
-            (altError) => {
-              console.error('Error loading alternative model:', altError);
-            }
-          );
-        }
-      );
     },
     (progress) => {
       console.log('Loading medium table progress:', (progress.loaded / progress.total) * 100, '%');
@@ -721,7 +659,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       const unicornPlane = new THREE.Mesh(geometry, material);
       
       // Position on left wall
-      unicornPlane.position.set(-roomWidth/2 + 0.23, 2.2, 1.5);
+      unicornPlane.position.set(-roomWidth/2 + 0.27, 2.2, 1.5);
       
       // Rotate to face into the room
       unicornPlane.rotation.y = Math.PI / 2;

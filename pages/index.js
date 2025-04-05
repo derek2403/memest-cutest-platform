@@ -7,11 +7,15 @@ import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
 import { loadAIAgent } from "../components/aiagent.js";
 import { spawn1inchUnicorn } from "../components/oneinch.js";
-import { spawnMetamaskWolf } from "../components/metawallet.js";
+import { spawnMetamaskFox } from "../components/metawallet.js";
+import { spawnPolygonModel } from "../components/polygon.js";
+import { spawnCeloModel } from "../components/celo.js";
+import { spawnGmailModel } from "../components/gmail.js";
+import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
 import dynamic from 'next/dynamic';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
+const WorkflowPopup = dynamic(() => import('../components/WorkflowPopup'), { ssr: false });
 
 // At the top of your file, before the component
 // Add this if you remove globals.css
@@ -50,6 +54,9 @@ export default function Home() {
     minZ: -3.5,
     maxZ: 3.5
   };
+
+  // Expose floorBoundaries to window for access from sidebar.js
+  window.floorBoundaries = floorBoundaries;
 
   // Add furniture obstacle data
   const furnitureObstacles = [
@@ -104,6 +111,7 @@ export default function Home() {
   // Add these state variables
   const [showShortcutPopup, setShowShortcutPopup] = useState(false);
   const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
+  const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
   
   // Debug mode for visualizing obstacles
   const DEBUG_MODE = true;
@@ -646,121 +654,58 @@ export default function Home() {
     scene.add(windowLight);
 
     // Floor (specific color)
-    const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
-    
-    // Create a texture for wooden floor
-    const floorTexture = createWoodenFloorTexture();
-    floorTexture.wrapS = THREE.RepeatWrapping;
-    floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set(3, 3); // Repeat the texture pattern
-    
-    const floorMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#D2B48C"), // Change to lighter Tan color
-      side: THREE.DoubleSide,
-      roughness: 0.7, // Slightly less rough for lighter wood
-      metalness: 0.1, // Less metalness for lighter wood
-      map: floorTexture
-    });
-    
+    const floorGeometry = new THREE.BoxGeometry(roomWidth, 0.2, roomDepth); // Make floor thicker
+    const floorMaterial = [
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Right edge - darker
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Left edge - darker
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#D2B48C") }), // Top surface - unchanged
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#704628") }), // Bottom - even darker
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Front edge - darker
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") })  // Back edge - darker
+    ];
+
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = 0;
+    floor.position.y = -0.1; // Lower the floor to center it
     floor.receiveShadow = false;
     floor.name = "floor"; // Name the floor for raycasting
     scene.add(floor);
     
-    // Helper function to create a procedural wooden floor texture
-    function createWoodenFloorTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-      
-      // Base color (light wood)
-      ctx.fillStyle = '#E8D8C0'; // Lighter tan
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Create wood grain pattern
-      ctx.strokeStyle = '#C19A6B'; // Lighter brown for grain outlines
-      ctx.lineWidth = 1.5;
-      
-      // Horizontal planks
-      const plankHeight = canvas.height / 8;
-      for (let y = 0; y < canvas.height; y += plankHeight) {
-        ctx.fillStyle = '#DEBB9D'; // Light maple color
-        ctx.fillRect(0, y, canvas.width, plankHeight - 1);
-        
-        // Draw plank divider
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-        
-        // Draw wood grain
-        const grainLines = 20 + Math.floor(Math.random() * 10);
-        ctx.strokeStyle = 'rgba(160, 120, 80, 0.2)'; // Lighter, more transparent grain
-        ctx.lineWidth = 1;
-        
-        for (let i = 0; i < grainLines; i++) {
-          const xStart = Math.random() * canvas.width;
-          const curveAmount = Math.random() * 20 - 10;
-          
-          ctx.beginPath();
-          ctx.moveTo(xStart, y);
-          ctx.bezierCurveTo(
-            xStart + curveAmount, y + plankHeight / 3,
-            xStart - curveAmount, y + plankHeight * 2/3,
-            xStart, y + plankHeight
-          );
-          ctx.stroke();
-        }
-      }
-      
-      // Vertical planks
-      const plankWidth = canvas.width / 6;
-      for (let x = 0; x < canvas.width; x += plankWidth) {
-        // Draw plank divider
-        ctx.strokeStyle = '#C19A6B'; // Lighter brown for dividers
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      
-      const texture = new THREE.CanvasTexture(canvas);
-      return texture;
-    }
-    
-    // Set floor boundaries based on room dimensions
-    floorBoundaries = {
-      minX: -roomWidth / 2 + 0.2, // Add some padding to avoid walking right at the edge
-      maxX: roomWidth / 2 - 0.2,
-      minZ: -roomDepth / 2 + 0.2,
-      maxZ: roomDepth / 2 - 0.2
-    };
-    
-    // If in debug mode, visualize the floor boundaries
-    if (DEBUG_MODE) {
-      visualizeFloorBoundaries(floorBoundaries);
-    }
+    // Left wall (light blue color) - make it thicker with different colored edges
+    const leftWallGeometry = new THREE.BoxGeometry(0.2, roomHeight, roomDepth);
+    const leftWallMaterial = [
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#5A87B5") }), // Right - inner surface (unchanged)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Left - outer surface (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Top edge (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Bottom edge (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Front edge (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") })  // Back edge (darker)
+    ];
 
-    // Left wall (light blue color)
-    const leftWallGeometry = new THREE.PlaneGeometry(roomDepth, roomHeight);
-    const leftWallMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#6d99c7"), // Using string format with THREE.Color
-      side: THREE.DoubleSide,
-    });
     const leftWall = new THREE.Mesh(leftWallGeometry, leftWallMaterial);
-    leftWall.rotation.y = Math.PI / 2;
-    leftWall.position.set(-roomWidth / 2, roomHeight / 2, 0);
+    leftWall.position.set(-roomWidth / 2 + 0.1, roomHeight / 2, 0); // Adjust position for thickness
     leftWall.receiveShadow = false;
     scene.add(leftWall);
 
-    // Create a window cutout in the left wall
+    // Back wall (slightly darker color) - make it thicker with different colored edges
+    const backWallGeometry = new THREE.BoxGeometry(roomWidth, roomHeight, 0.2);
+    const backWallMaterial = [
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Right edge (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Left edge (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Top edge (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Bottom edge (darker)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#D0D0D0") }), // Front - inner surface (unchanged)
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#A0A0A0") })  // Back - outer surface (darker)
+    ];
+
+    const backWall = new THREE.Mesh(backWallGeometry, backWallMaterial);
+    backWall.position.set(0, roomHeight / 2, -roomDepth / 2 + 0.1); // Adjust position for thickness
+    backWall.receiveShadow = false;
+    scene.add(backWall);
+
+    // Create a window cutout in the left wall - adjust for the new wall thickness
     const windowWidth = 1.2;
     const windowHeight = 1.2;
-    const windowX = -roomWidth/2 + 0.01; // Slightly in front of the wall
+    const windowX = -roomWidth/2 + 0.21; // Slightly in front of the wall, adjusted for thickness
     const windowY = 2.2; // Height position
     const windowZ = -2; // Same Z position as the bed and window frame
 
@@ -790,20 +735,6 @@ export default function Home() {
     scene.add(windowGlass);
     
     // Light rays and dust particles removed from the room for a cleaner interior look
-
-    // Back wall (slightly darker color)
-    const backWallGeometry = new THREE.PlaneGeometry(roomWidth, roomHeight);
-    const backWallMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#f0f0f0"), // Changed to a slightly darker white/light gray
-      side: THREE.DoubleSide,
-      emissive: new THREE.Color("#222222"), // Darker emissive for contrast
-      roughness: 0.7,
-      metalness: 0.1,
-    });
-    const backWall = new THREE.Mesh(backWallGeometry, backWallMaterial);
-    backWall.position.set(0, roomHeight / 2, -roomDepth / 2);
-    backWall.receiveShadow = false;
-    scene.add(backWall);
 
     // Control variables
     agentTargetPosition = new THREE.Vector3(0, 0, 0); // Initialize target position
@@ -2071,6 +2002,9 @@ export default function Home() {
           // Handle different clickable objects
           if (clickableObject.userData.type === 'airConditioner') {
             setShowShortcutPopup(true);
+          } else if (clickableObject.userData.type === 'books') {
+            // Show the workflow popup when books are clicked
+            setShowWorkflowPopup(true);
           }
         }
       }
@@ -2083,17 +2017,39 @@ export default function Home() {
     console.log("Initializing sidebar with callbacks");
     initSidebar({
       'metamask-button': () => {
-        console.log("Metamask button clicked");
-        // This will now spawn the Metamask wolf
-        spawnMetamaskWolf(scene);
+        console.log("Metamask button clicked in index.js callback");
+        if (!scene) {
+          console.error("Scene is undefined in Metamask callback");
+          return;
+        }
+        console.log("About to spawn Metamask fox with scene:", scene);
+        // This will now spawn the Metamask fox
+        spawnMetamaskFox(scene);
       },
-      'gmail-button': () => {
-        console.log("Gmail button clicked");
+      'polygon-button': () => {
+        console.log("Polygon button clicked");
+        // Add Polygon functionality to spawn the model
+        spawnPolygonModel(scene);
+      },
+      'celo-button': () => {
+        console.log("Celo button clicked");
+        // Add Celo functionality to spawn the model
+        spawnCeloModel(scene);
       },
       'oneinch-button': () => {
         console.log("1inch button clicked");
         // Add 1inch functionality to spawn the unicorn
         spawn1inchUnicorn(scene);
+      },
+      'spreadsheet-button': () => {
+        console.log("Spreadsheet button clicked");
+        // Add Spreadsheet functionality to spawn the model
+        spawnSpreadsheetModel(scene);
+      },
+      'gmail-button': () => {
+        console.log("Gmail button clicked");
+        // Add Gmail functionality to spawn the model
+        spawnGmailModel(scene);
       }
     }, scene); // Pass the scene object here
 
@@ -2170,9 +2126,13 @@ export default function Home() {
         />
       )}
       
-      <div className="connect-button-wrapper">
-        <ConnectButton />
-      </div>
+      {showWorkflowPopup && (
+        <WorkflowPopup 
+          onClose={() => setShowWorkflowPopup(false)} 
+          showSavedSection={true}
+          readOnly={true}
+        />
+      )}
     </>
   );
 }
