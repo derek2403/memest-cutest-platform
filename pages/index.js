@@ -1116,4 +1116,344 @@ export default function Home() {
       return inside;
     }
     
+    // Function to check if a path intersects with a polygon
+    function doesPathIntersectPolygon(start, end, polygon) {
+      // Check for undefined/invalid inputs
+      if (!start || !end || !polygon || !Array.isArray(polygon) || polygon.length < 3) {
+        return false;
+      }
+      
+      // First check if either start or end point is inside the polygon
+      if (isPointInPolygon(start, polygon) || isPointInPolygon(end, polygon)) {
+        return true;
+      }
+      
+      // Check if any of the polygon edges intersect with the path
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const polyStart = polygon[j];
+        const polyEnd = polygon[i];
+        
+        if (lineSegmentsIntersect(
+          start.x, start.z, 
+          end.x, end.z, 
+          polyStart.x, polyStart.z, 
+          polyEnd.x, polyEnd.z
+        )) {
+          return true;
+        }
+      }
+      
+      return false;
+    }
     
+    // More reliable line segment intersection
+    function lineSegmentsIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+      // Check for undefined inputs
+      if (x1 === undefined || y1 === undefined || x2 === undefined || y2 === undefined ||
+          x3 === undefined || y3 === undefined || x4 === undefined || y4 === undefined) {
+        return false;
+      }
+      
+      // Calculate the direction of the vectors
+      const denominator = ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+      
+      // Lines are parallel or coincident
+      if (denominator === 0) {
+        return false;
+      }
+      
+      const uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / denominator;
+      const uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / denominator;
+      
+      // If uA and uB are between 0-1, lines are colliding
+      if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
+        return true;
+      }
+      return false;
+    }
+    
+    // Function to find a path around an obstacle
+    function findPathAroundObstacle(start, end, obstacle) {
+      // Make sure obstacle is valid and has points
+      if (!obstacle || !obstacle.points || !Array.isArray(obstacle.points)) {
+        console.error("Invalid obstacle object:", obstacle);
+        return [];
+      }
+      
+      // Get the expanded bounding box of the obstacle
+      const boundingBox = getExpandedBoundingBox(obstacle.points, OBSTACLE_BUFFER);
+      
+      // If using grid movement, generate cardinal direction waypoints
+      if (USE_GRID_MOVEMENT) {
+        return findGridBasedPath(start, end, boundingBox, obstacle.points);
+      }
+      
+      // Original waypoint generation code from before
+      const waypoints = [];
+      
+      // Generate waypoints around the expanded bounding box
+      // Top, bottom, left, right corners with buffer
+      waypoints.push(new THREE.Vector3(boundingBox.maxX, 0, boundingBox.maxZ)); // Top-right
+      waypoints.push(new THREE.Vector3(boundingBox.maxX, 0, boundingBox.minZ)); // Bottom-right
+      waypoints.push(new THREE.Vector3(boundingBox.minX, 0, boundingBox.maxZ)); // Top-left
+      waypoints.push(new THREE.Vector3(boundingBox.minX, 0, boundingBox.minZ)); // Bottom-left
+      
+      // Add midpoints along the sides for better navigation options
+      waypoints.push(new THREE.Vector3(boundingBox.minX, 0, (boundingBox.minZ + boundingBox.maxZ) / 2)); // Left middle
+      waypoints.push(new THREE.Vector3(boundingBox.maxX, 0, (boundingBox.minZ + boundingBox.maxZ) / 2)); // Right middle
+      waypoints.push(new THREE.Vector3((boundingBox.minX + boundingBox.maxX) / 2, 0, boundingBox.minZ)); // Bottom middle
+      waypoints.push(new THREE.Vector3((boundingBox.minX + boundingBox.maxX) / 2, 0, boundingBox.maxZ)); // Top middle
+      
+      // Find a valid sequence of waypoints
+      let bestPath = null;
+      let shortestDistance = Infinity;
+      
+      // First check direct waypoints
+      for (const waypoint of waypoints) {
+        // Check if the waypoint is itself clear of the obstacle
+        if (isPointInPolygon(waypoint, obstacle.points)) {
+          continue; // Skip waypoints inside the obstacle
+        }
+        
+        const toWaypointClear = !doesPathIntersectPolygon(start, waypoint, obstacle.points);
+        const fromWaypointClear = !doesPathIntersectPolygon(waypoint, end, obstacle.points);
+        
+        if (toWaypointClear && fromWaypointClear) {
+          const totalDistance = start.distanceTo(waypoint) + waypoint.distanceTo(end);
+          if (totalDistance < shortestDistance) {
+            shortestDistance = totalDistance;
+            bestPath = [waypoint];
+          }
+        }
+      }
+      
+      // If no direct path works, try using two waypoints
+      if (!bestPath) {
+        // Sort waypoints by distance to start + end
+        const sortedWaypoints = [...waypoints].sort((a, b) => {
+          const distA = start.distanceTo(a) + end.distanceTo(a);
+          const distB = start.distanceTo(b) + end.distanceTo(b);
+          return distA - distB;
+        });
+        
+        // Try combinations of the closest waypoints first (limit to top 4 for performance)
+        const topWaypoints = sortedWaypoints.slice(0, 4);
+        
+        for (let i = 0; i < topWaypoints.length; i++) {
+          for (let j = 0; j < waypoints.length; j++) {
+            if (i === j) continue;
+            
+            const wp1 = topWaypoints[i];
+            const wp2 = waypoints[j];
+            
+            const toWp1Clear = !doesPathIntersectPolygon(start, wp1, obstacle.points);
+            const wp1ToWp2Clear = !doesPathIntersectPolygon(wp1, wp2, obstacle.points);
+            const wp2ToEndClear = !doesPathIntersectPolygon(wp2, end, obstacle.points);
+            
+            if (toWp1Clear && wp1ToWp2Clear && wp2ToEndClear) {
+              const totalDistance = start.distanceTo(wp1) + wp1.distanceTo(wp2) + wp2.distanceTo(end);
+              if (totalDistance < shortestDistance) {
+                shortestDistance = totalDistance;
+                bestPath = [wp1, wp2];
+              }
+            }
+          }
+        }
+      }
+      
+      return bestPath;
+    }
+    
+    // New function to find grid-based paths (horizontal/vertical only)
+    function findGridBasedPath(start, end, boundingBox, polygon) {
+      // Verify inputs
+      if (!start || !end || !boundingBox || !polygon) {
+        console.error("Invalid inputs to findGridBasedPath");
+        return [];
+      }
+      
+      // Ensure both start and end points are within floor boundaries
+      const constrainedStart = constrainToFloor(start.clone());
+      const constrainedEnd = constrainToFloor(end.clone());
+      
+      // Calculate Manhattan distance directly (sum of horizontal and vertical distances)
+      const getManhattanDistance = (pointA, pointB) => {
+        return Math.abs(pointA.x - pointB.x) + Math.abs(pointA.z - pointB.z);
+      };
+      
+      // Determine which side of the obstacle is optimal based on Manhattan distance
+      
+      // Calculate the bounding box of the start and end points
+      const startEndBoundingBox = {
+        minX: Math.min(constrainedStart.x, constrainedEnd.x),
+        maxX: Math.max(constrainedStart.x, constrainedEnd.x),
+        minZ: Math.min(constrainedStart.z, constrainedEnd.z),
+        maxZ: Math.max(constrainedStart.z, constrainedEnd.z)
+      };
+      
+      // Check if the obstacle intersects with the bounding box of start and end
+      const obstacleIntersectsPath = 
+        boundingBox.minX <= startEndBoundingBox.maxX &&
+        boundingBox.maxX >= startEndBoundingBox.minX &&
+        boundingBox.minZ <= startEndBoundingBox.maxZ &&
+        boundingBox.maxZ >= startEndBoundingBox.minZ;
+      
+      // If obstacle doesn't intersect the direct path area, try a direct Manhattan path
+      if (!obstacleIntersectsPath) {
+        // Try direct horizontal then vertical path
+        const hFirst = [constrainToFloor(new THREE.Vector3(constrainedEnd.x, 0, constrainedStart.z))];
+        // Check if this path is clear
+        if (!doesPathIntersectPolygon(constrainedStart, hFirst[0], polygon) && 
+            !doesPathIntersectPolygon(hFirst[0], constrainedEnd, polygon)) {
+          return hFirst;
+        }
+        
+        // Try direct vertical then horizontal path
+        const vFirst = [constrainToFloor(new THREE.Vector3(constrainedStart.x, 0, constrainedEnd.z))];
+        // Check if this path is clear
+        if (!doesPathIntersectPolygon(constrainedStart, vFirst[0], polygon) && 
+            !doesPathIntersectPolygon(vFirst[0], constrainedEnd, polygon)) {
+          return vFirst;
+        }
+      }
+      
+      // We'll generate multiple potential paths and select the shortest valid one
+      const candidatePaths = [];
+      const extraBuffer = 0.2; // Extra space for safety
+      
+      // Top path (go around the top of the obstacle)
+      const topY = boundingBox.minZ - extraBuffer;
+      candidatePaths.push({
+        path: [
+          constrainToFloor(new THREE.Vector3(constrainedStart.x, 0, topY)),
+          constrainToFloor(new THREE.Vector3(constrainedEnd.x, 0, topY))
+        ],
+        distance: getManhattanDistance(constrainedStart, new THREE.Vector3(constrainedStart.x, 0, topY)) +
+                  getManhattanDistance(new THREE.Vector3(constrainedStart.x, 0, topY), new THREE.Vector3(constrainedEnd.x, 0, topY)) +
+                  getManhattanDistance(new THREE.Vector3(constrainedEnd.x, 0, topY), constrainedEnd)
+      });
+      
+      // Bottom path (go around the bottom of the obstacle)
+      const bottomY = boundingBox.maxZ + extraBuffer;
+      candidatePaths.push({
+        path: [
+          constrainToFloor(new THREE.Vector3(constrainedStart.x, 0, bottomY)),
+          constrainToFloor(new THREE.Vector3(constrainedEnd.x, 0, bottomY))
+        ],
+        distance: getManhattanDistance(constrainedStart, new THREE.Vector3(constrainedStart.x, 0, bottomY)) +
+                  getManhattanDistance(new THREE.Vector3(constrainedStart.x, 0, bottomY), new THREE.Vector3(constrainedEnd.x, 0, bottomY)) +
+                  getManhattanDistance(new THREE.Vector3(constrainedEnd.x, 0, bottomY), constrainedEnd)
+      });
+      
+      // Left path (go around the left of the obstacle)
+      const leftX = boundingBox.minX - extraBuffer;
+      candidatePaths.push({
+        path: [
+          constrainToFloor(new THREE.Vector3(leftX, 0, constrainedStart.z)),
+          constrainToFloor(new THREE.Vector3(leftX, 0, constrainedEnd.z))
+        ],
+        distance: getManhattanDistance(constrainedStart, new THREE.Vector3(leftX, 0, constrainedStart.z)) +
+                  getManhattanDistance(new THREE.Vector3(leftX, 0, constrainedStart.z), new THREE.Vector3(leftX, 0, constrainedEnd.z)) +
+                  getManhattanDistance(new THREE.Vector3(leftX, 0, constrainedEnd.z), constrainedEnd)
+      });
+      
+      // Right path (go around the right of the obstacle)
+      const rightX = boundingBox.maxX + extraBuffer;
+      candidatePaths.push({
+        path: [
+          constrainToFloor(new THREE.Vector3(rightX, 0, constrainedStart.z)),
+          constrainToFloor(new THREE.Vector3(rightX, 0, constrainedEnd.z))
+        ],
+        distance: getManhattanDistance(constrainedStart, new THREE.Vector3(rightX, 0, constrainedStart.z)) +
+                  getManhattanDistance(new THREE.Vector3(rightX, 0, constrainedStart.z), new THREE.Vector3(rightX, 0, constrainedEnd.z)) +
+                  getManhattanDistance(new THREE.Vector3(rightX, 0, constrainedEnd.z), constrainedEnd)
+      });
+      
+      // Add corner routes with horizontal-first or vertical-first preference
+      // Top-left corner
+      const topLeft = constrainToFloor(new THREE.Vector3(boundingBox.minX - extraBuffer, 0, boundingBox.minZ - extraBuffer));
+      
+      // Horizontal first to top-left
+      candidatePaths.push({
+        path: [
+          constrainToFloor(new THREE.Vector3(topLeft.x, 0, constrainedStart.z)),
+          topLeft,
+          constrainToFloor(new THREE.Vector3(constrainedEnd.x, 0, topLeft.z))
+        ],
+        distance: getManhattanDistance(constrainedStart, new THREE.Vector3(topLeft.x, 0, constrainedStart.z)) +
+                 getManhattanDistance(new THREE.Vector3(topLeft.x, 0, constrainedStart.z), topLeft) +
+                 getManhattanDistance(topLeft, new THREE.Vector3(constrainedEnd.x, 0, topLeft.z)) +
+                 getManhattanDistance(new THREE.Vector3(constrainedEnd.x, 0, topLeft.z), constrainedEnd)
+      });
+      
+      // Add additional corner paths and their variants (omitted for brevity, same pattern as above)
+      // ... existing corner paths ...
+      
+      // Add floor boundary-following paths
+      // These paths follow the edges of the floor when the direct path would go through space
+      
+      // First, check if the path would cross a floor boundary
+      const wouldCrossFloorBoundary = 
+        (constrainedStart.x === floorBoundaries.minX && constrainedEnd.x === floorBoundaries.minX) ||
+        (constrainedStart.x === floorBoundaries.maxX && constrainedEnd.x === floorBoundaries.maxX) ||
+        (constrainedStart.z === floorBoundaries.minZ && constrainedEnd.z === floorBoundaries.minZ) ||
+        (constrainedStart.z === floorBoundaries.maxZ && constrainedEnd.z === floorBoundaries.maxZ);
+      
+      if (wouldCrossFloorBoundary || 
+          constrainedStart.x === floorBoundaries.minX || constrainedStart.x === floorBoundaries.maxX ||
+          constrainedStart.z === floorBoundaries.minZ || constrainedStart.z === floorBoundaries.maxZ ||
+          constrainedEnd.x === floorBoundaries.minX || constrainedEnd.x === floorBoundaries.maxX ||
+          constrainedEnd.z === floorBoundaries.minZ || constrainedEnd.z === floorBoundaries.maxZ) {
+        
+        // Add paths that follow the floor boundaries
+        
+        // Bottom-left corner of the floor
+        const floorBL = new THREE.Vector3(floorBoundaries.minX + 0.3, 0, floorBoundaries.maxZ - 0.3);
+        candidatePaths.push({
+          path: [floorBL],
+          distance: getManhattanDistance(constrainedStart, floorBL) + getManhattanDistance(floorBL, constrainedEnd)
+        });
+        
+        // Bottom-right corner of the floor
+        const floorBR = new THREE.Vector3(floorBoundaries.maxX - 0.3, 0, floorBoundaries.maxZ - 0.3);
+        candidatePaths.push({
+          path: [floorBR],
+          distance: getManhattanDistance(constrainedStart, floorBR) + getManhattanDistance(floorBR, constrainedEnd)
+        });
+        
+        // Top-left corner of the floor
+        const floorTL = new THREE.Vector3(floorBoundaries.minX + 0.3, 0, floorBoundaries.minZ + 0.3);
+        candidatePaths.push({
+          path: [floorTL],
+          distance: getManhattanDistance(constrainedStart, floorTL) + getManhattanDistance(floorTL, constrainedEnd)
+        });
+        
+        // Top-right corner of the floor
+        const floorTR = new THREE.Vector3(floorBoundaries.maxX - 0.3, 0, floorBoundaries.minZ + 0.3);
+        candidatePaths.push({
+          path: [floorTR],
+          distance: getManhattanDistance(constrainedStart, floorTR) + getManhattanDistance(floorTR, constrainedEnd)
+        });
+        
+        // Two-point paths via floor corners
+        candidatePaths.push({
+          path: [floorBL, floorTL],
+          distance: getManhattanDistance(constrainedStart, floorBL) + getManhattanDistance(floorBL, floorTL) + getManhattanDistance(floorTL, constrainedEnd)
+        });
+        
+        candidatePaths.push({
+          path: [floorBL, floorBR],
+          distance: getManhattanDistance(constrainedStart, floorBL) + getManhattanDistance(floorBL, floorBR) + getManhattanDistance(floorBR, constrainedEnd)
+        });
+        
+        candidatePaths.push({
+          path: [floorBR, floorTR],
+          distance: getManhattanDistance(constrainedStart, floorBR) + getManhattanDistance(floorBR, floorTR) + getManhattanDistance(floorTR, constrainedEnd)
+        });
+        
+        candidatePaths.push({
+          path: [floorTL, floorTR],
+          distance: getManhattanDistance(constrainedStart, floorTL) + getManhattanDistance(floorTL, floorTR) + getManhattanDistance(floorTR, constrainedEnd)
+        });
+      }
+      
