@@ -123,7 +123,149 @@ export default function Home() {
     // Scene setup
     scene = new THREE.Scene();
     
-    // Load video background with original quality preserved
+    // Add fog for depth perception
+    scene.fog = new THREE.FogExp2(0x0a1a3f, 0.005);
+    
+    // Create an environment with skybox
+    // We'll use a combination of a skybox and a stylized backdrop
+    const environmentGroup = new THREE.Group();
+    scene.add(environmentGroup);
+    
+    // Create a gradient sky background instead of a pure black background
+    const skyColors = {
+      topColor: new THREE.Color("#0a1a3f"),  // Deep blue for top
+      middleColor: new THREE.Color("#233f73"), // Medium blue for horizon
+      bottomColor: new THREE.Color("#3a5da5") // Lighter blue for base
+    };
+    
+    // Create a gradient background sphere
+    const skyGeometry = new THREE.SphereGeometry(200, 32, 32);
+    // Use a custom shader for the gradient sky
+    const skyMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        topColor: { value: skyColors.topColor },
+        middleColor: { value: skyColors.middleColor },
+        bottomColor: { value: skyColors.bottomColor }
+      },
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPosition.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 middleColor;
+        uniform vec3 bottomColor;
+        varying vec3 vWorldPosition;
+        void main() {
+          // Normalize position for gradient calculation (0 = bottom, 1 = top)
+          float h = normalize(vWorldPosition).y * 0.5 + 0.5;
+          
+          // Mix colors based on height
+          vec3 color = mix(bottomColor, middleColor, smoothstep(0.0, 0.5, h));
+          color = mix(color, topColor, smoothstep(0.4, 1.0, h));
+          
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+      side: THREE.BackSide
+    });
+    
+    const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    environmentGroup.add(sky);
+    
+    // Add stars to the sky
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 1,
+      transparent: true,
+      opacity: 0.8,
+      sizeAttenuation: true
+    });
+    
+    // Generate 2000 random star positions
+    const starsVertices = [];
+    for (let i = 0; i < 2000; i++) {
+      const x = THREE.MathUtils.randFloatSpread(400);
+      const y = THREE.MathUtils.randFloatSpread(200);
+      const z = THREE.MathUtils.randFloatSpread(400);
+      // Keep stars above horizon mostly
+      if (y < 0) continue;
+      starsVertices.push(x, y, z);
+    }
+    
+    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    environmentGroup.add(stars);
+    
+    // Add distant mountains/terrain for context
+    const terrainGroup = new THREE.Group();
+    environmentGroup.add(terrainGroup);
+    
+    // Function to create a stylized mountain with a specific color
+    function createStylizedMountain(color, width, height, depth, x, z) {
+      const mountainGeometry = new THREE.ConeGeometry(width, height, 4);
+      const mountainMaterial = new THREE.MeshStandardMaterial({ 
+        color: color,
+        flatShading: true,
+        roughness: 0.8
+      });
+      
+      const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
+      mountain.position.set(x, height/2 - 20, z);
+      // Randomly rotate for variation
+      mountain.rotation.y = Math.random() * Math.PI;
+      return mountain;
+    }
+    
+    // Add some distant mountains
+    const mountainColors = [
+      "#2a3b5a", // Dark blue
+      "#203354", // Medium blue
+      "#152a4c"  // Deeper blue
+    ];
+    
+    // Create mountains at different distances
+    for (let i = 0; i < 20; i++) {
+      const distance = 70 + Math.random() * 100;
+      const angle = Math.random() * Math.PI * 2;
+      const x = Math.cos(angle) * distance;
+      const z = Math.sin(angle) * distance;
+      
+      const width = 10 + Math.random() * 20;
+      const height = 30 + Math.random() * 40;
+      const colorIndex = Math.floor(Math.random() * mountainColors.length);
+      
+      const mountain = createStylizedMountain(
+        mountainColors[colorIndex],
+        width,
+        height,
+        width,
+        x,
+        z
+      );
+      
+      terrainGroup.add(mountain);
+    }
+    
+    // Create a ground plane that extends beyond the room
+    const extendedGroundGeometry = new THREE.PlaneGeometry(500, 500);
+    const extendedGroundMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#1a2940"), // Dark blue ground
+      side: THREE.DoubleSide,
+      roughness: 0.9
+    });
+    
+    const extendedGround = new THREE.Mesh(extendedGroundGeometry, extendedGroundMaterial);
+    extendedGround.rotation.x = -Math.PI / 2;
+    extendedGround.position.y = -0.01; // Slightly below room floor to prevent z-fighting
+    environmentGroup.add(extendedGround);
+    
+    // Keep the existing video as a dynamic element in the sky
     const videoElement = document.createElement('video');
     videoElement.src = '/assets/fullstars.mp4';
     videoElement.loop = true;
@@ -139,9 +281,9 @@ export default function Home() {
 
     // Create video texture with highest quality settings
     const videoTexture = new THREE.VideoTexture(videoElement);
-    videoTexture.minFilter = THREE.NearestFilter; // Use nearest filter for original pixels
-    videoTexture.magFilter = THREE.NearestFilter; // Use nearest filter for original pixels
-    videoTexture.format = THREE.RGBAFormat; // Use RGBA for full color information
+    videoTexture.minFilter = THREE.NearestFilter;
+    videoTexture.magFilter = THREE.NearestFilter;
+    videoTexture.format = THREE.RGBAFormat;
     
     // Use correct color space for Three.js version
     if (THREE.SRGBColorSpace !== undefined) {
@@ -150,14 +292,20 @@ export default function Home() {
       videoTexture.encoding = THREE.sRGBEncoding;
     }
     
-    // Disable mipmaps to preserve original quality
     videoTexture.generateMipmaps = false;
-    
-    // Ensure the video texture uses the full resolution
     videoTexture.needsUpdate = true;
 
-    // Set the video texture as the scene background
-    scene.background = videoTexture;
+    // Create a sphere with the video texture on the inside
+    const videoSphereGeometry = new THREE.SphereGeometry(180, 32, 32);
+    const videoSphereMaterial = new THREE.MeshBasicMaterial({
+      map: videoTexture,
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: 0.6 // Make it semi-transparent to blend with our gradient sky
+    });
+    
+    const videoSphere = new THREE.Mesh(videoSphereGeometry, videoSphereMaterial);
+    environmentGroup.add(videoSphere);
 
     // Start playing the video with multiple attempts to ensure it plays
     const ensureVideoPlays = () => {
@@ -178,6 +326,10 @@ export default function Home() {
     );
     camera.position.set(5, 5, 5);
     camera.lookAt(0, 0, 0);
+    
+    // Allow the camera to see more of the environment
+    camera.far = 500;
+    camera.updateProjectionMatrix();
 
     // Renderer setup with optimizations
     renderer = new THREE.WebGLRenderer({
@@ -205,25 +357,38 @@ export default function Home() {
     controls.target.set(0, 1, 0); // Set target to center of room, at reasonable height
     controls.update();
 
+    // Room dimensions (defined here so we can use them for lighting)
+    const roomWidth = 7;
+    const roomHeight = 3.5;
+    const roomDepth = 7;
+
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+    const ambientLight = new THREE.AmbientLight(0x404e7c, 0.5); // Bluish ambient light
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(5, 10, 5);
+    // Add a warmer light inside the room
+    const roomLight = new THREE.AmbientLight(0xffffcc, 0.7); // Warm light for the room
+    roomLight.position.set(0, 2, 0);
+    scene.add(roomLight);
+
+    // Main directional light (sun/moon light)
+    const directionalLight = new THREE.DirectionalLight(0xe8f7ff, 1.0); // Cooler light
+    directionalLight.position.set(50, 100, 30);
     directionalLight.castShadow = false;
     scene.add(directionalLight);
 
     // Add a second directional light from another angle
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight2 = new THREE.DirectionalLight(0xffebcd, 0.6); // Warmer secondary light
     directionalLight2.position.set(-5, 8, -5);
     directionalLight2.castShadow = false;
     scene.add(directionalLight2);
 
-    // Room dimensions
-    const roomWidth = 7;
-    const roomHeight = 3.5;
-    const roomDepth = 7;
+    // Add a small point light near the window to simulate outside light coming in
+    const windowLight = new THREE.PointLight(0xadd8e6, 0.8); // Light blue window light
+    windowLight.position.set(-roomWidth/2 + 0.5, 2.2, -2); // Position near window
+    windowLight.distance = 10;
+    windowLight.decay = 2;
+    scene.add(windowLight);
 
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
@@ -267,7 +432,7 @@ export default function Home() {
     const windowWidth = 1.2;
     const windowHeight = 1.2;
     const windowX = -roomWidth/2 + 0.01; // Slightly in front of the wall
-    const windowY = 2.2; // Heigh position
+    const windowY = 2.2; // Height position
     const windowZ = -2; // Same Z position as the bed and window frame
 
     // Create a white glass for the window
@@ -294,6 +459,8 @@ export default function Home() {
     windowGlass.rotation.y = Math.PI / 2; // Same rotation as the wall
     windowGlass.receiveShadow = false;
     scene.add(windowGlass);
+    
+    // Light rays and dust particles removed from the room for a cleaner interior look
 
     // Back wall (slightly darker color)
     const backWallGeometry = new THREE.PlaneGeometry(roomWidth, roomHeight);
@@ -1523,7 +1690,7 @@ export default function Home() {
 
       const delta = deltaTime / 1000; // Convert to seconds
       lastFrameTime = currentTime - (deltaTime % frameInterval);
-
+      
       // Update AI Agent position if it's moving
       updateAgentPosition(delta);
 
