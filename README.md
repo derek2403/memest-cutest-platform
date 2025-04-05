@@ -1,11 +1,11 @@
-# Memest Cutest Project 
-_A gamified, cross app based Model Context Protocol platform_
+# Memest Cutest Platform 
+_A gamified, cross-app based Model Context Protocol platform running in a TEE_
 
 ![2289375F-C956-485C-AC6F-8FF9A0074BAE](https://github.com/user-attachments/assets/66de8c94-d973-4c4b-99bd-27f78bdb7286)
 
 We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
 
-We’ve deployed a **live demonstration of Memest Cutest Project** at [**(Link Coming Soon)**](#).
+We’ve deployed a **live demonstration of Memest Cutest Platform** at [**(Link Coming Soon)**](#).
 
 ---
 
@@ -14,8 +14,7 @@ We noticed how **inconvenient** it is to manage multiple wallet connections whet
 
 > *“What if we had a single platform that connected all these services into building blocks, letting users assemble custom workflows in one place?”*
 
-Thus, **Memest Cutest Project** was born, a unified space where all your services coexist in one interface, powered by simple drag-and-drop building blocks and AI-driven orchestration for seamless cross-service tasks. We also gamified the visual process, so users can truly see and understand every interaction happening within the MCP making cross-service integration as transparent and engaging as possible.
-
+Thus, **Memest Cutest Platform** was born, a unified space where all your services coexist in one interface, powered by simple drag-and-drop building blocks and AI-driven orchestration for seamless cross-service tasks. We also gamified the visual process, so users can truly see and understand every interaction happening within the MCP making cross-service integration as transparent and engaging as possible. However, as we developed our MPC, we quickly realized a significant challenge. To orchestrate services effectively, the AI needed access to data across multiple platforms. This created an inherent privacy risk as the AI could potentially see sensitive information from your MetaMask wallet, Gmail account, and other connected services. That is how we plan to add the TEE afterwards wrapping it in a tee
 
 
 
@@ -31,20 +30,24 @@ Thus, **Memest Cutest Project** was born, a unified space where all your service
 
 5. **Poor Visibility & Usability:** Managing multiple services and credentials in different tabs or windows makes it difficult to understand what’s happening at a glance or to trust that you haven’t missed any critical event.
 
+6. **Privacy Vulnerabilities:** Traditional Model Context Protocol implementations expose sensitive user data across services to the orchestrating AI—creating potential privacy risks as more personal accounts and wallets are connected to the system.
+
 
 ---
 
 ## The Solution🔑
 
-1. **Unified Web2–Web3 Integration:** Memest Cutest Project uses MCP to unite disparate platforms like MetaMask, 1inch, Polygon, Celo, Gmail, Spreadsheet into a single cohesive interface, eliminating the hassle of juggling multiple logins and websites.
+1. **Unified Web2–Web3 Integration:** Memest Cutest Platform uses MCP to unite disparate platforms like MetaMask, 1inch, Polygon, Celo, Gmail, Spreadsheet into a single cohesive interface, eliminating the hassle of juggling multiple logins and websites.
 
-2. **Drag-and-Drop Workflows:** With a simple visual interface powered by MCP, Memest Cutest Project lets users assemble cross-service automations using building blocks with no coding required with NLP or drag and drop workflows.
+2. **Drag-and-Drop Workflows:** With a simple visual interface powered by MCP, Memest Cutest Platform lets users assemble cross-service automations using building blocks with no coding required with NLP or drag and drop workflows.
 
-3. **AI-Driven Orchestration:** By harnessing MCP, Memest Cutest Project enables intelligent agents to seamlessly handle multi-step tasks across your connected services, reducing manual effort and errors.
+3. **AI-Driven Orchestration:** By harnessing MCP, Memest Cutest Platform enables intelligent agents to seamlessly handle multi-step tasks across your connected services, reducing manual effort and errors.
 
-4. **Gamified Visualization:** Memest Cutest Project transforms service interactions into an engaging, map-like view, so you can intuitively grasp how workflows progress and which services are talking to each other.
+4. **Gamified Visualization:** Memest Cutest Platform transforms service interactions into an engaging, map-like view, so you can intuitively grasp how workflows progress and which services are talking to each other.
 
-5. **Secure & Scalable Foundation:** Built on MCP standards, Memest Cutest Project provides a robust environment where anyone can host their own MCP server. Its modular, building-block architecture empowers developers and users alike to add new plugins and services, continuously expanding the ecosystem like building blocks
+5. **Secure & Scalable Foundation:** Built on MCP standards, Memest Cutest Platform provides a robust environment where anyone can host their own MCP server. Its modular, building-block architecture empowers developers and users alike to add new plugins and services, continuously expanding the ecosystem like building blocks.
+
+6. **TEE-Protected Privacy:** Memest Cutest Platform wraps the entire MCP inside a Trusted Execution Environment (TEE), creating a hardware-level security barrier between users sensitive data and potential threats. This secure enclave ensures that even the user's workflows interact with multiple services, their private keys, credentials, and personal information remain encrypted and inaccessible even to the platform and ai agent operators. 
 
 
 ---
@@ -69,6 +72,9 @@ Inspired by Apple Shortcuts, users can simply drag, drop, and connect these serv
 **AI Agent Execution**  
 Once you’ve configured a workflow, our AI agent (a little robot in the interface) “walks” between the relevant service blocks to illustrate how your automation runs. In the background, MCP triggers event listeners (for instance, on MetaMask) and processes each command (like sending an email, logging data to a spreadsheet, or initiating a token swap).
 
+**TEE Attestation Verification**
+Each time a step in the AI workflow is executed, a unique attestation hash is generated, providing cryptographic proof that the operation was securely performed inside the TEE. Users can easily view the verification hash for any executed step by simply clicking on it. To confirm the authenticity of the operation, users can copy the hash and paste it into the Phala Network attestation verifier. This straightforward verification process ensures that the action was carried out within the MCP inside the TEE, offering transparent security without sacrificing the user-friendly interface.
+
 ---
 
 ### Example Workflows
@@ -79,7 +85,7 @@ Once you’ve configured a workflow, our AI agent (a little robot in the interfa
 ---
 
 **Endless Possibilities**  
-Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, and Google Sheets—but any additional plugins can be added to expand the platform’s capabilities. Think of **Memest Cutest Project** as an “agent kit” with building blocks anyone can contribute to. Best of all, it can be **self-hosted**, giving you full control and privacy over your cross-service automations. Whether it’s purely Web2 integrations (like email and spreadsheets) or advanced cross-chain workflows, **MCP** supports it all as more services are added.
+Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, and Google Sheets—but any additional plugins can be added to expand the platform’s capabilities. Think of **Memest Cutest Platform** as an “agent kit” with building blocks anyone can contribute to. Best of all, it can be **self-hosted**, giving you full control and privacy over your cross-service automations. Whether it’s purely Web2 integrations (like email and spreadsheets) or advanced cross-chain workflows, **MCP** supports it all as more services are added.
 
 
 
@@ -87,13 +93,30 @@ Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, a
 
 ## System Architecture High-Level Overview🏗️
 
-![Architecture]() 
+![Architecture](https://github.com/derek2403/TeeTee/blob/main/public/Architecture.png?raw=true) 
+
+### 1. **User Interface** (Frontend)
+   - **Role**: The user interacts with the system through the **Frontend** interface. This is where users specify their desired workflows using natural language.
+   - **Interaction**: The user communicates with the frontend to define and visualize the workflow.
+
+### 2. **AI Agent**
+   - **Role**: Once the user specifies the workflow, the **AI Agent** interprets the input, generates the execution plan, and coordinates the interaction with services.
+   - **Function**: The AI Agent helps solve the workflow by accessing various external services (e.g., Metamask, Gmail, Google Sheets, etc.) and executing the tasks defined in the workflow.
+
+### 3. **Model Context Protocol (MCP) Environment**
+   - **Role**: The **MCP** is the secure environment where the workflow is processed. It ensures that all operations are performed in a trusted and encrypted space provided by **Phala Network’s Trusted Execution Environment (TEE)**.
+   - **Function**: The generated workflow is stored in the MCP, and all sensitive data processing happens within this secure environment. The TEE ensures that no unauthorized access to data occurs during execution.
+
+### 4. **External Services**
+   - **Role**: External services, such as **Metamask**, **Gmail**, **Google Sheets**, and others, are accessed by the AI Agent to complete the tasks defined in the workflow.
+   - **Interaction**: These services can interact with each other as needed. For example, Metamask can trigger actions in Gmail, and the AI Agent facilitates seamless communication between them to execute the specified actions.
+
+### 5. **Phala Network’s Trusted Execution Environment (TEE)**
+   - **Role**: Every action performed within the TEE is logged and generates an **attestation report**.
+   - **Function**: The **attestation report** provides cryptographic proof of secure execution inside the TEE. This report can be verified through the **Phala Network Attestation Verifier** to ensure that the operations were performed within the TEE and that no data was compromised during execution.
 
 
 ---
-
-
-
 
 
 ## Tech Stack Overview🛠️
@@ -105,13 +128,14 @@ Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, a
 - **Wagmi** – React hooks for Ethereum
 - **Ethers.js 6** – Blockchain interaction and smart contract integration
 - **Framer Motion** – Animations and transitions
-- **Base & Sepolia** – Primary blockchain networks for testing
 - **Polygon Amoy** – Testnet for event monitoring
 - **Viem** – TypeScript interface for Ethereum
-- **Tanstack Query** – Data fetching and state management
 - **Anthropic AI SDK** – AI integration for platform features
-- **Celo Mainnet L2** - Layer 2 blockchain for scalable transactions
+- **Celo Mainnet L2** - Layer 2 blockchain for deployment
+- **Polygon Testnet** - Layer 2 blockchain for testing
 - **1inch** - Aggregates DEXes for optimal token swap rates and liquidity
+- **Phala Network** – TEE hosting and on chain attestation proofs
+- **Docker** – Containerization for hosting code securely in Phala TEEs
 
 
 ---
@@ -133,7 +157,17 @@ Here's a brief overview of important directories in our repository:
 - **/pages** – Core application pages  
   - **index.js** – Main 3D environment with Three.js scene setup  
   - **events.js** – Blockchain event monitoring interface  
-  - **mcptest.js** – Platform testing environment  
+  - **mcptest.js** – Platform testing environment
+ 
+### Blockchain & Smart Contract Integration
+- **/1inch** – 1inch integration for decentralized finance (DeFi) functionality  
+  - Contains code for interacting with the 1inch API and aggregating liquidity from various decentralized exchanges (DEXs).
+- **/mcp-server** – Server handling interactions with the Model Context Protocol (MCP)  
+  - Manages connections and requests to external services or data providers using MCP.
+- **/smart-contract** – Smart contract logic  
+  - Contains Solidity smart contracts or other blockchain scripts related to the project.
+- **/utils** – Utility functions and helpers  
+  - Includes contract ABIs, blockchain-related utilities, and other helper functions needed for contract interactions.
 
 ---
 ## How We Are Different🌟
@@ -141,9 +175,9 @@ Here's a brief overview of important directories in our repository:
 
 We noticed that while there are several tools to connect Web2 and Web3 services, none of them offer a seamless, visual, and user-friendly experience for managing cross-platform workflows. Many existing platforms are usually either fragmented, complicated, or require technical knowledge to be used effectively.
 
-Here’s how Memest Cutest Project is uniquely positioned:
+Here’s how Memest Cutest Platform is uniquely positioned:
 
-| **Feature**                          | **Traditional Web2/Web3 Tools**                                                   | **Memest Cutest Project**                                                                 |
+| **Feature**                          | **Traditional Web2/Web3 Tools**                                                   | **Memest Cutest Platform**                                                                 |
 |--------------------------------------|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
 | **Integration Across Web2 & Web3**   | Web2 and Web3 services are siloed; users must switch between apps and sites manually. | Unified interface to connect Web2 (e.g., Gmail, Google Sheets) and Web3 (e.g., MetaMask, Uniswap) seamlessly in one place. |
 | **User Experience**                  | Complicated, requires manual connections, and lacks a visual workflow tool.       | Drag-and-drop, visual, gamified interface that makes cross-platform workflows intuitive and fun to create. |
@@ -154,7 +188,7 @@ Here’s how Memest Cutest Project is uniquely positioned:
 | **Platform Ecosystem**               | Rigid and closed ecosystems; adding new services requires external integrations.  | Open and modular system that supports plugin additions and self-hosting for greater flexibility and user control. |
 | **Scalability**                      | Centralized platforms are often limited by infrastructure or bandwidth.           | Scalable platform that can grow with more services and users, supporting decentralized workflows. |
 
-Memest Cutest Project offers a fully integrated, automated, and gamified approach to managing both Web2 and Web3 services, overcoming the pain points of fragmentation, privacy issues, and complicated workflows seen in traditional tools. Whether for developers or non-technical users, it’s designed to be intuitive, secure, and highly customizable.
+Memest Cutest Platform offers a fully integrated, automated, and gamified approach to managing both Web2 and Web3 services, overcoming the pain points of fragmentation, privacy issues, and complicated workflows seen in traditional tools. Whether for developers or non-technical users, it’s designed to be intuitive, secure, and highly customizable.
 
 ---
 
@@ -162,7 +196,7 @@ Memest Cutest Project offers a fully integrated, automated, and gamified approac
 ## Future Implementations 🚀
 ### Cross-Chain Diagram
 
-In the future, Memest Cutest Project will extend its support for additional blockchain networks beyond those already integrated (e.g., Polygon, Celo). By implementing a cross-chain framework, users will be able to create seamless workflows that span multiple chains, such as Ethereum, Binance Smart Chain, Solana, and more. This will allow for automated actions across a diverse range of blockchain ecosystems—whether it’s token swaps, event listening, or contract interactions—without users needing to manually switch between networks.
+In the future, Memest Cutest Platform will extend its support for additional blockchain networks beyond those already integrated (e.g., Polygon, Celo). By implementing a cross-chain framework, users will be able to create seamless workflows that span multiple chains, such as Ethereum, Binance Smart Chain, Solana, and more. This will allow for automated actions across a diverse range of blockchain ecosystems—whether it’s token swaps, event listening, or contract interactions—without users needing to manually switch between networks.
 
 We envision a network of interconnected blockchains that are easily accessed and automated within a single, unified interface. This will bring true interoperability to the Web3 space and offer greater flexibility for users building cross-chain workflows.
 
@@ -177,9 +211,9 @@ This enhancement will also allow for a more comprehensive monitoring dashboard, 
 
 ### Modular Plugin Diagram
 
-To further expand Memest Cutest Project’s capabilities, we will be developing a modular plugin system where both users and developers can contribute new services, block types, and integrations. This open-source ecosystem will allow the platform to grow continuously, adapting to new tools, services, and blockchain networks as they emerge. Users will be able to install and configure plugins easily, ensuring that they are always able to integrate the latest technologies into their workflows.
+To further expand Memest Cutest Platform’s capabilities, we will be developing a modular plugin system where both users and developers can contribute new services, block types, and integrations. This open-source ecosystem will allow the platform to grow continuously, adapting to new tools, services, and blockchain networks as they emerge. Users will be able to install and configure plugins easily, ensuring that they are always able to integrate the latest technologies into their workflows.
 
-We aim to build a community-driven platform where anyone can contribute to the project’s evolution, creating a constantly growing repository of pre-built workflows, service blocks, and integrations.
+We aim to build a community-driven platform where anyone can contribute to the Platform’s evolution, creating a constantly growing repository of pre-built workflows, service blocks, and integrations.
 
 
 ---
@@ -188,7 +222,7 @@ We aim to build a community-driven platform where anyone can contribute to the p
 ## Team👥
 
 - **Derek Liew Qi Jian**  
-  - *Role*: Project Lead, AI & 
+  - *Role*: Platform Lead, AI & 
   - [LinkedIn](https://www.linkedin.com/in/derek2403/) | [Twitter](https://x.com/derek2403)
 
 - **Phen Jing Yuan**  
