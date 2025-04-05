@@ -235,13 +235,48 @@ export const addTransactionToSheet = async (transaction) => {
     // Format date
     const date = new Date(transaction.timestamp || Date.now()).toISOString();
     
-    // Add row to sheet
-    await sheet.addRow({
+    const rowData = {
       'Date': date,
       'Amount (ETH)': amountInEth,
       'Transaction Hash': transaction.hash,
       'Chain ID': transaction.chainId
-    });
+    };
+    
+    // Check which method is available and use it
+    if (typeof sheet.addRow === 'function') {
+      // Original method from google-spreadsheet
+      await sheet.addRow(rowData);
+    } else if (typeof sheet.addRows === 'function') {
+      // Fallback method from our mock implementation
+      await sheet.addRows([rowData]);
+    } else {
+      // Last resort - try to use the Google Sheets API directly
+      console.log('Using direct API method to add row to sheet');
+      const values = [
+        [date, amountInEth, transaction.hash, transaction.chainId.toString()]
+      ];
+      
+      // Get the spreadsheet ID from the parent doc object
+      const spreadsheetId = sheet.doc?.spreadsheetId || process.env.GOOGLE_SHEET_ID;
+      
+      // Create a new JWT auth client
+      const auth = new google.auth.JWT({
+        email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+      
+      // Initialize the sheets API
+      const sheets = google.sheets({ version: 'v4', auth });
+      
+      // Append the values to the sheet
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: 'Sheet1!A1',
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
+    }
     
     return {
       success: true,
