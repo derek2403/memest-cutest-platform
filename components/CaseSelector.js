@@ -22,9 +22,9 @@ const COORDINATES = {
   ),
 
   polygon: new THREE.Vector3(
-    -0.822410210531122,
+    -0.8220582468792008,
     0, // Raised higher above the table
-    0.6046197241590376
+    -0.05409581610712064
   ),
   celo: new THREE.Vector3(
     0.3830632560763707,
