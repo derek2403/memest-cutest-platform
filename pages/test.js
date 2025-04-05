@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 
@@ -82,7 +81,20 @@ export default function Test() {
   const [workflowInput, setWorkflowInput] = useState('');
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
+  const [savedWorkflows, setSavedWorkflows] = useState([]);
   const messagesEndRef = useRef(null);
+
+  // Load saved workflows from localStorage when the component mounts
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('savedWorkflows');
+      if (saved) {
+        setSavedWorkflows(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading saved workflows:', error);
+    }
+  }, []);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -169,6 +181,41 @@ export default function Test() {
     }
   };
 
+  // Save the current parsed workflow to localStorage
+  const saveWorkflow = () => {
+    if (!workflowParsed || workflowParsed.length === 0) return;
+    
+    try {
+      const newSavedWorkflow = {
+        id: Date.now(), // Generate a unique ID based on timestamp
+        description: workflowInput,
+        workflow: workflowParsed,
+        createdAt: new Date().toISOString()
+      };
+      
+      const updatedWorkflows = [...savedWorkflows, newSavedWorkflow];
+      setSavedWorkflows(updatedWorkflows);
+      localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
+      
+      alert('Workflow saved successfully!');
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      alert('Failed to save workflow');
+    }
+  };
+
+  // Delete a saved workflow
+  const deleteWorkflow = (id) => {
+    try {
+      const updatedWorkflows = savedWorkflows.filter(workflow => workflow.id !== id);
+      setSavedWorkflows(updatedWorkflows);
+      localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+      alert('Failed to delete workflow');
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <Head>
@@ -233,8 +280,46 @@ export default function Test() {
               {/* Visual Flow Chart */}
               <div className="mt-6 p-4 border border-gray-200 rounded-md bg-gray-50">
                 <FlowChart workflow={workflowParsed} />
+                
+                {/* Save Workflow Button */}
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={saveWorkflow}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Save Workflow
+                  </button>
+                </div>
               </div>
             </>
+          )}
+
+          {/* Saved Workflows Section */}
+          {savedWorkflows.length > 0 && (
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-semibold mb-4">Saved Workflows</h3>
+              <div className="space-y-4">
+                {savedWorkflows.map((saved) => (
+                  <div key={saved.id} className="border border-gray-200 rounded-md p-4 bg-gray-50">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-md">{saved.description}</h4>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Saved on {new Date(saved.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => deleteWorkflow(saved.id)}
+                        className="px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <FlowChart workflow={saved.workflow} />
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
