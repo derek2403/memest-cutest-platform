@@ -71,6 +71,7 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
+  const [serverResponse, setServerResponse] = useState(null);
   
   // Parse the workflow when component mounts if initialInput is provided
   useEffect(() => {
@@ -189,6 +190,36 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
     }
   };
 
+  // Send workflow to server
+  const handleApproveWorkflow = async () => {
+    try {
+      setWorkflowLoading(true);
+      
+      // Send the workflow description to the server
+      const response = await fetch('http://localhost:3001/api/workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ workflowInput }),
+      });
+      
+      const data = await response.json();
+      console.log('Server response:', data);
+      
+      // Store the server response
+      setServerResponse(data);
+      
+      // Update UI to show approval
+      setWorkflowApproved(true);
+      setWorkflowLoading(false);
+    } catch (error) {
+      console.error('Error sending workflow to server:', error);
+      alert('Failed to create workflow. Please try again.');
+      setWorkflowLoading(false);
+    }
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -209,6 +240,16 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
               </div>
               <h3>Workflow Approved!</h3>
               <p>Your AI workflow has been successfully created and is now active.</p>
+              {serverResponse && (
+                <div className={styles.serverResponseInfo}>
+                  <p className={styles.workflowName}>
+                    <strong>{serverResponse.functions?.workflowName || 'Custom Workflow'}</strong>
+                  </p>
+                  <p className={styles.workflowDesc}>
+                    {serverResponse.functions?.description || 'Your custom workflow is now active.'}
+                  </p>
+                </div>
+              )}
               <button className={styles.doneButton} onClick={onClose}>
                 Done
               </button>
@@ -267,11 +308,10 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
                     </button>
                     <button 
                       className={styles.approveButton}
-                      onClick={() => {
-                        setWorkflowApproved(true);
-                      }}
+                      onClick={handleApproveWorkflow}
+                      disabled={workflowLoading}
                     >
-                      Approve Workflow
+                      {workflowLoading ? 'Creating...' : 'Approve Workflow'}
                     </button>
                   </div>
                 </div>
