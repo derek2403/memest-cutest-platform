@@ -46,6 +46,16 @@ export default function Home() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailResult, setEmailResult] = useState(null);
   
+  // Counter Events states
+  const [contractAddress, setContractAddress] = useState('');
+  const [counterEvents, setCounterEvents] = useState(null);
+  const [counterLoading, setCounterLoading] = useState(false);
+  
+  // Counter Value states
+  const [valueContractAddress, setValueContractAddress] = useState('');
+  const [counterValue, setCounterValue] = useState(null);
+  const [valueLoading, setValueLoading] = useState(false);
+  
   // Client-side wallet state
   const [walletData, setWalletData] = useState({
     isConnected: false,
@@ -175,6 +185,66 @@ export default function Home() {
       });
     } finally {
       setReportLoading(false);
+    }
+  };
+
+  // Handler for fetching counter events
+  const handleFetchCounterEvents = async (e) => {
+    e.preventDefault();
+    setCounterLoading(true);
+    setCounterEvents(null);
+    
+    try {
+      if (!contractAddress) {
+        setCounterEvents({ 
+          success: false, 
+          message: 'Contract address is required' 
+        });
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:3001/api/events/counter?contractAddress=${contractAddress}`);
+      const data = await response.json();
+      
+      setCounterEvents(data);
+    } catch (error) {
+      setCounterEvents({
+        success: false,
+        message: `Error fetching counter events: ${error.message}`,
+        error: error.message
+      });
+    } finally {
+      setCounterLoading(false);
+    }
+  };
+
+  // Handler for fetching counter value
+  const handleFetchCounterValue = async (e) => {
+    e.preventDefault();
+    setValueLoading(true);
+    setCounterValue(null);
+    
+    try {
+      if (!valueContractAddress) {
+        setCounterValue({ 
+          success: false, 
+          message: 'Contract address is required' 
+        });
+        return;
+      }
+      
+      const response = await fetch(`http://localhost:3001/api/counter/value?contractAddress=${valueContractAddress}`);
+      const data = await response.json();
+      
+      setCounterValue(data);
+    } catch (error) {
+      setCounterValue({
+        success: false,
+        message: `Error fetching counter value: ${error.message}`,
+        error: error.message
+      });
+    } finally {
+      setValueLoading(false);
     }
   };
 
@@ -578,6 +648,150 @@ export default function Home() {
                 {reportStatus?.error && !reportStatus?.success && (
                   <div className="mt-4 p-4 rounded-md bg-red-50 text-red-700">
                     <p>{reportStatus.error || reportStatus.message}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Counter Events Section */}
+              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                <h2 className="text-2xl font-bold mb-8">Counter Events</h2>
+                
+                <form onSubmit={handleFetchCounterEvents} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Contract Address
+                    </label>
+                    <input
+                      type="text"
+                      value={contractAddress}
+                      onChange={(e) => setContractAddress(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      placeholder="0x..."
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={counterLoading}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+                  >
+                    {counterLoading ? 'Fetching...' : 'Fetch Counter Events'}
+                  </button>
+                </form>
+                
+                {/* Counter Events Results */}
+                {counterEvents && (
+                  <div className={`mt-4 p-4 rounded-md ${counterEvents.success ? 'bg-green-50' : 'bg-red-50'}`}>
+                    <h3 className={`font-bold mb-3 ${counterEvents.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {counterEvents.success ? 'Counter Events' : 'Error'}
+                    </h3>
+                    
+                    {!counterEvents.success && (
+                      <p className="text-red-700">{counterEvents.message || 'Failed to fetch counter events'}</p>
+                    )}
+                    
+                    {counterEvents.success && (
+                      <>
+                        <p className="mb-3 text-green-700">{counterEvents.message}</p>
+                        
+                        {counterEvents.events && counterEvents.events.length > 0 ? (
+                          <div className="bg-white rounded-md shadow overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block / Time</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Count Value</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {counterEvents.events.map((event, index) => (
+                                  <tr key={index}>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                      {event.name || 'CountUpdated'}
+                                    </td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                      {event.blockNumber}
+                                      {event.timestamp && (
+                                        <div className="text-xs text-gray-400">
+                                          {new Date(event.timestamp).toLocaleString()}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                                      {event.args?.newCount || 'N/A'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-gray-600">No events found for this contract.</p>
+                        )}
+                        
+                        <div className="mt-3 text-xs text-gray-500">
+                          <p>Contract Address: {counterEvents.contractAddress}</p>
+                          <p>Chain: {counterEvents.chain || 'polygon-amoy'}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Counter Value Section */}
+              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
+                <h2 className="text-2xl font-bold mb-8">Counter Value</h2>
+                
+                <form onSubmit={handleFetchCounterValue} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Contract Address
+                    </label>
+                    <input
+                      type="text"
+                      value={valueContractAddress}
+                      onChange={(e) => setValueContractAddress(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      placeholder="0x..."
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={valueLoading}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50"
+                  >
+                    {valueLoading ? 'Fetching...' : 'Get Current Value'}
+                  </button>
+                </form>
+                
+                {/* Counter Value Results */}
+                {counterValue && (
+                  <div className={`mt-4 p-4 rounded-md ${counterValue.success ? 'bg-green-50' : 'bg-red-50'}`}>
+                    <h3 className={`font-bold mb-3 ${counterValue.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {counterValue.success ? 'Current Counter Value' : 'Error'}
+                    </h3>
+                    
+                    {!counterValue.success && (
+                      <p className="text-red-700">{counterValue.message || 'Failed to fetch counter value'}</p>
+                    )}
+                    
+                    {counterValue.success && (
+                      <>
+                        <div className="bg-white rounded-md shadow p-6 text-center">
+                          <p className="text-sm text-gray-500">Counter Value</p>
+                          <div className="text-4xl font-bold text-amber-600 my-2">
+                            {counterValue.value}
+                          </div>
+                        </div>
+                        
+                        <div className="mt-3 text-xs text-gray-500">
+                          <p>Contract Address: {counterValue.contractAddress}</p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

@@ -2,9 +2,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { handleEmailVerification, verifyToken, isEmailVerified, sendTransactionApprovalEmail, verifyTransactionToken } from './scripts/email.js';
-import { handleTransaction, executeTransaction } from './scripts/wallet.js';
-import { generateTransactionExcel, addTransactionToSheet, generateTransactionGraphs, sendGraphsByEmail } from './scripts/excel.js';
+import { gmailService } from './workflows.js';
+import { metamaskService } from './workflows.js';
+import { spreadsheetService, workflows, handleWorkflowRequest } from './workflows.js';
+import { getCounterEvents, getCounterValue } from './scripts/events.js';
 
 // Load environment variables
 dotenv.config();
@@ -36,7 +37,7 @@ app.post('/email', async (req, res) => {
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
   }
-  const result = await handleEmailVerification(email);
+  const result = await gmailService.verifyEmail(email);
   return res.json(result);
 });
 
@@ -46,7 +47,7 @@ app.get('/email/verify', (req, res) => {
   if (!token) {
     return res.status(400).json({ success: false, message: 'Token is required' });
   }
-  const result = verifyToken(token);
+  const result = gmailService.verifyTransactionFromEmail(token);
   return res.json(result);
 });
 
@@ -56,40 +57,20 @@ app.get('/email/status', (req, res) => {
   if (!email) {
     return res.status(400).json({ error: 'Email parameter is required' });
   }
-  const status = isEmailVerified(email);
+  const status = gmailService.checkEmailVerification(email);
   return res.json({ email, ...status });
 });
 
 // Transaction endpoint - prepare transaction and send approval email
 app.post('/transaction', async (req, res) => {
-  const { email } = req.body;
+  const { to, amount, chainId, email } = req.body;
+  
   if (!email) {
     return res.status(400).json({ error: 'Email parameter is required for transaction approval' });
   }
   
-  // Process transaction request without requiring email verification first
-  const result = await handleTransaction(req.body);
-  
-  // If transaction preparation was successful, send approval email
-  if (result.success && result.requiresApproval) {
-    const emailResult = await sendTransactionApprovalEmail(email, result.data);
-    
-    if (emailResult.success) {
-      return res.json({
-        success: true,
-        message: 'Transaction pending approval. Check your email to approve or ignore this transaction.',
-        transactionId: emailResult.approveToken.substring(0, 8), // Just use first 8 chars as ID
-        email
-      });
-    } else {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to send approval email',
-        error: emailResult.error
-      });
-    }
-  }
-  
+  // Use the workflow to handle transaction request and approval
+  const result = await workflows.requestTransactionApproval(to, amount, chainId, email);
   return res.json(result);
 });
 
@@ -100,50 +81,9 @@ app.get('/transaction/verify', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Token is required' });
   }
   
-  // Verify the token and get transaction data
-  const verificationResult = verifyTransactionToken(token);
-  
-  if (!verificationResult.success) {
-    return res.json(verificationResult);
-  }
-  
-  // Handle approval or ignoring based on the token action
-  if (verificationResult.action === 'approve') {
-    // Execute the transaction using the private key
-    const executionResult = await executeTransaction(verificationResult.transaction);
-    
-    // If successful, add to the spreadsheet
-    if (executionResult.success) {
-      // Add transaction details to the spreadsheet
-      const transaction = {
-        ...verificationResult.transaction,
-        hash: executionResult.hash,
-        timestamp: Date.now()
-      };
-      await addTransactionToSheet(transaction);
-    }
-    
-    // Return execution result
-    return res.json({
-      success: executionResult.success,
-      message: executionResult.success 
-        ? 'Transaction approved and executed successfully' 
-        : 'Transaction approved but execution failed',
-      details: executionResult
-    });
-  } else if (verificationResult.action === 'ignore') {
-    // Transaction was ignored
-    return res.json({
-      success: true,
-      message: 'Transaction has been ignored',
-      transaction: verificationResult.transaction
-    });
-  }
-  
-  return res.status(400).json({
-    success: false,
-    message: 'Invalid action specified in token'
-  });
+  // Use the workflow to handle complete transaction approval process
+  const result = await workflows.completeTransactionApproval(token);
+  return res.json(result);
 });
 
 // Generate transaction report
@@ -159,7 +99,7 @@ app.post('/transactions/report', async (req, res) => {
   
   try {
     console.log(`Generating transaction report for address: ${address || 'using private key wallet'}, chain: ${chainId}, month: ${month}, year: ${year}`);
-    const result = await generateTransactionExcel(address, chainId, month, year);
+    const result = await spreadsheetService.visualizeTransactions(address, chainId, month, year);
     
     // Log the result for debugging
     console.log(`Report generation result: success=${result.success}, transactions=${result.count || 0}`);
@@ -193,17 +133,65 @@ app.post('/api/transactions/graphs', async (req, res) => {
     
     console.log(`Generating transaction graphs for address ${address} on chain ${chainId}, month ${month}, year ${year}`);
     
-    // Generate Excel report with graphs and email
-    const result = await generateTransactionExcel(address, chainId, month, year, {
-      generateGraphs: true,
-      email: email || 'derekliew0@gmail.com' // Default email if not provided
-    });
+    // Use workflow to generate and email the report
+    const result = await workflows.generateTransactionReport(address, chainId, month, year, email || 'derekliew0@gmail.com');
     
     res.json(result);
   } catch (error) {
     console.error('Error generating transaction graphs:', error);
     res.status(500).json({
       success: false,
+      error: error.message
+    });
+  }
+});
+
+// New endpoint for processing workflow requests from WorkflowPopup
+app.post('/api/workflow', handleWorkflowRequest);
+
+// Get events specifically for Counter contracts
+app.get('/api/events/counter', async (req, res) => {
+  try {
+    const { contractAddress } = req.query;
+    
+    if (!contractAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Contract address is required'
+      });
+    }
+    
+    const result = await getCounterEvents(contractAddress);
+    return res.json(result);
+  } catch (error) {
+    console.error('Error getting counter events:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error getting counter events',
+      error: error.message
+    });
+  }
+});
+
+// Get current value from a Counter contract
+app.get('/api/counter/value', async (req, res) => {
+  try {
+    const { contractAddress } = req.query;
+    
+    if (!contractAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Contract address is required'
+      });
+    }
+    
+    const result = await getCounterValue(contractAddress);
+    return res.json(result);
+  } catch (error) {
+    console.error('Error getting counter value:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error getting counter value',
       error: error.message
     });
   }

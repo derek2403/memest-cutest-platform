@@ -127,6 +127,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
+  const [serverResponse, setServerResponse] = useState(null);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
   const [availableWorkflows, setAvailableWorkflows] = useState([]);
   const savedSectionRef = React.useRef(null);
@@ -217,6 +218,36 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     }
   };
 
+  // Send workflow to server
+  const handleApproveWorkflow = async () => {
+    try {
+      setWorkflowLoading(true);
+      
+      // Send the workflow description to the server
+      const response = await fetch('http://localhost:3001/api/workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ workflowInput }),
+      });
+      
+      const data = await response.json();
+      console.log('Server response:', data);
+      
+      // Store the server response
+      setServerResponse(data);
+      
+      // Update UI to show approval
+      setWorkflowApproved(true);
+      setWorkflowLoading(false);
+    } catch (error) {
+      console.error('Error sending workflow to server:', error);
+      alert('Failed to create workflow. Please try again.');
+      setWorkflowLoading(false);
+    }
+  };
+
   // Save the current parsed workflow to localStorage
   const saveWorkflow = () => {
     if (!workflowParsed || workflowParsed.length === 0) return;
@@ -273,6 +304,16 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
               </div>
               <h3>Workflow Approved!</h3>
               <p>Your AI workflow has been successfully created and is now active.</p>
+              {serverResponse && (
+                <div className={styles.serverResponseInfo}>
+                  <p className={styles.workflowName}>
+                    <strong>{serverResponse.functions?.workflowName || 'Custom Workflow'}</strong>
+                  </p>
+                  <p className={styles.workflowDesc}>
+                    {serverResponse.functions?.description || 'Your custom workflow is now active.'}
+                  </p>
+                </div>
+              )}
               <p className={styles.bookTip}>You can access all your saved workflows by clicking on the books on the coffee table.</p>
               <button className={styles.doneButton} onClick={onClose}>
                 Done
@@ -312,6 +353,14 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                       className={styles.parseButton}
                       disabled={workflowLoading || !workflowInput.trim()}
                     >
+                      Try Again
+                    </button>
+                    <button 
+                      className={styles.approveButton}
+                      onClick={handleApproveWorkflow}
+                      disabled={workflowLoading}
+                    >
+                      {workflowLoading ? 'Creating...' : 'Approve Workflow'}
                       {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
                     </button>
                   </form>
