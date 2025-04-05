@@ -9,9 +9,12 @@ import { loadAIAgent } from "../components/aiagent.js";
 import { spawn1inchUnicorn } from "../components/oneinch.js";
 import { spawnMetamaskFox } from "../components/metawallet.js";
 import { spawnPolygonModel } from "../components/polygon.js";
+import { spawnPolygonPlanet } from "../components/polygon_planet.js";
+import { spawnOneinchPlanet } from "../components/oneinch_planet.js";
 import { spawnCeloModel } from "../components/celo.js";
 import { spawnGmailModel } from "../components/gmail.js";
 import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
+import { spawnIslandModel } from "../components/island.js";
 import dynamic from 'next/dynamic';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
@@ -43,6 +46,8 @@ export default function Home() {
     window.pluginsInRoom = {
       metamask: false,
       polygon: false,
+      polygonPlanet: false,
+      oneinchPlanet: false,
       celo: false,
       oneinch: false,
       spreadsheet: false,
@@ -52,6 +57,8 @@ export default function Home() {
         const active = [];
         if (this.metamask) active.push('metamask');
         if (this.polygon) active.push('polygon');
+        if (this.polygonPlanet) active.push('polygonPlanet');
+        if (this.oneinchPlanet) active.push('oneinchPlanet');
         if (this.celo) active.push('celo');
         if (this.oneinch) active.push('oneinch');
         if (this.spreadsheet) active.push('spreadsheet');
@@ -138,7 +145,7 @@ export default function Home() {
   ];
 
   // Debug mode for visualizing obstacles
-  const DEBUG_MODE = true;
+  const DEBUG_MODE = false;
   // Larger buffer for obstacle avoidance
   const OBSTACLE_BUFFER = 1.0;
   // Use simple grid-based movement (horizontal/vertical only)
@@ -209,7 +216,7 @@ export default function Home() {
     environmentGroup.add(sky);
     
     // Create stylized stars with varied sizes and brightness
-    const starCount = 3000;
+    const starCount = 2000; // Reduced from 5000 to 2000
     const starColors = [0xffffff, 0xffffee, 0xeeeeff, 0xccddff];
     const starSizes = [0.4, 0.6, 0.8, 1.2, 1.5];
     
@@ -221,7 +228,9 @@ export default function Home() {
         size: starSizes[layer % starSizes.length],
         transparent: true,
         opacity: 0.8 - (layer * 0.15),
-        sizeAttenuation: true
+        sizeAttenuation: true,
+        map: createCircleStarTexture(32), // Create circle texture for stars
+        blending: THREE.AdditiveBlending // Use additive blending for smoother appearance
       });
       
       const starsVertices = [];
@@ -236,8 +245,8 @@ export default function Home() {
         const y = radius * Math.sin(phi) * Math.sin(theta);
         const z = radius * Math.cos(phi);
         
-        // Make sure most stars stay above horizon
-        if (y < -50) continue;
+        // Remove the line below to allow stars to appear everywhere in space
+        // if (y < -50) continue;
         
         starsVertices.push(x, y, z);
       }
@@ -247,8 +256,40 @@ export default function Home() {
       environmentGroup.add(stars);
     }
     
+    // Add an additional layer of stars closer to the island
+    const closeStarsGeometry = new THREE.BufferGeometry();
+    const closeStarsMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.3,
+      transparent: true,
+      opacity: 0.7,
+      sizeAttenuation: true,
+      map: createCircleStarTexture(24), // Create circle texture for close stars
+      blending: THREE.AdditiveBlending // Use additive blending for smoother appearance
+    });
+    
+    const closeStarsVertices = [];
+    const closeStarCount = 300; // Reduced from 800 to 300
+    
+    for (let i = 0; i < closeStarCount; i++) {
+      // Generate stars in a smaller sphere around the island
+      const radius = 20 + Math.random() * 30;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+      
+      closeStarsVertices.push(x, y, z);
+    }
+    
+    closeStarsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(closeStarsVertices, 3));
+    const closeStars = new THREE.Points(closeStarsGeometry, closeStarsMaterial);
+    environmentGroup.add(closeStars);
+    
     // Create twinkling stars with animation
-    const twinkleStarCount = 100;
+    const twinkleStarCount = 100; // Reduced from 200 to 100
     const twinkleStarsGeometry = new THREE.BufferGeometry();
     const twinkleStarsMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
@@ -256,7 +297,7 @@ export default function Home() {
       transparent: true,
       opacity: 0.9,
       sizeAttenuation: true,
-      map: createStarTexture(),
+      map: createCircleStarTexture(32, true), // Create twinkling star texture with glow
       blending: THREE.AdditiveBlending
     });
     
@@ -272,9 +313,7 @@ export default function Home() {
       const y = radius * Math.sin(phi) * Math.sin(theta);
       const z = radius * Math.cos(phi);
       
-      // Make sure twinkling stars are visible
-      if (y < 0) continue;
-      
+      // Allow twinkling stars everywhere
       twinkleVertices.push(x, y, z);
       // Store initial twinkle state
       twinkleOpacities.push(Math.random());
@@ -284,148 +323,57 @@ export default function Home() {
     const twinkleStars = new THREE.Points(twinkleStarsGeometry, twinkleStarsMaterial);
     environmentGroup.add(twinkleStars);
     
-    // Create a softer, more stylized star texture
-    function createStarTexture() {
+    // Function to create a circular star texture
+    function createCircleStarTexture(size = 32, withGlow = false) {
       const canvas = document.createElement('canvas');
-      canvas.width = 32;
-      canvas.height = 32;
+      canvas.width = size;
+      canvas.height = size;
       const ctx = canvas.getContext('2d');
       
       // Clear canvas
       ctx.fillStyle = 'rgba(0,0,0,0)';
-      ctx.fillRect(0, 0, 32, 32);
+      ctx.fillRect(0, 0, size, size);
       
-      // Create a soft radial gradient
-      const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-      gradient.addColorStop(0, 'rgba(255,255,255,1)');
-      gradient.addColorStop(0.5, 'rgba(240,240,255,0.5)');
-      gradient.addColorStop(1, 'rgba(220,220,255,0)');
+      const center = size / 2;
+      const radius = size / 2 - 1;
+      
+      // Create a soft radial gradient for smooth circle
+      const gradient = ctx.createRadialGradient(center, center, 0, center, center, radius);
+      
+      if (withGlow) {
+        // Create a star with glow effect
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.4, 'rgba(240,240,255,0.8)');
+        gradient.addColorStop(0.7, 'rgba(220,220,255,0.3)');
+        gradient.addColorStop(1, 'rgba(220,220,255,0)');
+      } else {
+        // Create a smooth circle star
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.7, 'rgba(255,255,255,0.5)');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+      }
       
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 32, 32);
-      
-      // Create simple cross shape
-      ctx.strokeStyle = 'rgba(180,180,255,0.8)';
-      ctx.lineWidth = 1;
       ctx.beginPath();
-      // Horizontal line
-      ctx.moveTo(8, 16);
-      ctx.lineTo(24, 16);
-      // Vertical line
-      ctx.moveTo(16, 8);
-      ctx.lineTo(16, 24);
-      ctx.stroke();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.fill();
       
       const texture = new THREE.CanvasTexture(canvas);
       return texture;
     }
     
-    // Create shooting stars system
-    const shootingStarsGroup = new THREE.Group();
-    environmentGroup.add(shootingStarsGroup);
-    
-    // We'll store active shooting stars here
-    const activeShootingStars = [];
-    
-    // Function to create a shooting star
-    function createShootingStar() {
-      // Create a line geometry for the trail
-      const trailPoints = [];
-      const trailLength = 10 + Math.random() * 15; // Random trail length
-      
-      for (let i = 0; i < trailLength; i++) {
-        trailPoints.push(new THREE.Vector3(i * -0.8, 0, 0)); // Create a trail along x-axis
-      }
-      
-      const trailGeometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
-      
-      // Create a gradient material for the trail
-      const trailMaterial = new THREE.LineDashedMaterial({
-        color: 0xffffff,
-        linewidth: 2,
-        scale: 1,
-        dashSize: 0.5,
-        gapSize: 0.1,
-        transparent: true,
-        opacity: 0.8
-      });
-      
-      const trail = new THREE.Line(trailGeometry, trailMaterial);
-      trail.computeLineDistances(); // Required for dashed lines
-      
-      // Add a bright point at the head of the shooting star
-      const headGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-      const headMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xffffff,
-        transparent: true,
-        opacity: 1.0
-      });
-      const head = new THREE.Mesh(headGeometry, headMaterial);
-      head.position.set(0, 0, 0);
-      
-      // Create a group for the shooting star
-      const shootingStar = new THREE.Group();
-      shootingStar.add(trail);
-      shootingStar.add(head);
-      
-      // Position and rotation
-      // Start from a random position high in the sky
-      const startX = (Math.random() * 2 - 1) * 120;
-      const startY = 60 + Math.random() * 100;
-      const startZ = (Math.random() * 2 - 1) * 120;
-      
-      shootingStar.position.set(startX, startY, startZ);
-      
-      // Random direction, but generally moving downward and at an angle
-      const dirX = -0.5 + Math.random();
-      const dirY = -1 - Math.random() * 0.5;
-      const dirZ = -0.5 + Math.random();
-      
-      const direction = new THREE.Vector3(dirX, dirY, dirZ).normalize();
-      
-      // Calculate rotation to face direction of movement
-      shootingStar.lookAt(shootingStar.position.clone().add(direction));
-      
-      // Add to scene
-      shootingStarsGroup.add(shootingStar);
-      
-      // Store properties for animation
-      return {
-        object: shootingStar,
-        direction: direction,
-        speed: 1 + Math.random() * 1.5, // Random speed
-        lifetime: 0,
-        maxLifetime: 3 + Math.random() * 2, // Random lifetime in seconds
-        head: head,
-        trail: trail
-      };
+    // Create a softer, more stylized star texture (original function - now replaced)
+    function createStarTexture() {
+      return createCircleStarTexture(32, true);
     }
     
-    // Function to update shooting stars in the animation loop
-    function updateShootingStars(delta) {
-      // Randomly create new shooting stars
-      if (Math.random() < 0.02) { // Adjust frequency as needed
-        activeShootingStars.push(createShootingStar());
-      }
-      
-      // Update existing shooting stars
-      for (let i = activeShootingStars.length - 1; i >= 0; i--) {
-        const star = activeShootingStars[i];
-        star.lifetime += delta;
-        
-        // Move the shooting star
-        star.object.position.add(star.direction.clone().multiplyScalar(star.speed * 15 * delta));
-        
-        // Fade out as lifetime increases
-        const fadeRatio = Math.min(1, star.lifetime / star.maxLifetime);
-        star.head.material.opacity = 1 - fadeRatio;
-        star.trail.material.opacity = (1 - fadeRatio) * 0.8;
-        
-        // Remove if lifetime exceeded or out of view
-        if (star.lifetime > star.maxLifetime || star.object.position.y < -50) {
-          shootingStarsGroup.remove(star.object);
-          activeShootingStars.splice(i, 1);
-        }
+    // Function to update stars in the animation loop
+    function updateStars(delta) {
+      // Update twinkling stars
+      if (twinkleStars && twinkleStars.material) {
+        // Create overall twinkling effect by varying material opacity
+        twinkleStars.material.opacity = 0.7 + Math.sin(Date.now() * 0.001) * 0.3;
+        twinkleStars.rotation.y += 0.0001; // Very slow rotation for added effect
       }
     }
     
@@ -474,11 +422,13 @@ export default function Home() {
       map: videoTexture,
       side: THREE.BackSide,
       transparent: true,
-      opacity: 0.3 // Reduced opacity to blend with our starry sky
+      opacity: 0.0, // Set to 0 to completely remove the blur effect
+      blending: THREE.NoBlending // Disable blending to ensure it doesn't show at all
     });
     
     const videoSphere = new THREE.Mesh(videoSphereGeometry, videoSphereMaterial);
-    environmentGroup.add(videoSphere);
+    // Uncomment this line if you want to completely remove the video sphere
+    // environmentGroup.add(videoSphere);
 
     const ensureVideoPlays = () => {
       videoElement.play().catch(e => {
@@ -487,7 +437,12 @@ export default function Home() {
       });
     };
     
-    ensureVideoPlays();
+    // Don't bother playing the video if we're not using it
+    // ensureVideoPlays();
+
+    // Automatically spawn the planets in space
+    spawnPolygonPlanet(scene);
+    spawnOneinchPlanet(scene);
 
     // Camera setup
     camera = new THREE.PerspectiveCamera(
@@ -687,102 +642,164 @@ export default function Home() {
 
     // Floor (specific color)
     const floorGeometry = new THREE.BoxGeometry(roomWidth, 0.2, roomDepth); // Make floor thicker
-    const floorTexture = new THREE.TextureLoader().load('/assets/floor.png');
-    floorTexture.wrapS = THREE.RepeatWrapping;
-    floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set(3, 3); // Adjust the repeat values as needed
-
+    
+    // Create a wooden floor texture
+    function createWoodenFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Base color for the wooden floor - slightly darker
+      ctx.fillStyle = '#8b6d4d';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Create wooden planks
+      const plankWidth = 60;
+      const plankGap = 2;
+      
+      // Draw the planks with grain
+      for (let x = 0; x < canvas.width; x += plankWidth + plankGap) {
+        const adjustedWidth = Math.min(plankWidth, canvas.width - x);
+        
+        // Use varying colors for each plank to create natural wood look - slightly darker
+        const baseHue = 28 + Math.random() * 10; // Darker brown
+        const baseSaturation = 45 + Math.random() * 20;
+        const baseLightness = 43 + Math.random() * 12; // Reduced lightness for darker appearance
+        
+        ctx.fillStyle = `hsl(${baseHue}, ${baseSaturation}%, ${baseLightness}%)`;
+        ctx.fillRect(x, 0, adjustedWidth, canvas.height);
+        
+        // Add grain lines
+        const grainCount = 40 + Math.floor(Math.random() * 30);
+        ctx.globalAlpha = 0.15;
+        
+        for (let i = 0; i < grainCount; i++) {
+          const grainY = Math.random() * canvas.height;
+          const grainLength = 50 + Math.random() * 150;
+          const grainThickness = 1 + Math.random() * 2;
+          
+          // Adjust grain color based on position - slightly more contrast
+          const grainDarkness = Math.random() * 25;
+          ctx.fillStyle = `hsl(${baseHue}, ${baseSaturation}%, ${baseLightness - grainDarkness}%)`;
+          
+          ctx.fillRect(x, grainY, adjustedWidth, grainThickness);
+        }
+        
+        ctx.globalAlpha = 1.0;
+        
+        // Add darker edges to simulate plank separation
+        if (x + adjustedWidth < canvas.width) {
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(x + adjustedWidth, 0, plankGap, canvas.height);
+        }
+      }
+      
+      // Add some knots in the wood
+      const knotCount = 5 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < knotCount; i++) {
+        const knotX = Math.random() * canvas.width;
+        const knotY = Math.random() * canvas.height;
+        const knotRadius = 3 + Math.random() * 5;
+        
+        const gradient = ctx.createRadialGradient(
+          knotX, knotY, 0,
+          knotX, knotY, knotRadius
+        );
+        
+        gradient.addColorStop(0, 'rgba(50, 25, 0, 0.8)');
+        gradient.addColorStop(0.8, 'rgba(80, 55, 30, 0.3)');
+        gradient.addColorStop(1, 'rgba(100, 75, 50, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(knotX, knotY, knotRadius * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Create texture from canvas
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(2, 2); // Repeat the texture to make planks smaller
+      
+      // For better quality
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      
+      return texture;
+    }
+    
+    // Create the wooden texture
+    const woodTexture = createWoodenFloorTexture();
+    
+    // Create normal map for added depth
+    function createWoodNormalMap() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill with neutral normal color (r=128, g=128, b=255)
+      ctx.fillStyle = '#8080ff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add normal details for plank gaps
+      const plankWidth = 60;
+      const plankGap = 2;
+      
+      ctx.fillStyle = '#6060ff'; // Darker for depth
+      
+      for (let x = 0; x < canvas.width; x += plankWidth + plankGap) {
+        if (x + plankWidth < canvas.width) {
+          ctx.fillRect(x + plankWidth, 0, plankGap, canvas.height);
+        }
+      }
+      
+      const normalTexture = new THREE.CanvasTexture(canvas);
+      normalTexture.wrapS = THREE.RepeatWrapping;
+      normalTexture.wrapT = THREE.RepeatWrapping;
+      normalTexture.repeat.set(2, 2);
+      
+      return normalTexture;
+    }
+    
+    const woodNormalMap = createWoodNormalMap();
+    
+    // Create material with texture
+    const woodMaterial = new THREE.MeshStandardMaterial({
+      map: woodTexture,
+      normalMap: woodNormalMap,
+      roughness: 0.7,
+      metalness: 0.1,
+      normalScale: new THREE.Vector2(0.5, 0.5)
+    });
+    
+    // Use the wooden material for the top face, darker wood for sides
     const floorMaterial = [
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Right edge - darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Left edge - darker
-      new THREE.MeshStandardMaterial({ map: floorTexture }), // Top surface - now using texture
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#704628") }), // Bottom - even darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Front edge - darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") })  // Back edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Right edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Left edge - darker
+      woodMaterial, // Top surface - wooden texture
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#4d3118"), roughness: 0.9 }), // Bottom - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Front edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") })  // Back edge - darker
     ];
 
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.position.y = -0.1; // Lower the floor to center it
-    floor.receiveShadow = false;
+    floor.receiveShadow = true; // Enable shadows on floor
     floor.name = "floor"; // Name the floor for raycasting
     scene.add(floor);
     
-    // Left wall - replace solid color with wallpaper texture
-    const leftWallGeometry = new THREE.BoxGeometry(0.2, roomHeight, roomDepth);
-    const wallpaperTexture = new THREE.TextureLoader().load('/assets/wallpaper.png');
-    wallpaperTexture.wrapS = THREE.RepeatWrapping;
-    wallpaperTexture.wrapT = THREE.RepeatWrapping;
-    wallpaperTexture.repeat.set(2, 2); // Adjust the repeat values as needed
-
-    const leftWallMaterial = [
-      new THREE.MeshStandardMaterial({ map: wallpaperTexture }), // Right - inner surface
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Left - outer surface (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Top edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Bottom edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Front edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") })  // Back edge (darker)
-    ];
-
-    const leftWall = new THREE.Mesh(leftWallGeometry, leftWallMaterial);
-    leftWall.position.set(-roomWidth / 2 + 0.1, roomHeight / 2, 0); // Adjust position for thickness
-    leftWall.receiveShadow = false;
-    scene.add(leftWall);
-
-    // Back wall - also use wallpaper texture
-    const backWallGeometry = new THREE.BoxGeometry(roomWidth, roomHeight, 0.2);
-    const backWallMaterial = [
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Right edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Left edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Top edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Bottom edge (darker)
-      new THREE.MeshStandardMaterial({ map: wallpaperTexture }), // Front - inner surface
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#A0A0A0") })  // Back - outer surface (darker)
-    ];
-
-    const backWall = new THREE.Mesh(backWallGeometry, backWallMaterial);
-    backWall.position.set(0, roomHeight / 2, -roomDepth / 2 + 0.1); // Adjust position for thickness
-    backWall.receiveShadow = false;
-    scene.add(backWall);
-
-    // Create a window cutout in the left wall - adjust for the new wall thickness
-    const windowWidth = 1.2;
-    const windowHeight = 1.2;
-    const windowX = -roomWidth/2 + 0.21; // Slightly in front of the wall, adjusted for thickness
-    const windowY = 2.2; // Height position
-    const windowZ = -2; // Same Z position as the bed and window frame
-
-    // Create a white glass for the window
-    const windowGlassGeometry = new THREE.PlaneGeometry(
-      windowWidth,
-      windowHeight
-    );
-    const windowGlassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff, // Pure white color
-      transparent: true,
-      opacity: 0.8, // More opaque
-      transmission: 0.2, // Less transmission for white appearance
-      roughness: 0.05,
-      metalness: 0.0,
-      clearcoat: 1.0,
-      side: THREE.DoubleSide,
-    });
-
-    const windowGlass = new THREE.Mesh(
-      windowGlassGeometry,
-      windowGlassMaterial
-    );
-    windowGlass.position.set(windowX, windowY, windowZ);
-    windowGlass.rotation.y = Math.PI / 2; // Same rotation as the wall
-    windowGlass.receiveShadow = false;
-    scene.add(windowGlass);
-    
     // Light rays and dust particles removed from the room for a cleaner interior look
-
+    
     // Control variables
     agentTargetPosition = new THREE.Vector3(0, 0, 0); // Initialize target position
 
     // Load all furniture
     loadFurniture(scene, roomWidth, roomHeight, roomDepth);
+    
+    // Load the island model in the center of the room
+    spawnIslandModel(scene);
     
     // Visualize the obstacle boundaries in debug mode
     if (DEBUG_MODE) {
@@ -896,7 +913,11 @@ export default function Home() {
         toPlay.reset();
         toPlay.setEffectiveTimeScale(1);
         toPlay.setEffectiveWeight(1);
-        toPlay.crossFadeFrom(fromAnim, fadeTime, true);
+        
+        // Use a much shorter crossfade time for walk animation to prevent gliding
+        const actualFadeTime = name === 'walk' ? 0.1 : fadeTime;
+        
+        toPlay.crossFadeFrom(fromAnim, actualFadeTime, true);
         toPlay.play();
       } else {
         // Just play the animation directly
@@ -1654,6 +1675,11 @@ export default function Home() {
       if (intersects.length > 0) {
         console.log("Right click detected on floor", intersects[0].point);
 
+        // Start walk animation immediately (before pathfinding)
+        // This prevents the brief gliding effect
+        isAgentWalking = true;
+        playAnimation('walk', 0.1);
+        
         // Set the target position where the AI Agent should move to
         let clickPosition = intersects[0].point.clone();
         
@@ -1782,16 +1808,17 @@ export default function Home() {
         const targetRotation = Math.atan2(direction.x, direction.z);
         aiAgent.rotation.y = targetRotation;
 
-        // Start walking
-        isAgentWalking = true;
-        playAnimation('walk');
+        // Animation is already started, no need to call these again
+        // isAgentWalking = true;
+        // playAnimation('walk');
         console.log("Started walking to: ", agentTargetPosition);
         } catch (error) {
           console.error("Error in pathfinding:", error);
           // Fallback to direct movement if pathfinding fails
           agentTargetPosition.copy(constrainToFloor(clickPosition));
-          isAgentWalking = true;
-          playAnimation('walk');
+          // Animation already started above, no need to call these again
+          // isAgentWalking = true; 
+          // playAnimation('walk');
         }
       } else {
         console.log("No intersection with floor detected");
@@ -1993,11 +2020,27 @@ export default function Home() {
       const delta = deltaTime / 1000; // Convert to seconds
       lastFrameTime = currentTime - (deltaTime % frameInterval);
       
-      // Update shooting stars
-      updateShootingStars(delta);
+      // Update stars
+      updateStars(delta);
       
       // Update AI Agent position if it's moving
       updateAgentPosition(delta);
+
+      // Animate any custom models that need animation (like the rotating planet)
+      if (window.customModelsToAnimate && window.customModelsToAnimate.length > 0) {
+        window.customModelsToAnimate.forEach(model => {
+          // Handle rotation
+          if (model && model.userData && model.userData.isRotating) {
+            // Apply rotation based on the model's rotation speed
+            model.rotation.y += model.userData.rotationSpeed || 0.005;
+          }
+          
+          // Handle pulsing glow effect
+          if (model && model.userData && model.userData.isPulsing && model.userData.updatePulse) {
+            model.userData.updatePulse(delta);
+          }
+        });
+      }
 
       controls.update();
       renderer.render(scene, camera);
