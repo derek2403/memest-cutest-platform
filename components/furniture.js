@@ -391,7 +391,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the stool chair in front of the medium table - adjusted for 6x6 room
-      stoolChair.position.set(2, 0, -1); // Moved to fit in the 6x6 room
+      stoolChair.position.set(2, 0, -1.6); // Moved to fit in the 6x6 room
       
       // Rotate the chair to face the table
       stoolChair.rotation.y = Math.PI / 1; // Rotate to face right (toward the table)

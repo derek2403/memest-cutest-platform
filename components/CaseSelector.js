@@ -16,9 +16,9 @@ const COORDINATES = {
   ),
 
   oneinch: new THREE.Vector3(
-    0.9316894864631875,
+    1.0345270594518754,
     0, // Essentially zero
-    2.367221419907647
+    2.046216301672585
   ),
 
   polygon: new THREE.Vector3(
