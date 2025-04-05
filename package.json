@@ -1,4 +1,8 @@
 {
+  "name": "memest-cutest-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -6,6 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@1inch/cross-chain-sdk": "^0.1.13",
+    "@1inch/fusion-sdk": "^2.2.3",
     "@anthropic-ai/sdk": "^0.39.0",
     "@heroui/react": "^2.7.5",
     "@rainbow-me/rainbowkit": "^2.2.4",
@@ -13,14 +19,17 @@
     "@walletconnect/sign-client": "^2.19.2",
     "anthropic": "^0.0.0",
     "autoprefixer": "^10.4.21",
+    "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
     "framer-motion": "^12.6.3",
     "next": "^14.1.0",
+    "nodemailer": "^6.10.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "three": "^0.175.0",
     "viem": "^2.25.0",
-    "wagmi": "^2.14.16"
+    "wagmi": "^2.14.16",
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -33,6 +42,9 @@
   "optionalDependencies": {
     "@next/swc-darwin-arm64": "^14.1.0",
     "@next/swc-darwin-x64": "^14.1.0",
-    "@next/swc-win32-x64-msvc": "^14.1.0"
+    "@next/swc-win32-x64-msvc": "^14.1.0",
+    "@types/node": "^22.7.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
   }
 }

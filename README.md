@@ -1,39 +1,86 @@
-# Title
-**One Line**
+# Memest Cutest Project 
+_A gamified, cross app based Model Context Protocol platform_
 
-![Logo]()
+![2289375F-C956-485C-AC6F-8FF9A0074BAE](https://github.com/user-attachments/assets/66de8c94-d973-4c4b-99bd-27f78bdb7286)
 
+We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
 
-
----
-
-## Inspiration: How We Came Up with This Idea💡
-
-Long
-
-We thought:
-
-> *“What if we could ?”*
-
-So
+We’ve deployed a **live demonstration of Memest Cutest Project** at [**(Link Coming Soon)**](#).
 
 ---
+
+## Inspiration: How We Came Up with This Idea 💡
+We noticed how **inconvenient** it is to manage multiple wallet connections whether MetaMask, 1inch, or Uniswap—because each service forces you to visit its own site and manually connect your wallet. The same fragmentation appears in Web2 tools like Gmail or Microsoft Excel, which offer no straightforward way to communicate with each other. It leads to a constant juggling act of logins and disjointed experiences. Even worse, there’s no easy way to bridge these Web2 and Web3 worlds together, leading to fragmented experiences, extra logins, and lots of frustration.
+
+> *“What if we had a single platform that connected all these services into building blocks, letting users assemble custom workflows in one place?”*
+
+Thus, **Memest Cutest Project** was born, a unified space where all your services coexist in one interface, powered by simple drag-and-drop building blocks and AI-driven orchestration for seamless cross-service tasks. We also gamified the visual process, so users can truly see and understand every interaction happening within the MCP making cross-service integration as transparent and engaging as possible.
+
+
 
 
 ## The Problem🚧
 
+1. **Fragmented Wallet Connections:** Each web3 service like MetaMask, 1inch, Uniswap and many more forces you to connect your wallet separately, creating a repetitive and disjointed user experience.
+
+2. **Multiple Platform Juggling:** Users constantly switch between various websites and applications (Web2 and Web3 alike), wasting time and effort on repeated logins and manual data transfers.
+
+3. **Lack of Web2–Web3 Bridging:** Traditional Web2 tools (e.g., Gmail, Microsoft Excel) don’t talk directly to Web3 services, preventing streamlined, cross-platform workflows.
+
+4. **Limited Automation:** Without a unified interface, automating tasks (like notifying yourself by email whenever funds arrive in your wallet) is cumbersome and requires technical skill or third-party hacks.
+
+5. **Poor Visibility & Usability:** Managing multiple services and credentials in different tabs or windows makes it difficult to understand what’s happening at a glance or to trust that you haven’t missed any critical event.
 
 
 ---
 
 ## The Solution🔑
 
+1. **Unified Web2–Web3 Integration:** Memest Cutest Project uses MCP to unite disparate platforms like MetaMask, 1inch, Polygon, Celo, Gmail, Spreadsheet into a single cohesive interface, eliminating the hassle of juggling multiple logins and websites.
+
+2. **Drag-and-Drop Workflows:** With a simple visual interface powered by MCP, Memest Cutest Project lets users assemble cross-service automations using building blocks with no coding required with NLP or drag and drop workflows.
+
+3. **AI-Driven Orchestration:** By harnessing MCP, Memest Cutest Project enables intelligent agents to seamlessly handle multi-step tasks across your connected services, reducing manual effort and errors.
+
+4. **Gamified Visualization:** Memest Cutest Project transforms service interactions into an engaging, map-like view, so you can intuitively grasp how workflows progress and which services are talking to each other.
+
+5. **Secure & Scalable Foundation:** Built on MCP standards, Memest Cutest Project provides a robust environment where anyone can host their own MCP server. Its modular, building-block architecture empowers developers and users alike to add new plugins and services, continuously expanding the ecosystem like building blocks
 
 
 ---
 
-## How Our Project Works⚙️
-This is done by
+## How Our Project Works ⚙️
+
+**Single-Platform Integration**  
+Users begin by connecting their wallets (via RainbowKit) and linking Web2 services (e.g., Gmail) directly within our unified interface thus no more hopping across separate websites.
+
+**Visual Service Blocks**  
+We spawn a playful representation of each service once it’s added. For example:  
+- **MetaMask** appears as a fox  
+- **1inch** appears as a unicorn  
+- **Polygon** is a purple crystal ball  
+- **Celo** is a plant  
+- **Google Sheets** appears as a paper spreadsheet  
+- **Gmail** is shown as a laptop with Gmail open
+
+**Drag-and-Drop Workflows**  
+Inspired by Apple Shortcuts, users can simply drag, drop, and connect these service blocks. An AI agent automatically translates these connections into real actions behind the scenes. You can also define workflows via natural language—our agent will interpret phrases like “For each MetaMask fund transfer, notify me by Gmail and record it in Google Sheets.”
+
+**AI Agent Execution**  
+Once you’ve configured a workflow, our AI agent (a little robot in the interface) “walks” between the relevant service blocks to illustrate how your automation runs. In the background, MCP triggers event listeners (for instance, on MetaMask) and processes each command (like sending an email, logging data to a spreadsheet, or initiating a token swap).
+
+---
+
+### Example Workflows
+- **For each fund transfer in MetaMask, notify me in Gmail and record the transaction in Google Sheets.**  
+- **Upon receiving funds in MetaMask, automatically swap them to Arbitrum using 1inch.**  
+- **Listen to a specific smart contract on any supported chain, and notify me by email whenever it emits an event.**
+
+---
+
+**Endless Possibilities**  
+Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, and Google Sheets—but any additional plugins can be added to expand the platform’s capabilities. Think of **Memest Cutest Project** as an “agent kit” with building blocks anyone can contribute to. Best of all, it can be **self-hosted**, giving you full control and privacy over your cross-service automations. Whether it’s purely Web2 integrations (like email and spreadsheets) or advanced cross-chain workflows, **MCP** supports it all as more services are added.
+
 
 
 ---
@@ -50,27 +97,89 @@ This is done by
 
 
 ## Tech Stack Overview🛠️
-
+- **Next.js 14** – Front-end React framework
+- **Three.js** – 3D interactive visualizations and room rendering
+- **Tailwind CSS** – UI styling and responsive design
+- **Magic UI** – UI components library
+- **RainbowKit** – Wallet connection and management
+- **Wagmi** – React hooks for Ethereum
+- **Ethers.js 6** – Blockchain interaction and smart contract integration
+- **Framer Motion** – Animations and transitions
+- **Base & Sepolia** – Primary blockchain networks for testing
+- **Polygon Amoy** – Testnet for event monitoring
+- **Viem** – TypeScript interface for Ethereum
+- **Tanstack Query** – Data fetching and state management
+- **Anthropic AI SDK** – AI integration for platform features
+- **Celo Mainnet L2** - Layer 2 blockchain for scalable transactions
+- **1inch** - Aggregates DEXes for optimal token swap rates and liquidity
 
 
 ---
 
 ## Important Code Directories📂 
+Here's a brief overview of important directories in our repository:
 
+### 3D Models & Assets
+- **/gltf** – GLTF format 3D models  
+  - Furniture models (tables, chairs, shelves)  
+  - Decorative items (rugs, plants, picture frames)  
+  - Room elements and fixtures
+- **/public/models** – Additional 3D model assets  
+- **/public/fbx** – FBX format 3D models  
+- **/public/assets** – Static assets for UI elements  
+- **/public/icon** – Icon resources for UI components  
 
-
+### Pages & Layout
+- **/pages** – Core application pages  
+  - **index.js** – Main 3D environment with Three.js scene setup  
+  - **events.js** – Blockchain event monitoring interface  
+  - **mcptest.js** – Platform testing environment  
 
 ---
 ## How We Are Different🌟
+---
 
+We noticed that while there are several tools to connect Web2 and Web3 services, none of them offer a seamless, visual, and user-friendly experience for managing cross-platform workflows. Many existing platforms are usually either fragmented, complicated, or require technical knowledge to be used effectively.
+
+Here’s how Memest Cutest Project is uniquely positioned:
+
+| **Feature**                          | **Traditional Web2/Web3 Tools**                                                   | **Memest Cutest Project**                                                                 |
+|--------------------------------------|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| **Integration Across Web2 & Web3**   | Web2 and Web3 services are siloed; users must switch between apps and sites manually. | Unified interface to connect Web2 (e.g., Gmail, Google Sheets) and Web3 (e.g., MetaMask, Uniswap) seamlessly in one place. |
+| **User Experience**                  | Complicated, requires manual connections, and lacks a visual workflow tool.       | Drag-and-drop, visual, gamified interface that makes cross-platform workflows intuitive and fun to create. |
+| **Automation**                       | Limited automation options or require technical knowledge to configure.          | Easy-to-create, AI-driven workflows that automate tasks across platforms without coding. |
+| **Privacy & Security**               | Centralized platforms with no control over data privacy.                          | Users can self-host the platform, providing full control over data and privacy within their cross-service automations. |
+| **Visibility & Transparency**        | Services run in separate tabs, making it hard to visualize or understand workflows. | Gamified visualization that shows real-time interactions between services, helping users track and understand every action. |
+| **Customization & Flexibility**      | Limited customization options; most services require manual intervention or external tools. | Highly customizable workflows that can be adjusted using drag-and-drop tools or natural language instructions. |
+| **Platform Ecosystem**               | Rigid and closed ecosystems; adding new services requires external integrations.  | Open and modular system that supports plugin additions and self-hosting for greater flexibility and user control. |
+| **Scalability**                      | Centralized platforms are often limited by infrastructure or bandwidth.           | Scalable platform that can grow with more services and users, supporting decentralized workflows. |
+
+Memest Cutest Project offers a fully integrated, automated, and gamified approach to managing both Web2 and Web3 services, overcoming the pain points of fragmentation, privacy issues, and complicated workflows seen in traditional tools. Whether for developers or non-technical users, it’s designed to be intuitive, secure, and highly customizable.
 
 ---
 
 
 ## Future Implementations 🚀
+### Cross-Chain Diagram
+
+In the future, Memest Cutest Project will extend its support for additional blockchain networks beyond those already integrated (e.g., Polygon, Celo). By implementing a cross-chain framework, users will be able to create seamless workflows that span multiple chains, such as Ethereum, Binance Smart Chain, Solana, and more. This will allow for automated actions across a diverse range of blockchain ecosystems—whether it’s token swaps, event listening, or contract interactions—without users needing to manually switch between networks.
+
+We envision a network of interconnected blockchains that are easily accessed and automated within a single, unified interface. This will bring true interoperability to the Web3 space and offer greater flexibility for users building cross-chain workflows.
+
+Advanced AI-Driven Orchestration: Context-Aware Workflows
+
+### Gamification Visualization Diagram
+
+In the future, we plan to expand the visual gamified interface to support real-time data streaming, showing not just the static flow of actions but live updates as workflows execute. Users will be able to watch their actions unfold in real-time, with service blocks reacting interactively to data flows. This will improve the transparency and engagement of the platform, turning automated tasks into a highly interactive experience.
+
+This enhancement will also allow for a more comprehensive monitoring dashboard, where users can view detailed metrics, like transaction speeds, service health, and the efficiency of each step in their workflow.
 
 
+### Modular Plugin Diagram
 
+To further expand Memest Cutest Project’s capabilities, we will be developing a modular plugin system where both users and developers can contribute new services, block types, and integrations. This open-source ecosystem will allow the platform to grow continuously, adapting to new tools, services, and blockchain networks as they emerge. Users will be able to install and configure plugins easily, ensuring that they are always able to integrate the latest technologies into their workflows.
+
+We aim to build a community-driven platform where anyone can contribute to the project’s evolution, creating a constantly growing repository of pre-built workflows, service blocks, and integrations.
 
 
 ---
@@ -98,88 +207,3 @@ This is done by
   - *Role*: 
   - [LinkedIn](https://www.linkedin.com/in/edwina-hon-548189340/)
  
-# 3D Room Visualization
-
-A 3D interactive room visualization built with Next.js and Three.js.
-
-## Preview
-
-This application renders a 3D room with furniture and interactive elements. Users can explore the room using mouse controls.
-
-## Requirements
-
-- Node.js 14.x or higher
-- npm 6.x or higher
-
-## Installation
-
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd mcp
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-## Running the Application
-
-### Development Mode
-
-```bash
-npm run dev
-```
-
-This starts the application in development mode with hot-reloading at http://localhost:3000.
-
-**Note:** Development mode may have performance issues with the 3D rendering.
-
-### Development Mode with Turbopack (Faster)
-
-For improved development performance, you can use Turbopack:
-
-```bash
-npx next dev --turbo
-```
-
-This uses Next.js's Turbopack bundler which offers faster refresh rates and improved development performance.
-
-### Production Mode (Recommended for Better Performance)
-
-For optimal performance, use the production build:
-
-```bash
-npm run build
-npm run start
-```
-
-This creates an optimized production build and serves it at http://localhost:3000.
-
-## Controls
-
-- **Rotate view**: Click and drag with the left mouse button
-- **Zoom**: Scroll up/down with the mouse wheel
-
-## Performance Tips
-
-If experiencing lag or performance issues:
-
-1. Use the production build (`npm run build` followed by `npm run start`)
-2. Close other resource-intensive applications
-3. Use a modern browser with hardware acceleration enabled
-4. Reduce the browser window size if needed
-
-## Project Structure
-
-- `/pages` - Next.js pages
-- `/components` - Reusable React components
-- `/gltf` - 3D models in GLTF format
-- `/fbx` - 3D models in FBX format
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.

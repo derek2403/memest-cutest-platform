@@ -34,7 +34,7 @@ export function spawnCeloModel(scene) {
       // Scale the model to 60% of original size
       model.scale.set(0.5, 0.5, 0.5); // Reduced size for better fit
       
-      // Set the position to the provided coordinates, but raise the y value
+      // Set the position to be on top of the low table
       model.position.set(
         -0.5519415662663658,
         0.58590545802205797, // Raised higher above the floor
