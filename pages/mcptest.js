@@ -79,7 +79,7 @@ export default function Home() {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/email', {
+      const response = await fetch('https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +110,7 @@ export default function Home() {
       }
       
       // Validate transaction with backend
-      const response = await fetch('http://localhost:3001/transaction', {
+      const response = await fetch('https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/transaction', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export default function Home() {
         return;
       }
       
-      const response = await fetch('http://localhost:3001/transactions/report', {
+      const response = await fetch('https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/transactions/report', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -203,7 +203,7 @@ export default function Home() {
         return;
       }
       
-      const response = await fetch(`http://localhost:3001/api/events/counter?contractAddress=${contractAddress}`);
+      const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/api/events/counter?contractAddress=${contractAddress}`);
       const data = await response.json();
       
       setCounterEvents(data);
@@ -233,7 +233,7 @@ export default function Home() {
         return;
       }
       
-      const response = await fetch(`http://localhost:3001/api/counter/value?contractAddress=${valueContractAddress}`);
+      const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/api/counter/value?contractAddress=${valueContractAddress}`);
       const data = await response.json();
       
       setCounterValue(data);
@@ -250,7 +250,7 @@ export default function Home() {
 
   const checkVerificationStatus = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/email/status?email=${email}`);
+      const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/email/status?email=${email}`);
       const data = await response.json();
       setStatus(data);
       
@@ -299,7 +299,7 @@ export default function Home() {
     setEmailResult(null);
     
     try {
-      const response = await fetch('http://localhost:3001/api/transactions/graphs', {
+      const response = await fetch('https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/api/transactions/graphs', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
