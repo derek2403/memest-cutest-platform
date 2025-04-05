@@ -8,6 +8,8 @@ import { loadFurniture } from "../components/furniture.js";
 import { loadAIAgent } from "../components/aiagent.js";
 import { spawn1inchUnicorn } from "../components/oneinch.js";
 import { spawnMetamaskFox } from "../components/metawallet.js";
+import { spawnPolygonModel } from "../components/polygon.js";
+import { spawnCeloModel } from "../components/celo.js";
 import dynamic from 'next/dynamic';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
@@ -2094,6 +2096,16 @@ export default function Home() {
         console.log("About to spawn Metamask fox with scene:", scene);
         // This will now spawn the Metamask fox
         spawnMetamaskFox(scene);
+      },
+      'polygon-button': () => {
+        console.log("Polygon button clicked");
+        // Add Polygon functionality to spawn the model
+        spawnPolygonModel(scene);
+      },
+      'celo-button': () => {
+        console.log("Celo button clicked");
+        // Add Celo functionality to spawn the model
+        spawnCeloModel(scene);
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");
