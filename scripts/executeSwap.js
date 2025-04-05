@@ -1,10 +1,38 @@
 const { ethers } = require("hardhat");
 const axios = require("axios");
+const inquirer = require("inquirer");
+require("dotenv").config();
 
 // Arbitrum Addresses
-const WETH_ADDRESS = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1";
-const USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
-const ONEINCH_V6_ADDRESS = "0x111111125421ca6dc452d289314280a0f8842a65"; // 1inch universal router
+const TOKENS = {
+  WETH: {
+    address: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    symbol: "WETH",
+    name: "Wrapped Ether",
+    decimals: 18,
+  },
+  USDC: {
+    address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    symbol: "USDC",
+    name: "USD Coin",
+    decimals: 6,
+  },
+  USDT: {
+    address: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    symbol: "USDT",
+    name: "Tether USD",
+    decimals: 6,
+  },
+  ARB: {
+    address: "0x912CE59144191C1204E64559FE8253a0e49E6548",
+    symbol: "ARB",
+    name: "Arbitrum",
+    decimals: 18,
+  },
+  // Add more tokens as needed
+};
+
+const ONEINCH_V6_ADDRESS = "0x111111125421ca6dc314280a0f8842a65"; // 1inch universal router
 
 // ABIs
 const wethAbi = [
@@ -20,68 +48,70 @@ const erc20Abi = [
   "function transfer(address to, uint256 value) returns (bool)",
   "function approve(address spender, uint256 value) returns (bool)",
   "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)",
 ];
 
 // Check wallet balances
-async function checkBalances() {
-  const signer = await ethers.provider.getSigner(0);
-  const address = await signer.getAddress();
+async function checkBalances(wallet) {
+  const address = wallet.address;
 
+  // Check ETH balance
   const ethBalance = await ethers.provider.getBalance(address);
   console.log(`ETH Balance: ${ethers.formatEther(ethBalance)} ETH`);
 
-  const WETH = await ethers.getContractAt(wethAbi, WETH_ADDRESS, signer);
-  const USDC = await ethers.getContractAt(erc20Abi, USDC_ADDRESS, signer);
-  const usdcDecimals = await USDC.decimals();
+  // Check all token balances
+  console.log("\nToken Balances:");
+  for (const [name, token] of Object.entries(TOKENS)) {
+    const contract = new ethers.Contract(token.address, erc20Abi, wallet);
+    const balance = await contract.balanceOf(address);
+    console.log(
+      `${name} Balance: ${ethers.formatUnits(balance, token.decimals)} ${
+        token.symbol
+      }`
+    );
+  }
 
-  const wethBalance = await WETH.balanceOf(address);
-  const usdcBalance = await USDC.balanceOf(address);
-
-  console.log(`WETH Balance: ${ethers.formatEther(wethBalance)} WETH`);
-  console.log(
-    `USDC Balance: ${ethers.formatUnits(usdcBalance, usdcDecimals)} USDC`
-  );
-
-  return { ethBalance, wethBalance, usdcBalance, usdcDecimals };
+  return { ethBalance };
 }
 
 // Wrap ETH to WETH
-async function wrapEthToWeth(amountToWrap) {
-  const signer = await ethers.provider.getSigner(0);
+async function wrapEthToWeth(wallet, amountToWrap) {
   const wrapAmount = ethers.parseEther(amountToWrap.toString());
+  const WETH = new ethers.Contract(TOKENS.WETH.address, wethAbi, wallet);
 
-  const WETH = await ethers.getContractAt(wethAbi, WETH_ADDRESS, signer);
   const tx = await WETH.deposit({ value: wrapAmount });
   await tx.wait();
 
   console.log(`Wrapped ${amountToWrap} ETH to WETH`);
 }
 
-// Approve WETH to 1inch
-async function approveWethFor1inchRouter(amount) {
-  const signer = await ethers.provider.getSigner(0);
-  const approvalAmount = ethers.parseEther(amount.toString());
+// Approve token for 1inch
+async function approveTokenFor1inchRouter(wallet, tokenSymbol, amount) {
+  const token = TOKENS[tokenSymbol];
+  const tokenContract = new ethers.Contract(token.address, erc20Abi, wallet);
+  const approvalAmount = ethers.parseUnits(amount.toString(), token.decimals);
 
-  const WETH = await ethers.getContractAt(wethAbi, WETH_ADDRESS, signer);
-  const tx = await WETH.approve(ONEINCH_V6_ADDRESS, approvalAmount);
+  const tx = await tokenContract.approve(ONEINCH_V6_ADDRESS, approvalAmount);
   await tx.wait();
 
-  console.log(`Approved ${amount} WETH to 1inch router`);
+  console.log(`Approved ${amount} ${tokenSymbol} to 1inch router`);
 }
 
-// Swap WETH to USDC on Arbitrum using 1inch
-async function swapWethToUsdc(amountInWeth) {
-  const signer = await ethers.provider.getSigner(0);
-  const address = await signer.getAddress();
-  const amountInWei = ethers.parseEther(amountInWeth.toString());
+// Swap tokens on Arbitrum using 1inch
+async function swapTokens(wallet, fromToken, toToken, amount) {
+  const address = wallet.address;
+  const amountInWei = ethers.parseUnits(
+    amount.toString(),
+    TOKENS[fromToken].decimals
+  );
 
   try {
     const response = await axios.get(
       `https://api.1inch.dev/swap/v5.2/42161/swap`,
       {
         params: {
-          src: WETH_ADDRESS,
-          dst: USDC_ADDRESS,
+          src: TOKENS[fromToken].address,
+          dst: TOKENS[toToken].address,
           amount: amountInWei.toString(),
           from: address,
           slippage: 5,
@@ -95,14 +125,17 @@ async function swapWethToUsdc(amountInWeth) {
 
     const txData = response.data.tx;
 
-    console.log(`Swapping ${amountInWeth} WETH to USDC on Arbitrum...`);
+    console.log(`Swapping ${amount} ${fromToken} to ${toToken} on Arbitrum...`);
     console.log(
-      `Expected USDC: ${response.data.toAmount} (${response.data.toTokenAmount})`
+      `Expected ${toToken}: ${ethers.formatUnits(
+        response.data.toAmount,
+        TOKENS[toToken].decimals
+      )} ${toToken}`
     );
 
     const gasLimit = txData.gas ? Math.round(txData.gas * 1.5) : 3000000;
 
-    const tx = await signer.sendTransaction({
+    const tx = await wallet.sendTransaction({
       to: txData.to,
       data: txData.data,
       value: txData.value || 0,
@@ -113,15 +146,15 @@ async function swapWethToUsdc(amountInWeth) {
     await tx.wait();
     console.log("Swap successful!");
 
-    await checkBalances();
+    await checkBalances(wallet);
   } catch (error) {
     console.error("1inch Swap failed:", error?.response?.data || error.message);
 
     if (error.message.includes("fewer coins than expected")) {
       console.log("\nThis error is due to price impact or slippage.");
       console.log("Solutions:");
-      console.log("1. Try increasing the slippage tolerance even more");
-      console.log("2. Try swapping a larger amount (0.001 WETH is very small)");
+      console.log("1. Try increasing the slippage tolerance");
+      console.log("2. Try swapping a larger amount");
       console.log("3. Try a different token pair with better liquidity");
     }
 
@@ -129,29 +162,125 @@ async function swapWethToUsdc(amountInWeth) {
   }
 }
 
+// Get user input
+async function getUserInput() {
+  const questions = [
+    {
+      type: "password",
+      name: "privateKey",
+      message: "Enter your private key:",
+      mask: "*",
+    },
+    {
+      type: "list",
+      name: "action",
+      message: "What would you like to do?",
+      choices: ["Check Balances", "Swap Tokens", "Wrap ETH to WETH"],
+    },
+  ];
+
+  const answers = await inquirer.prompt(questions);
+
+  if (answers.action === "Swap Tokens") {
+    const tokenChoices = Object.keys(TOKENS);
+
+    const swapQuestions = [
+      {
+        type: "list",
+        name: "fromToken",
+        message: "Select token to swap from:",
+        choices: [...tokenChoices, "ETH"],
+      },
+      {
+        type: "list",
+        name: "toToken",
+        message: "Select token to swap to:",
+        choices: tokenChoices,
+      },
+      {
+        type: "input",
+        name: "amount",
+        message: "Enter amount to swap:",
+        validate: (value) =>
+          !isNaN(parseFloat(value)) ? true : "Please enter a valid number",
+      },
+    ];
+
+    const swapAnswers = await inquirer.prompt(swapQuestions);
+    return { ...answers, ...swapAnswers };
+  } else if (answers.action === "Wrap ETH to WETH") {
+    const wrapQuestions = [
+      {
+        type: "input",
+        name: "wrapAmount",
+        message: "Enter amount of ETH to wrap:",
+        validate: (value) =>
+          !isNaN(parseFloat(value)) ? true : "Please enter a valid number",
+      },
+    ];
+
+    const wrapAnswers = await inquirer.prompt(wrapQuestions);
+    return { ...answers, ...wrapAnswers };
+  }
+
+  return answers;
+}
+
 // Main flow
 async function main() {
   try {
-    console.log("Initial Balances:");
-    const { ethBalance } = await checkBalances();
+    const userInput = await getUserInput();
 
-    const ethToWrap = 0.001;
-    if (ethers.formatEther(ethBalance) < ethToWrap) {
-      console.log(`Not enough ETH. Need at least ${ethToWrap} ETH.`);
-      return;
+    // Create wallet from private key
+    const wallet = new ethers.Wallet(userInput.privateKey, ethers.provider);
+    console.log(`Using wallet address: ${wallet.address}`);
+
+    if (userInput.action === "Check Balances") {
+      console.log("\nChecking Balances:");
+      await checkBalances(wallet);
+    } else if (userInput.action === "Wrap ETH to WETH") {
+      console.log("\nInitial Balances:");
+      const { ethBalance } = await checkBalances(wallet);
+
+      if (ethers.formatEther(ethBalance) < parseFloat(userInput.wrapAmount)) {
+        console.log(
+          `Not enough ETH. Need at least ${userInput.wrapAmount} ETH.`
+        );
+        return;
+      }
+
+      console.log("\nWrapping ETH...");
+      await wrapEthToWeth(wallet, userInput.wrapAmount);
+
+      console.log("\nFinal Balances:");
+      await checkBalances(wallet);
+    } else if (userInput.action === "Swap Tokens") {
+      console.log("\nInitial Balances:");
+      await checkBalances(wallet);
+
+      const { fromToken, toToken, amount } = userInput;
+
+      // If swapping from ETH, wrap it first
+      if (fromToken === "ETH") {
+        console.log("\nWrapping ETH to WETH first...");
+        await wrapEthToWeth(wallet, amount);
+
+        console.log("\nApproving WETH for 1inch...");
+        await approveTokenFor1inchRouter(wallet, "WETH", amount);
+
+        console.log("\nSwapping WETH to " + toToken + "...");
+        await swapTokens(wallet, "WETH", toToken, amount);
+      } else {
+        console.log(`\nApproving ${fromToken} for 1inch...`);
+        await approveTokenFor1inchRouter(wallet, fromToken, amount);
+
+        console.log(`\nSwapping ${fromToken} to ${toToken}...`);
+        await swapTokens(wallet, fromToken, toToken, amount);
+      }
+
+      console.log("\nFinal Balances:");
+      await checkBalances(wallet);
     }
-
-    console.log("\nWrapping ETH...");
-    await wrapEthToWeth(ethToWrap);
-
-    console.log("\nApproving WETH for 1inch...");
-    await approveWethFor1inchRouter(ethToWrap);
-
-    console.log("\nSwapping WETH to USDC...");
-    await swapWethToUsdc(ethToWrap);
-
-    console.log("\nFinal Balances:");
-    await checkBalances();
   } catch (err) {
     console.error("Process failed:", err);
     process.exitCode = 1;
