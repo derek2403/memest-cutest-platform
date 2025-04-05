@@ -130,6 +130,47 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const [savedWorkflows, setSavedWorkflows] = useState([]);
   const [availableWorkflows, setAvailableWorkflows] = useState([]);
   const savedSectionRef = React.useRef(null);
+  const [executingWorkflow, setExecutingWorkflow] = useState(false);
+  const [executionStatus, setExecutionStatus] = useState(null);
+  
+  // New state for workflow details inputs
+  const [userEmail, setUserEmail] = useState('');
+  const [recipientAddress, setRecipientAddress] = useState('');
+  const [transactionAmount, setTransactionAmount] = useState('');
+  const [inputsComplete, setInputsComplete] = useState(false);
+  
+  // Helper to check if inputs are complete based on the workflow type
+  const checkInputsComplete = (workflowText, email, recipient, amount) => {
+    const lowerText = workflowText.toLowerCase();
+    
+    // Basic validation - always require email
+    if (!email) return false;
+    
+    // For USDC bridge or MetaMask transactions, require all fields
+    if (lowerText.includes("usdc") || 
+        lowerText.includes("metamask") || 
+        lowerText.includes("transfer")) {
+      return email && recipient && amount;
+    }
+    
+    // For event monitoring, only require email
+    if (lowerText.includes("listen") || lowerText.includes("event")) {
+      return email.length > 0;
+    }
+    
+    // Default case
+    return email.length > 0;
+  };
+  
+  // Update inputs complete state when any input changes
+  useEffect(() => {
+    setInputsComplete(checkInputsComplete(
+      workflowInput, 
+      userEmail, 
+      recipientAddress, 
+      transactionAmount
+    ));
+  }, [workflowInput, userEmail, recipientAddress, transactionAmount]);
   
   // Load saved workflows from localStorage and determine available workflows when the component mounts
   useEffect(() => {
@@ -177,6 +218,11 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   // Handle loading an example workflow
   const handleLoadExample = (example) => {
     setWorkflowInput(example.text);
+    
+    // Reset input fields when loading a new example
+    setUserEmail('');
+    setRecipientAddress('');
+    setTransactionAmount('');
   };
 
   // Handle workflow parsing
@@ -226,7 +272,11 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
         id: Date.now(), // Generate a unique ID based on timestamp
         description: workflowInput,
         workflow: workflowParsed,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        // Save user inputs
+        email: userEmail,
+        recipient: recipientAddress,
+        amount: transactionAmount
       };
       
       const updatedWorkflows = [...savedWorkflows, newSavedWorkflow];
@@ -253,6 +303,147 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     }
   };
   
+  // Render input fields based on workflow type
+  const renderInputFields = () => {
+    const lowerText = workflowInput.toLowerCase();
+    
+    return (
+      <div className={styles.inputFields}>
+        <h4 className={styles.inputTitle}>Workflow Details</h4>
+        
+        {/* Email field - always show */}
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Email Address <span className={styles.required}>*</span></label>
+          <input
+            type="email"
+            value={userEmail}
+            onChange={(e) => setUserEmail(e.target.value)}
+            placeholder="Enter your email"
+            className={styles.inputField}
+            required
+          />
+          <p className={styles.inputHelp}>For signing transactions</p>
+        </div>
+        
+        {/* Show recipient and amount for transfer/bridge workflows */}
+        {(lowerText.includes("metamask") || lowerText.includes("transfer") || lowerText.includes("usdc")) && (
+          <>
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>Recipient Address <span className={styles.required}>*</span></label>
+              <input
+                type="text"
+                value={recipientAddress}
+                onChange={(e) => setRecipientAddress(e.target.value)}
+                placeholder="0x..."
+                className={styles.inputField}
+                required
+              />
+              <p className={styles.inputHelp}>The blockchain address receiving funds</p>
+            </div>
+            
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>Amount <span className={styles.required}>*</span></label>
+              <input
+                type="number"
+                value={transactionAmount}
+                onChange={(e) => setTransactionAmount(e.target.value)}
+                placeholder="0.0"
+                step="0.000000000000000001"
+                className={styles.inputField}
+                required
+              />
+              <p className={styles.inputHelp}>Transaction amount in ETH or tokens</p>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+  
+  // Execute the workflow by making an API call
+  const handleExecuteWorkflow = async () => {
+    // Find the most recently saved workflow
+    const mostRecentWorkflow = savedWorkflows[savedWorkflows.length - 1];
+    
+    if (!mostRecentWorkflow) {
+      console.error('No workflow to execute');
+      return;
+    }
+    
+    // Get the email and transaction details from the saved workflow
+    const emailToUse = mostRecentWorkflow.email;
+    const recipientToUse = mostRecentWorkflow.recipient;
+    const amountToUse = mostRecentWorkflow.amount;
+    
+    if (!emailToUse || !recipientToUse || !amountToUse) {
+      console.error('Missing required workflow details');
+      return;
+    }
+    
+    setExecutingWorkflow(true);
+    
+    try {
+      // Call the external transaction endpoint
+      const response = await fetch('https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: recipientToUse,
+          amount: amountToUse,
+          chainId: "84532", // Use Base Sepolia testnet
+          email: emailToUse,
+          // We're not setting recordToSheet here - it will be handled after approval
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute transaction');
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        setExecutionStatus({
+          success: false,
+          message: data.message || 'Transaction failed'
+        });
+        return;
+      }
+
+      // If transaction approval email was sent
+      if (data.message && data.message.includes('pending approval')) {
+        setExecutionStatus({
+          success: true,
+          pending: true,
+          message: 'Transaction pending email approval. Google Sheet will be updated after approval. Please check your email.',
+        });
+      } else {
+        // If transaction was processed immediately (unlikely but possible)
+        setExecutionStatus({
+          success: true,
+          message: 'Transaction submitted successfully. Google Sheet will be updated shortly.',
+          txHash: data.hash,
+        });
+      }
+      
+      // Close the popup after a short delay to allow the user to see the status
+      setTimeout(() => {
+        onClose();
+      }, 5000); // Increased to 5 seconds so user can read the message
+      
+    } catch (error) {
+      console.error('Error executing workflow:', error);
+      setExecutionStatus({
+        success: false,
+        message: error.message || 'Failed to execute workflow'
+      });
+    } finally {
+      setExecutingWorkflow(false);
+    }
+  };
+  
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -274,8 +465,19 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
               <h3>Workflow Approved!</h3>
               <p>Your AI workflow has been successfully created and is now active.</p>
               <p className={styles.bookTip}>You can access all your saved workflows by clicking on the books on the coffee table.</p>
-              <button className={styles.doneButton} onClick={onClose}>
-                Done
+              
+              {executionStatus && (
+                <div className={`${styles.executionStatus} ${executionStatus.success ? styles.successStatus : styles.errorStatus}`}>
+                  <p className={styles.statusMessage}>{executionStatus.message}</p>
+                </div>
+              )}
+              
+              <button 
+                className={styles.executeButton} 
+                onClick={handleExecuteWorkflow}
+                disabled={executingWorkflow}
+              >
+                {executingWorkflow ? 'Executing...' : 'Execute Workflow'}
               </button>
             </div>
           ) : (
@@ -289,7 +491,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                       <button
                         onClick={() => handleLoadExample({
                           title: "MetaMask to Gmail",
-                          text: "For each fund transfer in MetaMask notify in Gmail and record in Google Sheet"
+                          text: "Redirect all signing of MetaMask to Gmail and record in Google Sheets"
                         })}
                         className={styles.exampleButton}
                       >
@@ -351,12 +553,18 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                         <FlowChart workflow={workflowParsed} />
                       </div>
                       
+                      {/* Input Fields for Email, Recipient, Amount */}
+                      {renderInputFields()}
+                      
                       {/* Action Buttons */}
                       <div className={styles.actionButtons}>
                         <button 
                           className={styles.tryAgainButton}
                           onClick={() => {
                             setWorkflowParsed([]);
+                            setUserEmail('');
+                            setRecipientAddress('');
+                            setTransactionAmount('');
                           }}
                         >
                           Try Again
@@ -364,6 +572,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                         <button 
                           className={styles.approveButton}
                           onClick={saveWorkflow}
+                          disabled={!inputsComplete}
                         >
                           Approve Workflow
                         </button>
@@ -392,6 +601,11 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                               <p className={styles.savedWorkflowDate}>
                                 Saved on {new Date(saved.createdAt).toLocaleString()}
                               </p>
+                              {saved.email && (
+                                <p className={styles.savedWorkflowEmail}>
+                                  Email: {saved.email}
+                                </p>
+                              )}
                             </div>
                             <div className={styles.savedWorkflowActions}>
                               <button 
@@ -406,6 +620,12 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                             </div>
                           </div>
                           <FlowChart workflow={saved.workflow} />
+                          {(saved.recipient || saved.amount) && (
+                            <div className={styles.savedWorkflowDetails}>
+                              {saved.recipient && <p>Recipient: {saved.recipient}</p>}
+                              {saved.amount && <p>Amount: {saved.amount}</p>}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

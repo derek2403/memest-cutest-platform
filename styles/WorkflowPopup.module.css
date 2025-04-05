@@ -351,6 +351,77 @@
   font-weight: bold;
 }
 
+.completionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.executeButton {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 30px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.executeButton:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.executionStatus {
+  margin: 15px auto;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  max-width: 90%;
+  text-align: center;
+}
+
+.successStatus {
+  background-color: rgba(52, 211, 153, 0.2);
+  color: #059669;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  font-weight: 600;
+}
+
+.statusMessage {
+  margin-bottom: 8px;
+}
+
+.sheetRecordInfo {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.sheetFieldList {
+  margin-top: 6px;
+  padding-left: 20px;
+  list-style-type: disc;
+  text-align: left;
+  font-weight: normal;
+}
+
+.sheetError {
+  margin-top: 8px;
+  color: #ef4444;
+  font-size: 0.85rem;
+}
+
+.errorStatus {
+  background-color: rgba(248, 113, 113, 0.2);
+  color: #b91c1c;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
 .doneButton {
   background-color: #6c63ff;
   color: white;
@@ -358,7 +429,6 @@
   border-radius: 8px;
   padding: 10px 30px;
   font-weight: 600;
-  margin-top: 20px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -530,4 +600,97 @@
   color: #e0e0ff;
   flex: 1;
   margin-left: 10px;
+}
+
+/* Add styles for the input fields section */
+.inputFields {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #f9f9fc;
+  border-radius: 8px;
+  border: 1px solid #e0e0f2;
+}
+
+.inputTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #444;
+}
+
+.inputGroup {
+  margin-bottom: 16px;
+}
+
+.inputLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  color: #000000;
+}
+
+.inputField:focus {
+  border-color: #6366f1;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.inputField::placeholder {
+  color: #999;
+}
+
+.inputHelp {
+  font-size: 12px;
+  color: #777;
+  margin-top: 4px;
+}
+
+.required {
+  color: #e53e3e;
+}
+
+/* Style for saved workflow details */
+.savedWorkflowEmail {
+  font-size: 13px;
+  color: #c5d0e6;
+  margin-top: 4px;
+}
+
+.savedWorkflowDetails {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f7fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+/* Disable button style */
+.approveButton:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.approveButton:disabled:hover {
+  background-color: #a0aec0;
+}
+
+/* Make sure the "Approve Workflow" button is properly styled when enabled */
+.approveButton:not(:disabled) {
+  background-color: #4f46e5;
+}
+
+.approveButton:not(:disabled):hover {
+  background-color: #4338ca;
 } 
