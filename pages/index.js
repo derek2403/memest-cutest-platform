@@ -51,6 +51,9 @@ export default function Home() {
     maxZ: 3.5
   };
 
+  // Expose floorBoundaries to window for access from sidebar.js
+  window.floorBoundaries = floorBoundaries;
+
   // Add furniture obstacle data
   const furnitureObstacles = [
     {

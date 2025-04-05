@@ -1,4 +1,5 @@
 import { initMetaWallet } from './metawallet.js';
+import * as THREE from 'three';
 
 // Create and initialize the sidebar with hierarchical structure
 export function initSidebar(callbacks = {}, scene) {
@@ -44,16 +45,8 @@ export function initSidebar(callbacks = {}, scene) {
     metamaskText.textContent = 'Metamask';
     metamaskButton.appendChild(metamaskText);
     
-    // Add click handler directly here for consistency
-    metamaskButton.addEventListener('click', () => {
-        console.log("Metamask button clicked directly");
-        if (callbacks['metamask-button']) {
-            console.log("Executing Metamask callback");
-            callbacks['metamask-button']();
-        } else {
-            console.warn("No Metamask callback found");
-        }
-    });
+    // Make Metamask button draggable
+    makeDraggable(metamaskButton, 'metamask-button', callbacks, scene);
     
     sidebar.appendChild(metamaskButton);
     
@@ -92,17 +85,9 @@ export function initSidebar(callbacks = {}, scene) {
         buttonText.style.color = '#FFFFFF';
         button.appendChild(buttonText);
         
-        // Add click event listener with more detailed logging
-        button.addEventListener('click', () => {
-            console.log(`${data.text} button clicked`);
-            // Call the appropriate callback if it exists
-            if (callbacks[data.id]) {
-                console.log(`Executing callback for ${data.id}`);
-                callbacks[data.id]();
-            } else {
-                console.warn(`No callback found for ${data.id}`);
-            }
-        });
+        // Make the button draggable
+        makeDraggable(button, data.id, callbacks, scene);
+        
         sidebar.appendChild(button);
     });
     
@@ -215,4 +200,300 @@ export function initSidebar(callbacks = {}, scene) {
     document.head.appendChild(style);
 
     return sidebar;
+}
+
+// Function to make an element draggable
+function makeDraggable(element, buttonId, callbacks, scene) {
+    // Variables for drag functionality
+    let isDragging = false;
+    let clone = null;
+    let startX, startY;
+    let originalOpacity;
+    let dropHighlight = null;
+    let rafId = null;
+    let lastKnownMousePosition = { x: 0, y: 0 };
+    let isOverValidDropArea = false;
+    
+    // Use requestAnimationFrame for smooth clone movement
+    const updateClonePosition = () => {
+        if (!isDragging || !clone) return;
+        
+        // Update the position of the clone to follow the cursor smoothly using transforms
+        // for better performance compared to top/left positioning
+        const x = lastKnownMousePosition.x - element.offsetWidth / 2;
+        const y = lastKnownMousePosition.y - element.offsetHeight / 2;
+        clone.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${isOverValidDropArea ? 1.15 : 1.1})`;
+        
+        // Check if over valid drop area and provide visual feedback (throttled)
+        const isWithinRoom = isWithinRoomBoundary(lastKnownMousePosition.x, lastKnownMousePosition.y);
+        
+        // Only update visuals if drop state has changed
+        if (isWithinRoom !== isOverValidDropArea) {
+            isOverValidDropArea = isWithinRoom;
+            
+            if (isWithinRoom) {
+                // Style the clone to show it's over a valid drop area
+                clone.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.5)';
+                
+                // Add visual highlight to the floor if not already there
+                if (!dropHighlight && scene) {
+                    createDropHighlight();
+                }
+            } else {
+                // Reset clone style
+                clone.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.3)';
+                
+                // Remove the floor highlight if it exists
+                removeDropHighlight();
+            }
+        }
+        
+        // Continue animation loop
+        rafId = requestAnimationFrame(updateClonePosition);
+    };
+    
+    // Create handlers for events
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        
+        // Just update mouse position without DOM operations
+        lastKnownMousePosition.x = e.clientX;
+        lastKnownMousePosition.y = e.clientY;
+    };
+    
+    // Create a visual highlight on the floor to indicate valid drop area
+    const createDropHighlight = () => {
+        if (dropHighlight || !scene) return;
+        
+        // Use existing highlight if in scene cache
+        if (window.cachedDropHighlight) {
+            dropHighlight = window.cachedDropHighlight;
+            dropHighlight.visible = true;
+            return;
+        }
+        
+        // Check if THREE is available
+        if (typeof THREE === 'undefined') {
+            console.error('THREE is not defined, cannot create highlight');
+            return;
+        }
+        
+        try {
+            const floorSize = 7; // Match your floor size (maxX - minX)
+            const highlightGeometry = new THREE.PlaneGeometry(floorSize, floorSize);
+            const highlightMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.DoubleSide
+            });
+            
+            dropHighlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+            
+            // Position slightly above the floor to avoid z-fighting
+            dropHighlight.position.set(0, 0.01, 0);
+            dropHighlight.rotation.x = -Math.PI / 2; // Rotate to lie flat
+            
+            // Add to scene
+            scene.add(dropHighlight);
+            
+            // Cache for reuse
+            window.cachedDropHighlight = dropHighlight;
+        } catch (error) {
+            console.error('Error creating highlight:', error);
+        }
+    };
+    
+    // Remove the floor highlight
+    const removeDropHighlight = () => {
+        if (dropHighlight && scene) {
+            // Instead of removing and disposing, just hide it
+            dropHighlight.visible = false;
+            dropHighlight = null;
+        }
+    };
+    
+    const handleMouseUp = (e) => {
+        if (!isDragging) return;
+        
+        // Cancel animation frame
+        if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        
+        // Reset the original button appearance
+        element.style.opacity = originalOpacity;
+        element.style.cursor = 'pointer';
+        
+        // Remove the clone element if it exists
+        if (clone) {
+            document.body.removeChild(clone);
+            clone = null;
+        }
+        
+        // Hide floor highlight instead of removing
+        if (dropHighlight) {
+            dropHighlight.visible = false;
+            dropHighlight = null;
+        }
+        
+        // Check if the drop position is within the room's bounding box
+        if (isWithinRoomBoundary(e.clientX, e.clientY)) {
+            console.log(`${buttonId} dropped inside room boundary`);
+            
+            // Execute the callback for the dropped button
+            if (callbacks[buttonId]) {
+                console.log(`Executing callback for ${buttonId}`);
+                callbacks[buttonId]();
+            } else {
+                console.warn(`No callback found for ${buttonId}`);
+            }
+        } else {
+            console.log(`${buttonId} dropped outside room boundary`);
+            // No action if dropped outside the room
+        }
+        
+        // Reset dragging state
+        isDragging = false;
+        isOverValidDropArea = false;
+        
+        // Clean up event listeners
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    // Add drag start event
+    element.addEventListener('mousedown', (e) => {
+        // Prevent default action to avoid text selection
+        e.preventDefault();
+        
+        // Store the starting position of the mouse
+        startX = e.clientX;
+        startY = e.clientY;
+        lastKnownMousePosition.x = e.clientX;
+        lastKnownMousePosition.y = e.clientY;
+        
+        // Set flag to indicate dragging has started
+        isDragging = true;
+        
+        // Store original opacity
+        originalOpacity = element.style.opacity || '1';
+        
+        // Create visual feedback for dragging
+        element.style.opacity = '0.7';
+        element.style.cursor = 'grabbing';
+        
+        // Create a clone of the button for drag visual - optimize by using a lighter clone
+        clone = document.createElement('div');
+        clone.className = 'drag-clone';
+        clone.style.position = 'fixed';
+        clone.style.zIndex = '10000';
+        // Set initial position at 0,0 and use transform instead
+        clone.style.left = '0';
+        clone.style.top = '0';
+        clone.style.width = `${element.offsetWidth}px`;
+        clone.style.height = `${element.offsetHeight}px`;
+        clone.style.borderRadius = '30px';
+        clone.style.backgroundColor = element.style.backgroundColor || '#333a52';
+        clone.style.pointerEvents = 'none'; // So it doesn't interfere with drop events
+        clone.style.opacity = '0.8';
+        clone.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.3)';
+        // Use transform for initial positioning
+        const x = e.clientX - element.offsetWidth / 2;
+        const y = e.clientY - element.offsetHeight / 2;
+        clone.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.1)`;
+        clone.style.willChange = 'transform'; // Hint for browser optimization
+        
+        // Add the icon for better visual
+        const iconImg = document.createElement('img');
+        iconImg.src = element.querySelector('img').src;
+        iconImg.style.width = '24px';
+        iconImg.style.height = '24px';
+        iconImg.style.position = 'absolute';
+        iconImg.style.left = '12px';
+        iconImg.style.top = '50%';
+        iconImg.style.transform = 'translateY(-50%)';
+        clone.appendChild(iconImg);
+        
+        // Add the text
+        const text = document.createElement('span');
+        text.textContent = element.querySelector('span').textContent;
+        text.style.color = '#FFFFFF';
+        text.style.position = 'absolute';
+        text.style.left = '46px';
+        text.style.top = '50%';
+        text.style.transform = 'translateY(-50%)';
+        text.style.fontFamily = 'Poppins, sans-serif';
+        text.style.fontWeight = '500';
+        text.style.fontSize = '14px';
+        clone.appendChild(text);
+        
+        document.body.appendChild(clone);
+        
+        // Add event listeners
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        
+        // Start animation frame for smooth movement
+        rafId = requestAnimationFrame(updateClonePosition);
+    });
+    
+    // Add click event separate from drag handling
+    element.addEventListener('click', (e) => {
+        // Only trigger click if it wasn't a drag
+        if (Math.abs(e.clientX - startX) < 5 && Math.abs(e.clientY - startY) < 5) {
+            console.log(`${buttonId} clicked directly`);
+            if (callbacks[buttonId]) {
+                console.log(`Executing callback for ${buttonId}`);
+                callbacks[buttonId]();
+            } else {
+                console.warn(`No callback found for ${buttonId}`);
+            }
+        }
+    });
+}
+
+// Function to check if coordinates are within the room boundary
+function isWithinRoomBoundary(x, y) {
+    try {
+        // Get the canvas/renderer element dimensions
+        const canvas = document.querySelector('canvas');
+        if (!canvas) {
+            console.warn('Canvas element not found for room boundary check');
+            return false;
+        }
+        
+        // Get the bounding rectangle of the canvas
+        const canvasRect = canvas.getBoundingClientRect();
+        
+        // Simple check if coordinates are within the canvas area
+        const isWithinCanvas = (
+            x >= canvasRect.left &&
+            x <= canvasRect.right &&
+            y >= canvasRect.top &&
+            y <= canvasRect.bottom
+        );
+        
+        // We can add additional checks here if needed
+        
+        // For debugging
+        if (isWithinCanvas) {
+            // Calculate relative position within canvas
+            const relX = (x - canvasRect.left) / canvasRect.width;
+            const relY = (y - canvasRect.top) / canvasRect.height;
+            
+            // Can add more specific boundary checks based on relative position
+            // For example, to exclude edges or specific areas of the room
+            
+            // For now, we'll just use the canvas boundary
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Error checking room boundary:', error);
+        // Default to false on error
+        return false;
+    }
 }
