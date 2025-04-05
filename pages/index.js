@@ -471,15 +471,130 @@ export default function Home() {
     camera.far = 500;
     camera.updateProjectionMatrix();
 
-    // Renderer setup with optimizations
-    renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = false;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
-    mountRef.current.appendChild(renderer.domElement);
+    // Check WebGL support before creating renderer
+    let isWebGLAvailable = false;
+    let isWebGL2Available = false;
+    let useLowPerformanceMode = false;
+    
+    try {
+      const canvas = document.createElement('canvas');
+      isWebGLAvailable = !!(
+        window.WebGLRenderingContext && 
+        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+      );
+      isWebGL2Available = !!(
+        window.WebGL2RenderingContext && 
+        canvas.getContext('webgl2')
+      );
+      
+      // Override to always use maximum quality regardless of device
+      useLowPerformanceMode = false;
+      
+    } catch (e) {
+      console.error("WebGL detection failed:", e);
+    }
+
+    if (!isWebGLAvailable) {
+      // Create fallback content when WebGL is not supported
+      const fallbackDiv = document.createElement('div');
+      fallbackDiv.style.width = '100%';
+      fallbackDiv.style.height = '100vh';
+      fallbackDiv.style.display = 'flex';
+      fallbackDiv.style.flexDirection = 'column';
+      fallbackDiv.style.justifyContent = 'center';
+      fallbackDiv.style.alignItems = 'center';
+      fallbackDiv.style.backgroundColor = '#050a20';
+      fallbackDiv.style.color = 'white';
+      fallbackDiv.style.fontFamily = 'Arial, sans-serif';
+      fallbackDiv.style.padding = '20px';
+      fallbackDiv.style.textAlign = 'center';
+      
+      const header = document.createElement('h1');
+      header.textContent = 'WebGL Not Available';
+      
+      const message = document.createElement('p');
+      message.textContent = 'Your browser or device does not support WebGL, which is required to view this 3D content. Please try a different browser or device.';
+      
+      fallbackDiv.appendChild(header);
+      fallbackDiv.appendChild(message);
+      
+      // Clear any existing content and add the fallback
+      if (mountRef.current) {
+        mountRef.current.innerHTML = '';
+        mountRef.current.appendChild(fallbackDiv);
+      }
+      
+      // Return early to prevent further initialization
+      return;
+    }
+
+    // Renderer setup with optimizations (only reaches here if WebGL is available)
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true, // Always enable antialiasing for maximum quality
+        powerPreference: "high-performance",
+        alpha: true,
+        precision: "highp", // Always use high precision
+        failIfMajorPerformanceCaveat: false,
+        depth: true,
+        stencil: true, // Enable stencil buffer for advanced effects
+        preserveDrawingBuffer: false
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true; // Enable shadow mapping
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Use soft shadows for better quality
+      
+      // Always use the device's actual pixel ratio for maximum clarity
+      renderer.setPixelRatio(window.devicePixelRatio);
+      
+      // Adjust renderer context settings for better compatibility
+      const gl = renderer.getContext();
+      if (gl) {
+        gl.getExtension('OES_standard_derivatives');
+        gl.getExtension('OES_element_index_uint');
+        gl.getExtension('WEBGL_depth_texture');
+        // Try to get additional extensions for better quality
+        gl.getExtension('EXT_shader_texture_lod');
+        gl.getExtension('OES_texture_float');
+        gl.getExtension('OES_texture_half_float');
+      }
+      
+      mountRef.current.appendChild(renderer.domElement);
+      
+      console.log(`Using WebGL${isWebGL2Available ? '2' : '1'} with maximum quality settings`);
+      
+    } catch (e) {
+      console.error("WebGL renderer creation failed:", e);
+      // Handle renderer creation failure
+      const errorDiv = document.createElement('div');
+      errorDiv.style.width = '100%';
+      errorDiv.style.height = '100vh';
+      errorDiv.style.display = 'flex';
+      errorDiv.style.flexDirection = 'column';
+      errorDiv.style.justifyContent = 'center';
+      errorDiv.style.alignItems = 'center';
+      errorDiv.style.backgroundColor = '#050a20';
+      errorDiv.style.color = 'white';
+      errorDiv.style.fontFamily = 'Arial, sans-serif';
+      errorDiv.style.padding = '20px';
+      errorDiv.style.textAlign = 'center';
+      
+      const header = document.createElement('h1');
+      header.textContent = 'WebGL Error';
+      
+      const message = document.createElement('p');
+      message.textContent = 'There was an error creating the WebGL context. This might be due to hardware limitations or browser settings. Try updating your graphics drivers or enabling hardware acceleration in your browser settings.';
+      
+      errorDiv.appendChild(header);
+      errorDiv.appendChild(message);
+      
+      if (mountRef.current) {
+        mountRef.current.innerHTML = '';
+        mountRef.current.appendChild(errorDiv);
+      }
+      
+      return;
+    }
 
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -532,16 +647,90 @@ export default function Home() {
 
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
+    
+    // Create a texture for wooden floor
+    const floorTexture = createWoodenFloorTexture();
+    floorTexture.wrapS = THREE.RepeatWrapping;
+    floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(3, 3); // Repeat the texture pattern
+    
     const floorMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#d8d9d8"), // Changed to a lighter gray color
+      color: new THREE.Color("#D2B48C"), // Change to lighter Tan color
       side: THREE.DoubleSide,
+      roughness: 0.7, // Slightly less rough for lighter wood
+      metalness: 0.1, // Less metalness for lighter wood
+      map: floorTexture
     });
+    
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0;
     floor.receiveShadow = false;
     floor.name = "floor"; // Name the floor for raycasting
     scene.add(floor);
+    
+    // Helper function to create a procedural wooden floor texture
+    function createWoodenFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Base color (light wood)
+      ctx.fillStyle = '#E8D8C0'; // Lighter tan
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Create wood grain pattern
+      ctx.strokeStyle = '#C19A6B'; // Lighter brown for grain outlines
+      ctx.lineWidth = 1.5;
+      
+      // Horizontal planks
+      const plankHeight = canvas.height / 8;
+      for (let y = 0; y < canvas.height; y += plankHeight) {
+        ctx.fillStyle = '#DEBB9D'; // Light maple color
+        ctx.fillRect(0, y, canvas.width, plankHeight - 1);
+        
+        // Draw plank divider
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+        
+        // Draw wood grain
+        const grainLines = 20 + Math.floor(Math.random() * 10);
+        ctx.strokeStyle = 'rgba(160, 120, 80, 0.2)'; // Lighter, more transparent grain
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i < grainLines; i++) {
+          const xStart = Math.random() * canvas.width;
+          const curveAmount = Math.random() * 20 - 10;
+          
+          ctx.beginPath();
+          ctx.moveTo(xStart, y);
+          ctx.bezierCurveTo(
+            xStart + curveAmount, y + plankHeight / 3,
+            xStart - curveAmount, y + plankHeight * 2/3,
+            xStart, y + plankHeight
+          );
+          ctx.stroke();
+        }
+      }
+      
+      // Vertical planks
+      const plankWidth = canvas.width / 6;
+      for (let x = 0; x < canvas.width; x += plankWidth) {
+        // Draw plank divider
+        ctx.strokeStyle = '#C19A6B'; // Lighter brown for dividers
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
+    }
     
     // Set floor boundaries based on room dimensions
     floorBoundaries = {
@@ -1818,13 +2007,12 @@ export default function Home() {
 
     // Animation loop with performance optimizations
     let lastFrameTime = 0;
-    const targetFPS = 30; // Lower FPS for better performance
+    const targetFPS = 60; // Higher FPS for smoother animation
     const frameInterval = 1000 / targetFPS;
 
     function animate(currentTime) {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Throttle renders to target FPS
       const deltaTime = currentTime - lastFrameTime;
       if (deltaTime < frameInterval) return;
 
