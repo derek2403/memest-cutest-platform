@@ -287,8 +287,8 @@ function makeDraggable(element, buttonId, callbacks, scene) {
             
             // Define rectangular boundaries exactly matching the room floor
             // Using the exact same values as in isWithinRoomBoundary
-            const roomWidth = 7.2;  // Increased from 6.0 to 7.2
-            const roomDepth = 7.2;  // Increased from 6.0 to 7.2
+            const roomWidth = 6.8;  // Reduced from 7.2 to 6.8 (about 5% smaller)
+            const roomDepth = 6.8;  // Reduced from 7.2 to 6.8 (about 5% smaller)
             
             // Create plane geometry for the rectangular highlight
             const highlightGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
@@ -490,8 +490,8 @@ function isWithinRoomBoundary(x, y) {
         
         // Define rectangular boundaries exactly matching the room floor
         // These values are relative to the center of the canvas
-        const roomWidth = canvasRect.width * 0.42;  // Increased from 0.35 to 0.42
-        const roomDepth = canvasRect.height * 0.42; // Increased from 0.35 to 0.42
+        const roomWidth = canvasRect.width * 0.40;  // Reduced from 0.42 to 0.40 (about 5% smaller)
+        const roomDepth = canvasRect.height * 0.40; // Reduced from 0.42 to 0.40 (about 5% smaller)
         
         // Calculate boundaries of the rectangle
         const minX = centerX - roomWidth / 2;
