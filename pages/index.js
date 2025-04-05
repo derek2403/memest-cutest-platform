@@ -576,6 +576,14 @@ export default function Home() {
       renderer.shadowMap.enabled = true; // Enable shadow mapping
       renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Use soft shadows for better quality
       
+      // Set output encoding to sRGB for vibrant colors throughout the scene
+      if (THREE.OutputEncoding !== undefined) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+      } else if (THREE.ColorManagement !== undefined) {
+        THREE.ColorManagement.enabled = true;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+      }
+      
       // Always use the device's actual pixel ratio for maximum clarity
       renderer.setPixelRatio(window.devicePixelRatio);
       

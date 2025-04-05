@@ -24,13 +24,29 @@ export function loadAIAgent(scene, callbacks = {}) {
       
       // Apply textures with proper colors
       const bodyTexture = textureLoader.load('/models/ai-agent/shaded.png');
+      // Set encoding to sRGB to preserve vibrant colors
+      bodyTexture.encoding = THREE.sRGBEncoding;
+      // Increase color saturation and brightness
+      bodyTexture.colorSpace = THREE.SRGBColorSpace;
+      // Enhance texture quality
+      bodyTexture.anisotropy = 16;
+      bodyTexture.generateMipmaps = true;
+      bodyTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      bodyTexture.magFilter = THREE.LinearFilter;
       
       // Create materials for different parts
-      const bodyMaterial = new THREE.MeshStandardMaterial({
+      const bodyMaterial = new THREE.MeshPhysicalMaterial({
         map: bodyTexture,
         skinning: true,
-        roughness: 1.0, // Maximum roughness for matte finish
-        metalness: 0.0 // No metalness for non-reflective surface
+        roughness: 0.4, // Lower roughness for more vibrant appearance
+        metalness: 0.15, // Slight metalness to enhance color
+        emissive: new THREE.Color(0x333333), // Increased emissive to enhance colors
+        emissiveMap: bodyTexture, // Use same texture for emissive to boost colors
+        emissiveIntensity: 0.15, // Moderate emissive intensity
+        clearcoat: 0.2, // Add subtle clearcoat for enhanced appearance
+        clearcoatRoughness: 0.8, // Keep the clearcoat mostly matte
+        transmission: 0.0, // No transmission
+        reflectivity: 0.2 // Slight reflectivity
       });
       
       // Apply material to all mesh parts to preserve texture colors
@@ -47,20 +63,24 @@ export function loadAIAgent(scene, callbacks = {}) {
               skinning: true,
               color: new THREE.Color('#00FFFF'), // Bright cyan for eyes
               emissive: new THREE.Color('#00FFFF'),
-              emissiveIntensity: 0.8, // Slightly reduced glow
-              roughness: 0.8, // High roughness for less shine
-              metalness: 0.0 // No metalness for non-reflective surface
+              emissiveIntensity: 1.0, // Increased glow
+              roughness: 0.4, // Reduced roughness for more shine
+              metalness: 0.2 // Slight metalness for reflective surface
             });
           }
           
           // Ensure no color transformations
           if (child.material.map) {
-            child.material.map.encoding = THREE.LinearEncoding;
+            // Use sRGB encoding for vibrant colors
+            child.material.map.encoding = THREE.sRGBEncoding;
+            child.material.map.colorSpace = THREE.SRGBColorSpace;
+            // Enable the texture to be more vibrant
+            child.material.map.anisotropy = 16;
             child.material.needsUpdate = true;
           }
           
-          child.castShadow = false;
-          child.receiveShadow = false;
+          child.castShadow = true; // Enable shadows for better visual integration
+          child.receiveShadow = true;
         }
       });
       
