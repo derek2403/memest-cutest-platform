@@ -544,46 +544,22 @@ export default function CaseSelector({ onSelectCase }) {
           }
         }, 1000); // Wait 1 second before next movement
       } else if (isActive) {
-        // Pattern completed, restart the SAME case
-        console.log(`Completed Case ${currentCase} pattern, restarting the same case...`);
+        // Pattern completed, stop instead of looping
+        console.log(`Completed Case ${currentCase} pattern, stopping...`);
         
-        // Get the fresh pattern for this case
-        const pattern = MOVEMENT_PATTERNS[currentCase];
-        if (pattern) {
-          setTimeout(() => {
-            console.log(`Restarting Case ${currentCase}: ${CASE_DESCRIPTIONS[currentCase]}`);
-            const coordinates = pattern.map(modelName => COORDINATES[modelName]);
-            setMovementQueue(coordinates);
-            
-            // Start movement with the first target
-            if (coordinates.length > 0) {
-              console.log("First target on restart:", coordinates[0]);
-              
-              // Try direct teleport first for more reliable positioning
-              if (!teleportAgentTo(coordinates[0])) {
-                // Fall back to navigator if teleport fails
-                onSelectCase(coordinates[0]);
-                
-                // Force dispatch of the arrival event if it's not happening automatically
-                setTimeout(() => {
-                  if (window.aiAgent && coordinates[0]) {
-                    // Check if agent is close enough to target
-                    const distance = window.aiAgent.position.distanceTo(coordinates[0]);
-                    if (distance > 0.5) {
-                      console.log("Agent didn't reach target on restart, manually moving to it");
-                      // Force agent to position
-                      if (window.aiAgent) {
-                        window.aiAgent.position.set(coordinates[0].x, 0, coordinates[0].z);
-                      }
-                    }
-                    // After ensuring agent is at position, trigger arrival event
-                    window.dispatchEvent(new CustomEvent('agentArrivedAtDestination'));
-                  }
-                }, 5000); // Check after 5 seconds and force if needed
-              }
-            }
-          }, 2000); // Wait 2 seconds before restarting pattern
+        // Clear state to stop automation
+        setIsActive(false);
+        setMovementQueue([]);
+        
+        // Switch to idle animation if still in walk animation
+        if (window.animations && window.animations.idle && window.currentAnimation === 'walk') {
+          window.animations.walk.stop();
+          window.animations.idle.play();
+          window.currentAnimation = 'idle';
         }
+        
+        // Make sure agent stops walking
+        window.isAgentWalking = false;
       }
     } else {
       console.log("Movement queue is empty, can't move to next target");
