@@ -338,10 +338,19 @@ app.post('/api/run-script', async (req, res) => {
       });
     }
     
-    // Execute the script using child_process
+    // Execute the script using child_process with proper path
     const { exec } = await import('child_process');
+    const { dirname } = await import('path');
+    const { fileURLToPath } = await import('url');
     
-    exec(`./${script}`, (error, stdout, stderr) => {
+    // Get current directory
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    
+    const scriptPath = `${__dirname}/${script}`;
+    console.log(`Executing script at: ${scriptPath}`);
+    
+    exec(`bash ${scriptPath}`, (error, stdout, stderr) => {
       if (error) {
         console.error(`Error executing script: ${error.message}`);
         return res.status(500).json({

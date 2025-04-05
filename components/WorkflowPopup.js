@@ -1213,11 +1213,33 @@ Timestamp: ${new Date().toLocaleString()}
             txHash: data.hash,
           });
           
-          // Auto-generate reports
-          handleGenerateReport();
-          setTimeout(() => {
-            handleGenerateGraphs();
-          }, 2000); // Small delay between the two operations
+          // Run the generate_reports.sh script automatically
+          fetch('/api/run-script', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              script: 'generate_reports.sh'
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log("Report generation script executed:", data);
+            setExecutionStatus({
+              success: true,
+              message: 'Transaction completed and reports generated automatically',
+              txHash: data.hash,
+            });
+          })
+          .catch(error => {
+            console.error("Error running report generation script:", error);
+            // Fall back to direct API calls if script execution fails
+            handleGenerateReport();
+            setTimeout(() => {
+              handleGenerateGraphs();
+            }, 2000); // Small delay between the two operations
+          });
         }
       } catch (error) {
         console.error("Error polling transaction status:", error);
