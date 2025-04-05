@@ -44,6 +44,15 @@ export default function Shortcut({ onClose, onDrop }) {
     } else if (buttonId === '1inch-button' || buttonId === '1inch-icon') {
       renderAssistant('1inch');
       onClose();
+    } else if (buttonId === 'polygon-button' || buttonId === 'polygon-icon') {
+      renderAssistant('polygon');
+      onClose();
+    } else if (buttonId === 'celo-button' || buttonId === 'celo-icon') {
+      renderAssistant('celo');
+      onClose();
+    } else if (buttonId === 'spreadsheet-button' || buttonId === 'spreadsheet-icon') {
+      renderAssistant('spreadsheet');
+      onClose();
     } else {
       // Check if the dragged element was one of the icons in the shortcut component
       const dataTransfer = e.dataTransfer;
@@ -63,6 +72,18 @@ export default function Shortcut({ onClose, onDrop }) {
               break;
             } else if (file.name.includes('1inch')) {
               renderAssistant('1inch');
+              onClose();
+              break;
+            } else if (file.name.includes('polygon')) {
+              renderAssistant('polygon');
+              onClose();
+              break;
+            } else if (file.name.includes('celo')) {
+              renderAssistant('celo');
+              onClose();
+              break;
+            } else if (file.name.includes('spreadsheet')) {
+              renderAssistant('spreadsheet');
               onClose();
               break;
             }
@@ -238,6 +259,21 @@ export default function Shortcut({ onClose, onDrop }) {
             </div>
             <div className={styles.logoContainer}>
               <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+          </div>
+          
+          <div className={styles.iconRow}>
+            <div className={styles.logoContainer}>
+              <img src="/icon/polygon.png" alt="Polygon" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/celo.png" alt="Celo" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/spreadsheet.png" alt="Spreadsheet" className={styles.shortcutIcon} />
               <div className={styles.logoGlow}></div>
             </div>
           </div>
