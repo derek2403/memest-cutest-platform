@@ -913,7 +913,11 @@ export default function Home() {
         toPlay.reset();
         toPlay.setEffectiveTimeScale(1);
         toPlay.setEffectiveWeight(1);
-        toPlay.crossFadeFrom(fromAnim, fadeTime, true);
+        
+        // Use a much shorter crossfade time for walk animation to prevent gliding
+        const actualFadeTime = name === 'walk' ? 0.1 : fadeTime;
+        
+        toPlay.crossFadeFrom(fromAnim, actualFadeTime, true);
         toPlay.play();
       } else {
         // Just play the animation directly
@@ -1671,6 +1675,11 @@ export default function Home() {
       if (intersects.length > 0) {
         console.log("Right click detected on floor", intersects[0].point);
 
+        // Start walk animation immediately (before pathfinding)
+        // This prevents the brief gliding effect
+        isAgentWalking = true;
+        playAnimation('walk', 0.1);
+        
         // Set the target position where the AI Agent should move to
         let clickPosition = intersects[0].point.clone();
         
@@ -1799,16 +1808,17 @@ export default function Home() {
         const targetRotation = Math.atan2(direction.x, direction.z);
         aiAgent.rotation.y = targetRotation;
 
-        // Start walking
-        isAgentWalking = true;
-        playAnimation('walk');
+        // Animation is already started, no need to call these again
+        // isAgentWalking = true;
+        // playAnimation('walk');
         console.log("Started walking to: ", agentTargetPosition);
         } catch (error) {
           console.error("Error in pathfinding:", error);
           // Fallback to direct movement if pathfinding fails
           agentTargetPosition.copy(constrainToFloor(clickPosition));
-          isAgentWalking = true;
-          playAnimation('walk');
+          // Animation already started above, no need to call these again
+          // isAgentWalking = true; 
+          // playAnimation('walk');
         }
       } else {
         console.log("No intersection with floor detected");
