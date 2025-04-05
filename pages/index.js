@@ -28,27 +28,6 @@ const globalStyles = {
   }
 };
 
-// Global state to track which plugins are in the room
-window.pluginsInRoom = {
-  metamask: false,
-  polygon: false,
-  celo: false,
-  oneinch: false,
-  spreadsheet: false,
-  gmail: false,
-  // Function to get all active plugins (those that are in the room)
-  getActivePlugins: function() {
-    const active = [];
-    if (this.metamask) active.push('metamask');
-    if (this.polygon) active.push('polygon');
-    if (this.celo) active.push('celo');
-    if (this.oneinch) active.push('oneinch');
-    if (this.spreadsheet) active.push('spreadsheet');
-    if (this.gmail) active.push('gmail');
-    return active;
-  }
-};
-
 export default function Home() {
   const mountRef = useRef(null);
   const [sceneRef, setSceneRef] = useState(null);
@@ -58,10 +37,29 @@ export default function Home() {
   const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
   const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
   
-  // We don't need this global function anymore since we're using the 3D model
-  // window.showMetamaskShortcut = () => {
-  //   setShowMetamaskShortcut(true);
-  // };
+  // Initialize pluginsInRoom on client-side only
+  useEffect(() => {
+    // Initialize global plugins tracking
+    window.pluginsInRoom = {
+      metamask: false,
+      polygon: false,
+      celo: false,
+      oneinch: false,
+      spreadsheet: false,
+      gmail: false,
+      // Function to get all active plugins (those that are in the room)
+      getActivePlugins: function() {
+        const active = [];
+        if (this.metamask) active.push('metamask');
+        if (this.polygon) active.push('polygon');
+        if (this.celo) active.push('celo');
+        if (this.oneinch) active.push('oneinch');
+        if (this.spreadsheet) active.push('spreadsheet');
+        if (this.gmail) active.push('gmail');
+        return active;
+      }
+    };
+  }, []);
 
   // Component level variables for animation and scene
   let walkingSpeed = 0.04; // Reduced by 20% from original 0.05

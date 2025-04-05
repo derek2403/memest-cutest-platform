@@ -572,7 +572,8 @@ export default function Shortcut({ onClose, onDrop }) {
             padding: 50px 15px !important;
             margin: 15px auto !important;
             width: 90% !important;
-            height: 450px !important;
+            height: 230px !important;
+            min-height: 200px !important;
             text-align: center !important;
             transition: all 0.3s ease !important;
             background-color: #232845 !important;
