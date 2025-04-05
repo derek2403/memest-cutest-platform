@@ -50,25 +50,77 @@ const FlowChart = ({ workflow }) => {
   );
 };
 
-// Example workflows
-const EXAMPLE_WORKFLOWS = [
-  {
-    title: 'MetaMask Transaction Tracker',
-    text: 'For each transaction in MetaMask notify in Gmail then record in Spreadsheet'
-  },
-  {
-    title: 'Token Swap Tracker',
-    text: 'For each transaction in MetaMask swap all tokens to Polygon on 1inch'
-  },
-  {
-    title: 'Automated Reports',
-    text: 'Every Monday at 9 AM, collect data from Spreadsheet and send a report to Gmail'
-  },
-  {
-    title: 'Cross-Chain Bridge',
-    text: 'For each Celo transaction, bridge tokens to Polygon using 1inch'
+// Helper function to get workflows based on available plugins
+const getAvailableWorkflows = () => {
+  // Default workflows - always available regardless of plugins
+  const DEFAULT_WORKFLOWS = [
+    {
+      title: 'Metamask Transaction Alerts',
+      text: 'Monitor my MetaMask wallet transactions and send alerts to my Gmail when values exceed $500'
+    },
+    {
+      title: 'Polygon Portfolio Tracker',
+      text: 'Track all my Polygon transactions and record them in a Spreadsheet with daily summaries'
+    },
+    {
+      title: 'Celo & 1inch Monitor',
+      text: 'Monitor Celo transactions and suggest optimal swap opportunities on 1inch exchange'
+    }
+  ];
+
+  // If window.pluginsInRoom is not available or no active plugins, just return defaults
+  if (!window.pluginsInRoom || window.pluginsInRoom.getActivePlugins().length === 0) {
+    return DEFAULT_WORKFLOWS;
   }
-];
+
+  // Get active plugins
+  const activePlugins = window.pluginsInRoom.getActivePlugins();
+  
+  // Start with the default workflows, will add more based on plugins
+  const workflows = [...DEFAULT_WORKFLOWS];
+
+  // Add MetaMask workflows if available
+  if (activePlugins.includes('metamask')) {
+    if (activePlugins.includes('gmail')) {
+      workflows.push({
+        title: 'Transaction Notifications',
+        text: 'For each transaction in MetaMask notify in Gmail'
+      });
+    }
+    
+    if (activePlugins.includes('spreadsheet')) {
+      workflows.push({
+        title: 'Transaction Tracker',
+        text: 'For each transaction in MetaMask record in Spreadsheet'
+      });
+    }
+    
+    if (activePlugins.includes('polygon')) {
+      workflows.push({
+        title: 'Polygon Bridge',
+        text: 'For each transaction in MetaMask bridge to Polygon'
+      });
+    }
+  }
+
+  // Add cross-chain workflows if multiple chains available
+  if (activePlugins.includes('celo') && activePlugins.includes('polygon')) {
+    workflows.push({
+      title: 'Cross-Chain Bridge',
+      text: 'For each Celo transaction, bridge tokens to Polygon'
+    });
+  }
+
+  // Add spreadsheet workflows
+  if (activePlugins.includes('spreadsheet') && activePlugins.includes('gmail')) {
+    workflows.push({
+      title: 'Automated Reports',
+      text: 'Every Monday at 9 AM, collect data from Spreadsheet and send a report to Gmail'
+    });
+  }
+
+  return workflows;
+};
 
 export default function WorkflowPopup({ initialInput = '', onClose, showSavedSection = false, readOnly = false }) {
   const [workflowInput, setWorkflowInput] = useState(initialInput);
@@ -77,11 +129,13 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const [workflowApproved, setWorkflowApproved] = useState(false);
   const [serverResponse, setServerResponse] = useState(null);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
+  const [availableWorkflows, setAvailableWorkflows] = useState([]);
   const savedSectionRef = React.useRef(null);
   
-  // Load saved workflows from localStorage when the component mounts
+  // Load saved workflows from localStorage and determine available workflows when the component mounts
   useEffect(() => {
     try {
+      // Load saved workflows
       const saved = localStorage.getItem('savedWorkflows');
       if (saved) {
         setSavedWorkflows(JSON.parse(saved));
@@ -95,11 +149,25 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
           }, 300); // Short delay to ensure component is fully rendered
         }
       }
+
+      // Initial load of available workflows
+      updateAvailableWorkflows();
+      
+      // Set interval to periodically check for plugin changes
+      const intervalId = setInterval(updateAvailableWorkflows, 1000);
+      
+      // Clean up interval on unmount
+      return () => clearInterval(intervalId);
     } catch (error) {
       console.error('Error loading saved workflows:', error);
     }
   }, [showSavedSection]);
   
+  // Function to update available workflows based on plugins in room
+  const updateAvailableWorkflows = () => {
+    setAvailableWorkflows(getAvailableWorkflows());
+  };
+
   // Parse the workflow when component mounts if initialInput is provided
   useEffect(() => {
     if (initialInput) {
@@ -221,10 +289,10 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.logoContainer}>
-            <img src="/icon/metamask.png" alt="Workflow" className={styles.logo} />
+            <img src="/icon/polygon.png" alt="Workflow" className={styles.logo} />
             <div className={styles.logoGlow}></div>
           </div>
-          <h2>{readOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>
+          <h2 className={styles.headerTitle}>{readOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
@@ -259,7 +327,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                   <div className={styles.examplesSection}>
                     <p className={styles.examplesTitle}>Try one of these examples:</p>
                     <div className={styles.exampleButtons}>
-                      {EXAMPLE_WORKFLOWS.map((example, index) => (
+                      {availableWorkflows.map((example, index) => (
                         <button
                           key={index}
                           onClick={() => handleLoadExample(example)}
@@ -271,11 +339,12 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                     </div>
                   </div>
                   
+                  {/* Always show the form regardless of plugin status */}
                   <form onSubmit={handleParseWorkflow} className={styles.workflowForm}>
                     <textarea
                       value={workflowInput}
                       onChange={(e) => setWorkflowInput(e.target.value)}
-                      placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Polygon on 1inch"
+                      placeholder="Describe your workflow (e.g., Monitor MetaMask transactions and send summaries to Gmail)"
                       className={styles.workflowInput}
                       disabled={workflowLoading}
                     />
@@ -296,7 +365,8 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                     </button>
                   </form>
         
-                  {workflowParsed.length > 0 && (
+                  {/* Result Section - Always show if workflow has been parsed, regardless of plugin status */}
+                  {workflowParsed && workflowParsed.length > 0 && (
                     <div className={styles.resultSection}>
                       {/* Visual Flow Chart */}
                       <div className={styles.flowchartSection}>
@@ -349,8 +419,11 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                               <button 
                                 className={styles.deleteButton}
                                 onClick={() => deleteWorkflow(saved.id)}
+                                aria-label="Delete workflow"
                               >
-                                Delete
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M2.5 1C2.5 0.447715 2.94772 0 3.5 0H12.5C13.0523 0 13.5 0.447715 13.5 1V2H15C15.5523 2 16 2.44772 16 3C16 3.55228 15.5523 4 15 4H14V14C14 15.1046 13.1046 16 12 16H4C2.89543 16 2 15.1046 2 14V4H1C0.447715 4 0 3.55228 0 3C0 2.44772 0.447715 2 1 2H2.5V1ZM4.5 2H11.5V1H4.5V2ZM4 4V14H12V4H4ZM6 6C6.55228 6 7 6.44772 7 7V11C7 11.5523 6.55228 12 6 12C5.44772 12 5 11.5523 5 11V7C5 6.44772 5.44772 6 6 6ZM10 6C10.5523 6 11 6.44772 11 7V11C11 11.5523 10.5523 12 10 12C9.44772 12 9 11.5523 9 11V7C9 6.44772 9.44772 6 10 6Z" />
+                                </svg>
                               </button>
                             </div>
                           </div>

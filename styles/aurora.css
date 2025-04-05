@@ -1,0 +1,13 @@
+/* Aurora Animation */
+@keyframes aurora {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: -200% -200%;
+  }
+}
+
+.animate-aurora {
+  animation: aurora 3s linear infinite;
+} 

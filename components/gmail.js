@@ -10,6 +10,10 @@ export function spawnGmailModel(scene) {
   // If model already exists, just toggle visibility instead of reloading
   if (gmailModelLoaded && gmailModel) {
     gmailModel.visible = !gmailModel.visible;
+    // Update the global plugins tracking state
+    if (window.pluginsInRoom) {
+      window.pluginsInRoom.gmail = gmailModel.visible;
+    }
     console.log(`Gmail model visibility set to: ${gmailModel.visible}`);
     return;
   }
@@ -58,6 +62,11 @@ export function spawnGmailModel(scene) {
       // Update tracking variables
       gmailModelLoaded = true;
       gmailModel = model;
+      
+      // Update the global plugins tracking state
+      if (window.pluginsInRoom) {
+        window.pluginsInRoom.gmail = true;
+      }
       
       console.log("Gmail model added to scene at:", model.position);
     },

@@ -32,6 +32,35 @@ export default function Home() {
   const mountRef = useRef(null);
   const [sceneRef, setSceneRef] = useState(null);
 
+  // Add these state variables
+  const [showShortcutPopup, setShowShortcutPopup] = useState(false);
+  const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
+  const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
+  
+  // Initialize pluginsInRoom on client-side only
+  useEffect(() => {
+    // Initialize global plugins tracking
+    window.pluginsInRoom = {
+      metamask: false,
+      polygon: false,
+      celo: false,
+      oneinch: false,
+      spreadsheet: false,
+      gmail: false,
+      // Function to get all active plugins (those that are in the room)
+      getActivePlugins: function() {
+        const active = [];
+        if (this.metamask) active.push('metamask');
+        if (this.polygon) active.push('polygon');
+        if (this.celo) active.push('celo');
+        if (this.oneinch) active.push('oneinch');
+        if (this.spreadsheet) active.push('spreadsheet');
+        if (this.gmail) active.push('gmail');
+        return active;
+      }
+    };
+  }, []);
+
   // Component level variables for animation and scene
   let walkingSpeed = 0.04; // Reduced by 20% from original 0.05
   let isAgentWalking = false;
@@ -108,11 +137,6 @@ export default function Home() {
     // More furniture obstacles can be added here
   ];
 
-  // Add these state variables
-  const [showShortcutPopup, setShowShortcutPopup] = useState(false);
-  const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
-  const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
-  
   // Debug mode for visualizing obstacles
   const DEBUG_MODE = true;
   // Larger buffer for obstacle avoidance
@@ -745,6 +769,7 @@ export default function Home() {
     // Visualize the obstacle boundaries in debug mode
     if (DEBUG_MODE) {
       visualizeObstacles();
+      visualizeFloorBoundaries(floorBoundaries);
     }
     
     // Function to visualize obstacles for debugging
@@ -2005,6 +2030,9 @@ export default function Home() {
           } else if (clickableObject.userData.type === 'books') {
             // Show the workflow popup when books are clicked
             setShowWorkflowPopup(true);
+          } else if (clickableObject.userData.type === 'metamask') {
+            // Show the MetaMask shortcut when fox is clicked
+            setShowMetamaskShortcut(true);
           }
         }
       }
@@ -2018,12 +2046,7 @@ export default function Home() {
     initSidebar({
       'metamask-button': () => {
         console.log("Metamask button clicked in index.js callback");
-        if (!scene) {
-          console.error("Scene is undefined in Metamask callback");
-          return;
-        }
-        console.log("About to spawn Metamask fox with scene:", scene);
-        // This will now spawn the Metamask fox
+        // Pass the scene parameter to the 3D implementation
         spawnMetamaskFox(scene);
       },
       'polygon-button': () => {

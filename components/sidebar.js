@@ -13,10 +13,32 @@ export function initSidebar(callbacks = {}, scene) {
     const sidebar = document.createElement('div');
     sidebar.id = 'sidebar';
     
-    // Create main heading
+    // Create main heading with aurora effect
     const mainHeading = document.createElement('h2');
-    mainHeading.textContent = 'PLUGINS';
     mainHeading.className = 'sidebar-heading main-heading';
+    
+    // Create the aurora text effect manually since we can't use React components directly
+    mainHeading.innerHTML = `
+        <span class="relative inline-block">
+            <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">PLUGINS</span>
+            <span 
+                class="animate-aurora"
+                style="
+                    display: inline-block;
+                    position: relative;
+                    background-image: linear-gradient(135deg, #FF0080, #FF0000, #FFA500, #FFFF00, #00FF00, #0000FF, #4B0082, #8B00FF, #FF0080, #FF0000);
+                    background-size: 200% 100%;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    color: transparent;
+                "
+                aria-hidden="true"
+            >
+                PLUGINS
+            </span>
+        </span>
+    `;
+    
     sidebar.appendChild(mainHeading);
     
     // Create wallet section
@@ -30,7 +52,7 @@ export function initSidebar(callbacks = {}, scene) {
     metamaskButton.id = 'metamask-button';
     metamaskButton.className = 'sidebar-button wallet-button';
     metamaskButton.style.border = 'none';
-    metamaskButton.style.backgroundColor = '#333a52';
+    metamaskButton.style.backgroundColor = '#f8a846';
     
     // Create icon for Metamask
     const metamaskIcon = document.createElement('img');
@@ -42,14 +64,20 @@ export function initSidebar(callbacks = {}, scene) {
     metamaskButton.appendChild(metamaskIcon);
     const metamaskText = document.createElement('span');
     metamaskText.textContent = 'Metamask';
+    metamaskText.className = 'button-text';
     metamaskButton.appendChild(metamaskText);
     
-    // Create tick indicator for active status
+    // Create tick indicator for Metamask
     const metamaskTick = document.createElement('span');
-    metamaskTick.className = 'active-indicator';
+    metamaskTick.className = 'plugin-tick';
     metamaskTick.innerHTML = '✓';
-    metamaskTick.style.display = 'none'; // Hidden by default
+    metamaskTick.style.visibility = 'hidden'; // Hidden by default (using visibility instead of display)
+    metamaskTick.style.opacity = '0';
+    metamaskTick.dataset.plugin = 'metamask'; // Add plugin name reference
     metamaskButton.appendChild(metamaskTick);
+    
+    // Make Metamask button draggable
+    makeDraggable(metamaskButton, 'metamask-button', callbacks, scene);
     
     // Add Metamask button to sidebar
     sidebar.appendChild(metamaskButton);
@@ -62,11 +90,11 @@ export function initSidebar(callbacks = {}, scene) {
     
     // Create other service buttons
     const serviceButtons = [
-        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#35287a' },
-        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#0a6e4c' },
-        { id: 'oneinch-button', text: '1inch', icon: '/icon/1inch.png', color: '#1e4896' },
-        { id: 'spreadsheet-button', text: 'Spreadsheet', icon: '/icon/spreadsheet.png', color: '#0a6e4c' },
-        { id: 'gmail-button', text: 'Gmail', icon: '/icon/gmail.png', color: '#992525' }
+        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#2e2370', plugin: 'polygon' },
+        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#2bae71', plugin: 'celo' },
+        { id: 'oneinch-button', text: '1inch', icon: '/icon/1inch.png', color: '#1e4896', plugin: 'oneinch' },
+        { id: 'spreadsheet-button', text: 'Spreadsheet', icon: '/icon/spreadsheet.png', color: '#0a6e4c', plugin: 'spreadsheet' },
+        { id: 'gmail-button', text: 'Gmail', icon: '/icon/gmail.png', color: '#992525', plugin: 'gmail' }
     ];
     
     // Create a map to store button references
@@ -115,15 +143,21 @@ export function initSidebar(callbacks = {}, scene) {
         button.appendChild(icon);
         const buttonText = document.createElement('span');
         buttonText.textContent = data.text;
-        buttonText.style.color = '#FFFFFF';
+        buttonText.className = 'button-text';
+        buttonText.style.color = '#FFFFFF';  // All buttons have white text for consistency
         button.appendChild(buttonText);
         
-        // Create tick indicator for active status
+        // Create tick indicator
         const tick = document.createElement('span');
-        tick.className = 'active-indicator';
+        tick.className = 'plugin-tick';
         tick.innerHTML = '✓';
-        tick.style.display = 'none'; // Hidden by default
+        tick.style.visibility = 'hidden'; // Hidden by default (using visibility instead of display)
+        tick.style.opacity = '0';
+        tick.dataset.plugin = data.plugin; // Store plugin name for reference
         button.appendChild(tick);
+        
+        // Make the button draggable
+        makeDraggable(button, data.id, callbacks, scene);
         
         // Store button reference
         buttonRefs[data.id] = button;
@@ -201,7 +235,7 @@ export function initSidebar(callbacks = {}, scene) {
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 220px;
+            width: 240px;
             background-color: #1a1f2e;
             border-radius: 12px;
             padding: 15px;
@@ -239,8 +273,9 @@ export function initSidebar(callbacks = {}, scene) {
         .sidebar-button {
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px 15px 10px 12px;
             margin-bottom: 10px;
             border: none !important;
             border-radius: 30px;
@@ -253,6 +288,8 @@ export function initSidebar(callbacks = {}, scene) {
             box-shadow: none !important;
             outline: none !important;
             position: relative;
+            min-height: 44px;
+            overflow: hidden;
         }
         
         .wallet-button {
@@ -271,6 +308,32 @@ export function initSidebar(callbacks = {}, scene) {
             height: 24px;
             margin-right: 10px;
             object-fit: contain;
+            flex-shrink: 0;
+        }
+        
+        .button-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            padding-right: 25px; /* Reserve space for tick */
+            color: #FFFFFF;
+        }
+        
+        .plugin-tick {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4CFF50;
+            font-weight: 900;
+            font-size: 22px;
+            text-shadow: 0 0 5px rgba(76, 255, 80, 0.7);
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .active-indicator {
@@ -299,14 +362,71 @@ export function initSidebar(callbacks = {}, scene) {
     `;
     document.head.appendChild(style);
 
-    // Add methods to control active indicators
-    const sidebarAPI = {
-        setActive: function(buttonId, isActive) {
-            const button = buttonId === 'metamask-button' ? metamaskButton : buttonRefs[buttonId];
-            if (button) {
-                const indicator = button.querySelector('.active-indicator');
-                if (indicator) {
-                    indicator.style.display = isActive ? 'block' : 'none';
+    // Function to update ticks based on pluginsInRoom state
+    const updatePluginTicks = () => {
+        if (!window.pluginsInRoom) {
+            console.warn("window.pluginsInRoom is not initialized yet");
+            return;
+        }
+        
+        // Update all plugins ticks using data-plugin attribute
+        document.querySelectorAll('.plugin-tick[data-plugin]').forEach(tick => {
+            const plugin = tick.dataset.plugin;
+            if (window.pluginsInRoom.hasOwnProperty(plugin)) {
+                const isVisible = window.pluginsInRoom[plugin];
+                // Use visibility instead of display to maintain layout
+                tick.style.visibility = isVisible ? 'visible' : 'hidden';
+                tick.style.opacity = isVisible ? '1' : '0';
+            }
+        });
+    };
+    
+    // Set up an interval to check for plugin changes
+    const tickInterval = setInterval(updatePluginTicks, 1000);
+    
+    // Initial update
+    setTimeout(updatePluginTicks, 1000);
+
+    return sidebar;
+}
+
+// Function to make an element draggable
+function makeDraggable(element, buttonId, callbacks, scene) {
+    // Variables for drag functionality
+    let isDragging = false;
+    let clone = null;
+    let startX, startY;
+    let originalOpacity;
+    let dropHighlight = null;
+    let rafId = null;
+    let lastKnownMousePosition = { x: 0, y: 0 };
+    let isOverValidDropArea = false;
+    
+    // Use requestAnimationFrame for smooth clone movement
+    const updateClonePosition = () => {
+        if (!isDragging || !clone) return;
+        
+        // Update the position of the clone to follow the cursor smoothly using transforms
+        // for better performance compared to top/left positioning
+        const x = lastKnownMousePosition.x - element.offsetWidth / 2;
+        const y = lastKnownMousePosition.y - element.offsetHeight / 2;
+        clone.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${isOverValidDropArea ? 1.15 : 1.1})`;
+        
+        // Check if over valid drop area and provide visual feedback (throttled)
+        const isWithinRoom = isWithinRoomBoundary(lastKnownMousePosition.x, lastKnownMousePosition.y);
+        
+        // Only update visuals if drop state has changed
+        if (isWithinRoom !== isOverValidDropArea) {
+            isOverValidDropArea = isWithinRoom;
+            
+            if (isWithinRoom) {
+                // Style the clone to show it's over a valid drop area
+                clone.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.5)';
+                clone.style.border = '2px solid rgba(0, 255, 0, 0.7)';
+                
+                // Add visual highlight to the floor if not already there
+                if (!dropHighlight && scene) {
+                    createDropHighlight();
                 }
                 
                 // Update the active state tracking
