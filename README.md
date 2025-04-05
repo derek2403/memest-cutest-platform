@@ -1,11 +1,11 @@
-# Memest Cutest Project (MCP)
+# Memest Cutest Project 
 _A gamified, cross app based Model Context Protocol platform_
 
 ![Logo](https://github.com/derek2403/memest-cutest-platform/blob/main/public/logo.png?raw=true)
 
 We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
 
-We’ve deployed a **live demonstration of MCP** at [**(Link Coming Soon)**](#).
+We’ve deployed a **live demonstration of Memest Cutest Project** at [**(Link Coming Soon)**](#).
 
 ---
 
@@ -14,7 +14,7 @@ We noticed how **inconvenient** it is to manage multiple wallet connections whet
 
 > *“What if we had a single platform that connected all these services into building blocks, letting users assemble custom workflows in one place?”*
 
-Thus, **Memest Cutest Project (MCP)** was born, a unified space where all your services coexist in one interface, powered by simple drag-and-drop building blocks and AI-driven orchestration for seamless cross-service tasks. We also gamified the visual process, so users can truly see and understand every interaction happening within the MCP—making cross-service integration as transparent and engaging as possible.
+Thus, **Memest Cutest Project** was born, a unified space where all your services coexist in one interface, powered by simple drag-and-drop building blocks and AI-driven orchestration for seamless cross-service tasks. We also gamified the visual process, so users can truly see and understand every interaction happening within the MCP making cross-service integration as transparent and engaging as possible.
 
 
 
@@ -36,12 +36,42 @@ Thus, **Memest Cutest Project (MCP)** was born, a unified space where all your s
 
 ## The Solution🔑
 
+1. **Unified Web2–Web3 Integration:** Memest Cutest Project uses MCP to unite disparate platforms like MetaMask, 1inch, Polygon, Celo, Gmail, Spreadsheet into a single cohesive interface, eliminating the hassle of juggling multiple logins and websites.
+
+2. **Drag-and-Drop Workflows:** With a simple visual interface powered by MCP, Memest Cutest Project lets users assemble cross-service automations using building blocks with no coding required with NLP or drag and drop workflows.
+
+3. **AI-Driven Orchestration:** By harnessing MCP, Memest Cutest Project enables intelligent agents to seamlessly handle multi-step tasks across your connected services, reducing manual effort and errors.
+
+4. **Gamified Visualization:** Memest Cutest Project transforms service interactions into an engaging, map-like view, so you can intuitively grasp how workflows progress and which services are talking to each other.
+
+5. **Secure & Scalable Foundation:** Built on MCP standards, Memest Cutest Project provides a robust environment where anyone can host their own MCP server. Its modular, building-block architecture empowers developers and users alike to add new plugins and services, continuously expanding the ecosystem like building blocks
 
 
 ---
 
-## How Our Project Works⚙️
-This is done by
+## How Our Project Works ⚙️
+
+**Single-Platform Integration**  
+Users begin by connecting their wallets (via RainbowKit) and linking Web2 services (e.g., Gmail) directly within our unified interface so they are not require to hop across separate websites.
+
+**Visual Service Blocks**  
+We spawn a playful representation of each service once it’s added. For example:  
+- **MetaMask** appears as a fox  
+- **1inch** appears as a unicorn  
+- **Polygon** is a purple crystal ball  
+- **Celo** is a plant  
+- **Google Sheets** appears as a paper spreadsheet  
+- **Gmail** is shown as a laptop with Gmail open
+
+**Drag-and-Drop Workflows**  
+Inspired by Apple Shortcuts, users can simply drag, drop, and connect these service blocks. An AI agent automatically translates these connections into real actions behind the scenes. You can also define workflows via natural language as our agent will interpret phrases like “For each MetaMask fund transfer, notify me by Gmail and record it in Google Sheets.”
+
+**AI Agent Execution**  
+Once you’ve configured a workflow, our AI agent (a little robot in the interface) “walks” between the relevant service blocks to illustrate how your automation runs. In the background, MCP triggers event listeners (for instance, on MetaMask) and processes each command (like sending an email, logging data to a spreadsheet, or initiating a token swap on 1inch).
+
+**Endless Possibilities**  
+Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, and Google Sheets but any additional plugins can expand the platform further. Whether it’s purely Web2 integrations (like email and spreadsheets) or advanced cross-chain automations (e.g., swapping funds via 1inch upon receiving tokens in MetaMask), the **Memest Cutest Project** can handle it all as more services are added.
+
 
 
 ---
