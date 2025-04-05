@@ -10,6 +10,7 @@ import { spawn1inchUnicorn } from "../components/oneinch.js";
 import { spawnMetamaskFox } from "../components/metawallet.js";
 import { spawnPolygonModel } from "../components/polygon.js";
 import { spawnPolygonPlanet } from "../components/polygon_planet.js";
+import { spawnOneinchPlanet } from "../components/oneinch_planet.js";
 import { spawnCeloModel } from "../components/celo.js";
 import { spawnGmailModel } from "../components/gmail.js";
 import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
@@ -45,6 +46,8 @@ export default function Home() {
     window.pluginsInRoom = {
       metamask: false,
       polygon: false,
+      polygonPlanet: false,
+      oneinchPlanet: false,
       celo: false,
       oneinch: false,
       spreadsheet: false,
@@ -54,6 +57,8 @@ export default function Home() {
         const active = [];
         if (this.metamask) active.push('metamask');
         if (this.polygon) active.push('polygon');
+        if (this.polygonPlanet) active.push('polygonPlanet');
+        if (this.oneinchPlanet) active.push('oneinchPlanet');
         if (this.celo) active.push('celo');
         if (this.oneinch) active.push('oneinch');
         if (this.spreadsheet) active.push('spreadsheet');
@@ -435,8 +440,9 @@ export default function Home() {
     // Don't bother playing the video if we're not using it
     // ensureVideoPlays();
 
-    // Automatically spawn the polygon planet in space
+    // Automatically spawn the planets in space
     spawnPolygonPlanet(scene);
+    spawnOneinchPlanet(scene);
 
     // Camera setup
     camera = new THREE.PerspectiveCamera(
