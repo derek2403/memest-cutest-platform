@@ -6,7 +6,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -19,22 +19,23 @@
   max-width: 500px;
   height: 80%;
   max-height: 600px;
-  background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  background-color: #1a1e2e;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  border: 1px solid #2c3050;
 }
 
 .header {
   display: flex;
   align-items: center;
   padding: 15px 20px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-  border-bottom: 1px solid #e0e0e0;
-  border-radius: 20px 20px 0 0;
+  background-color: #151b30;
+  border-bottom: 1px solid #2c3050;
+  border-radius: 12px 12px 0 0;
 }
 
 .logoContainer {
@@ -54,7 +55,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.3) 0%, rgba(108, 99, 255, 0) 70%);
   border-radius: 10px;
   animation: pulse 2s infinite;
 }
@@ -76,23 +77,31 @@
 
 .header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 600;
-  color: #333;
+  color: #e0e0ff;
 }
 
 .closeButton {
   margin-left: auto;
   background: none;
   border: none;
-  font-size: 1.8rem;
-  color: #888;
+  font-size: 28px;
+  color: #8f96b3;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .closeButton:hover {
-  color: #333;
+  color: #e0e0ff;
+  background-color: rgba(108, 99, 255, 0.1);
+  transform: scale(1.1);
 }
 
 .chatContainer {
@@ -100,7 +109,7 @@
   padding: 20px;
   overflow-y: auto;
   position: relative;
-  background-color: white;
+  background-color: #1a1e2e;
 }
 
 .lowPolyBackground {
@@ -109,7 +118,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: white;
+  background-color: #1a1e2e;
   opacity: 1;
   pointer-events: none;
   z-index: -1;
@@ -134,16 +143,16 @@
   padding: 12px 15px;
   border-radius: 18px;
   position: relative;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .aiMessage .messageBubble {
-  background-color: #f0f7ff;
+  background-color: #232845;
   border-bottom-left-radius: 5px;
 }
 
 .userMessage .messageBubble {
-  background-color: #e9f5e9;
+  background-color: #2c3050;
   border-bottom-right-radius: 5px;
 }
 
@@ -151,14 +160,14 @@
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 5px;
-  color: #666;
+  color: #a0a8cc;
 }
 
 .messageBubble p {
   margin: 0;
   font-size: 1rem;
   line-height: 1.4;
-  color: #333;
+  color: #d0d6ff;
 }
 
 .messageCorner {
@@ -170,12 +179,12 @@
 
 .aiMessage .messageCorner {
   left: -5px;
-  background: radial-gradient(circle at top right, transparent 10px, #f0f7ff 0);
+  background: radial-gradient(circle at top right, transparent 10px, #232845 0);
 }
 
 .userMessage .messageCorner {
   right: -5px;
-  background: radial-gradient(circle at top left, transparent 10px, #e9f5e9 0);
+  background: radial-gradient(circle at top left, transparent 10px, #2c3050 0);
 }
 
 .optionsContainer {
@@ -183,39 +192,43 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
-  margin-top: 20px;
+  margin: 20px;
+  padding: 15px;
+  background-color: #232845;
+  border-radius: 12px;
+  border: 1px solid #2c3050;
 }
 
 .optionButton {
   padding: 10px 15px;
-  background-color: #fff;
-  border: 2px solid #f0f0f0;
-  border-radius: 15px;
+  background-color: #2c3050;
+  border: 2px solid #3d4568;
+  border-radius: 12px;
   font-family: 'Baloo 2', cursive;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #555;
+  color: #d0d6ff;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
 .optionButton:hover {
-  background-color: #f9f9f9;
-  border-color: #ddd;
+  background-color: #3a3f68;
+  border-color: #6c63ff;
   transform: translateY(-2px);
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 12px rgba(108, 99, 255, 0.3);
 }
 
 .exitButton {
-  background-color: #ffebee;
-  border-color: #ffcdd2;
-  color: #e57373;
+  background-color: rgba(229, 83, 83, 0.15);
+  border-color: rgba(229, 83, 83, 0.3);
+  color: #ff8080;
 }
 
 .exitButton:hover {
-  background-color: #ffcdd2;
-  border-color: #ef9a9a;
+  background-color: rgba(229, 83, 83, 0.25);
+  border-color: rgba(229, 83, 83, 0.5);
 }
 
 /* Add cute animations */

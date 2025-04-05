@@ -21,8 +21,8 @@ export function initMetaWallet() {
         icon.style.width = '40px';
         icon.style.height = '40px';
         icon.style.borderRadius = '50%';
-        icon.style.backgroundColor = '#ffffff';
-        icon.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+        icon.style.backgroundColor = '#1a1e2e';
+        icon.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
         icon.style.cursor = 'grab';
         icon.style.zIndex = '1000';
         icon.style.display = 'flex';
@@ -43,25 +43,33 @@ export function initMetaWallet() {
         let isDragging = false;
         let offsetX, offsetY;
         
-        // Add drag start event
+        // Create glow effect
+        const glow = document.createElement('div');
+        glow.style.position = 'absolute';
+        glow.style.width = '100%';
+        glow.style.height = '100%';
+        glow.style.borderRadius = '50%';
+        glow.style.backgroundColor = 'rgba(108, 99, 255, 0.2)';
+        glow.style.filter = 'blur(8px)';
+        glow.style.zIndex = '-1';
+        icon.appendChild(glow);
+        
+        // Mouse down event - start dragging
         icon.addEventListener('mousedown', (e) => {
             isDragging = true;
+            offsetX = e.clientX - icon.getBoundingClientRect().left;
+            offsetY = e.clientY - icon.getBoundingClientRect().top;
             icon.style.cursor = 'grabbing';
             
-            // Calculate the offset of the mouse pointer relative to the icon
-            const rect = icon.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
-            
-            // Prevent default behavior to avoid text selection during drag
+            // Prevent default behavior
             e.preventDefault();
         });
         
-        // Add drag event
+        // Mouse move event - drag the icon
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             
-            // Update the icon position based on mouse position and offset
+            // Update icon position
             const x = e.clientX - offsetX;
             const y = e.clientY - offsetY;
             
@@ -69,21 +77,21 @@ export function initMetaWallet() {
             icon.style.top = `${y}px`;
         });
         
-        // Add drag end event
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                icon.style.cursor = 'grab';
-                
-                // Create and show the wallet box when dragging ends
-                createWalletBox(icon.style.left, icon.style.top);
-                
-                // Remove the icon after creating the wallet box
-                document.body.removeChild(icon);
-            }
+        // Mouse up event - stop dragging and create wallet
+        document.addEventListener('mouseup', (e) => {
+            if (!isDragging) return;
+            
+            isDragging = false;
+            icon.style.cursor = 'grab';
+            
+            // Create wallet box at current position
+            createWalletBox(`${icon.style.left}`, `${icon.style.top}`);
+            
+            // Remove the draggable icon
+            document.body.removeChild(icon);
         });
         
-        // Add the icon to the document
+        // Append the icon to the body
         document.body.appendChild(icon);
     };
     
@@ -99,14 +107,15 @@ export function initMetaWallet() {
         walletBox.style.top = top;
         walletBox.style.width = '300px';
         walletBox.style.height = '400px';
-        walletBox.style.backgroundColor = '#ffffff';
-        walletBox.style.borderRadius = '15px';
-        walletBox.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
+        walletBox.style.backgroundColor = '#1a1e2e';
+        walletBox.style.borderRadius = '12px';
+        walletBox.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.25)';
         walletBox.style.zIndex = '1000';
         walletBox.style.overflow = 'hidden';
         walletBox.style.display = 'flex';
         walletBox.style.flexDirection = 'column';
         walletBox.style.fontFamily = 'Quicksand, sans-serif';
+        walletBox.style.border = '1px solid #2c3050';
         
         // Create the header with close button
         const header = document.createElement('div');
@@ -114,8 +123,9 @@ export function initMetaWallet() {
         header.style.justifyContent = 'space-between';
         header.style.alignItems = 'center';
         header.style.padding = '15px';
-        header.style.backgroundColor = '#ffb6c1';
-        header.style.color = '#ffffff';
+        header.style.backgroundColor = '#151b30';
+        header.style.color = '#e0e0ff';
+        header.style.borderBottom = '1px solid #2c3050';
         
         // Add MetaMask logo and title to header
         const headerLeft = document.createElement('div');
@@ -132,83 +142,138 @@ export function initMetaWallet() {
         const headerTitle = document.createElement('h3');
         headerTitle.textContent = 'MetaMask Wallet';
         headerTitle.style.margin = '0';
-        headerTitle.style.color = '#5a5a5a';
+        headerTitle.style.fontSize = '16px';
+        headerTitle.style.fontWeight = '600';
+        headerTitle.style.color = '#e0e0ff';
         
         headerLeft.appendChild(headerIcon);
         headerLeft.appendChild(headerTitle);
         
         // Create close button
         const closeButton = document.createElement('button');
-        closeButton.innerHTML = '&times;';
+        closeButton.textContent = '×';
         closeButton.style.background = 'none';
         closeButton.style.border = 'none';
-        closeButton.style.color = '#5a5a5a';
+        closeButton.style.color = '#8f96b3';
         closeButton.style.fontSize = '24px';
         closeButton.style.cursor = 'pointer';
-        closeButton.style.padding = '0';
-        closeButton.style.lineHeight = '1';
+        closeButton.style.width = '32px';
+        closeButton.style.height = '32px';
         closeButton.style.display = 'flex';
-        closeButton.style.justifyContent = 'center';
         closeButton.style.alignItems = 'center';
-        closeButton.style.width = '30px';
-        closeButton.style.height = '30px';
+        closeButton.style.justifyContent = 'center';
+        closeButton.style.transition = 'all 0.2s';
         closeButton.style.borderRadius = '50%';
-        closeButton.style.transition = 'background-color 0.2s';
         
         // Add hover effect to close button
         closeButton.addEventListener('mouseenter', () => {
-            closeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+            closeButton.style.color = '#e0e0ff';
+            closeButton.style.backgroundColor = 'rgba(108, 99, 255, 0.1)';
+            closeButton.style.transform = 'scale(1.1)';
         });
         
         closeButton.addEventListener('mouseleave', () => {
+            closeButton.style.color = '#8f96b3';
             closeButton.style.backgroundColor = 'transparent';
+            closeButton.style.transform = 'scale(1)';
         });
         
-        // Add click event to close button
+        // Handle close button click
         closeButton.addEventListener('click', () => {
             document.body.removeChild(walletBox);
-            // Recreate the draggable icon when wallet is closed
-            createDraggableMetaMaskIcon();
         });
         
         // Assemble header
         header.appendChild(headerLeft);
         header.appendChild(closeButton);
-        walletBox.appendChild(header);
         
-        // Create wallet content
+        // Create main content area
         const content = document.createElement('div');
-        content.style.padding = '20px';
         content.style.flex = '1';
+        content.style.padding = '15px';
         content.style.display = 'flex';
         content.style.flexDirection = 'column';
-        content.style.gap = '15px';
+        content.style.overflowY = 'auto';
+        content.style.backgroundColor = '#1a1e2e';
+        content.style.color = '#d0d6ff';
         
-        // Add wallet balance section
+        // Add account info section
+        const accountSection = document.createElement('div');
+        accountSection.style.marginBottom = '20px';
+        accountSection.style.padding = '15px';
+        accountSection.style.backgroundColor = '#232845';
+        accountSection.style.borderRadius = '10px';
+        accountSection.style.border = '1px solid #2c3050';
+        
+        const accountTitle = document.createElement('h4');
+        accountTitle.textContent = 'Account';
+        accountTitle.style.margin = '0 0 10px 0';
+        accountTitle.style.color = '#a0a8cc';
+        accountTitle.style.fontSize = '14px';
+        accountTitle.style.fontWeight = '600';
+        
+        const accountIdContainer = document.createElement('div');
+        accountIdContainer.style.display = 'flex';
+        accountIdContainer.style.alignItems = 'center';
+        accountIdContainer.style.justifyContent = 'space-between';
+        
+        const accountId = document.createElement('div');
+        accountId.textContent = '0x1234...5678';
+        accountId.style.fontSize = '14px';
+        accountId.style.fontWeight = '500';
+        accountId.style.color = '#d0d6ff';
+        
+        const copyButton = document.createElement('button');
+        copyButton.textContent = 'Copy';
+        copyButton.style.background = 'none';
+        copyButton.style.border = '1px solid #3d4568';
+        copyButton.style.borderRadius = '6px';
+        copyButton.style.padding = '4px 8px';
+        copyButton.style.fontSize = '12px';
+        copyButton.style.color = '#a0a8cc';
+        copyButton.style.cursor = 'pointer';
+        copyButton.style.transition = 'all 0.2s';
+        
+        // Add hover effect to copy button
+        copyButton.addEventListener('mouseenter', () => {
+            copyButton.style.backgroundColor = 'rgba(108, 99, 255, 0.1)';
+            copyButton.style.borderColor = '#6c63ff';
+            copyButton.style.color = '#e0e0ff';
+        });
+        
+        copyButton.addEventListener('mouseleave', () => {
+            copyButton.style.backgroundColor = 'transparent';
+            copyButton.style.borderColor = '#3d4568';
+            copyButton.style.color = '#a0a8cc';
+        });
+        
+        accountIdContainer.appendChild(accountId);
+        accountIdContainer.appendChild(copyButton);
+        
+        accountSection.appendChild(accountTitle);
+        accountSection.appendChild(accountIdContainer);
+        
+        // Add balance section
         const balanceSection = document.createElement('div');
-        balanceSection.style.textAlign = 'center';
+        balanceSection.style.marginBottom = '20px';
         balanceSection.style.padding = '15px';
-        balanceSection.style.backgroundColor = '#f9f9f9';
+        balanceSection.style.backgroundColor = '#232845';
         balanceSection.style.borderRadius = '10px';
-        
-        const balanceLabel = document.createElement('div');
-        balanceLabel.textContent = 'Total Balance';
-        balanceLabel.style.fontSize = '14px';
-        balanceLabel.style.color = '#888';
+        balanceSection.style.border = '1px solid #2c3050';
+        balanceSection.style.textAlign = 'center';
         
         const balanceAmount = document.createElement('div');
-        balanceAmount.textContent = '0.0000 ETH';
+        balanceAmount.textContent = '1.45 ETH';
         balanceAmount.style.fontSize = '24px';
-        balanceAmount.style.fontWeight = 'bold';
-        balanceAmount.style.margin = '10px 0';
-        balanceAmount.style.color = '#5a5a5a';
+        balanceAmount.style.fontWeight = '700';
+        balanceAmount.style.color = '#e0e0ff';
+        balanceAmount.style.margin = '5px 0';
         
         const balanceFiat = document.createElement('div');
-        balanceFiat.textContent = '$0.00 USD';
+        balanceFiat.textContent = '$2,456.78 USD';
         balanceFiat.style.fontSize = '14px';
-        balanceFiat.style.color = '#888';
+        balanceFiat.style.color = '#a0a8cc';
         
-        balanceSection.appendChild(balanceLabel);
         balanceSection.appendChild(balanceAmount);
         balanceSection.appendChild(balanceFiat);
         
@@ -217,42 +282,47 @@ export function initMetaWallet() {
         actionButtons.style.display = 'flex';
         actionButtons.style.justifyContent = 'space-between';
         actionButtons.style.gap = '10px';
+        actionButtons.style.marginBottom = '20px';
         
+        // Create button function
         const createActionButton = (text, icon) => {
             const button = document.createElement('button');
             button.style.flex = '1';
-            button.style.padding = '12px';
-            button.style.backgroundColor = '#f0f0f0';
-            button.style.border = 'none';
-            button.style.borderRadius = '10px';
-            button.style.cursor = 'pointer';
             button.style.display = 'flex';
             button.style.flexDirection = 'column';
             button.style.alignItems = 'center';
             button.style.justifyContent = 'center';
             button.style.gap = '5px';
-            button.style.transition = 'transform 0.2s, background-color 0.2s';
+            button.style.padding = '12px';
+            button.style.backgroundColor = '#2c3050';
+            button.style.border = '1px solid #3d4568';
+            button.style.borderRadius = '10px';
+            button.style.cursor = 'pointer';
+            button.style.transition = 'all 0.2s';
             
-            const iconElement = document.createElement('div');
-            iconElement.innerHTML = icon;
-            iconElement.style.fontSize = '20px';
+            const buttonIcon = document.createElement('div');
+            buttonIcon.textContent = icon;
+            buttonIcon.style.fontSize = '20px';
+            buttonIcon.style.color = '#6c63ff';
             
-            const textElement = document.createElement('div');
-            textElement.textContent = text;
-            textElement.style.fontSize = '12px';
-            textElement.style.color = '#5a5a5a';
+            const buttonText = document.createElement('div');
+            buttonText.textContent = text;
+            buttonText.style.fontSize = '12px';
+            buttonText.style.color = '#d0d6ff';
             
-            button.appendChild(iconElement);
-            button.appendChild(textElement);
+            button.appendChild(buttonIcon);
+            button.appendChild(buttonText);
             
             // Add hover effect
             button.addEventListener('mouseenter', () => {
-                button.style.backgroundColor = '#e8e8e8';
+                button.style.backgroundColor = '#3a3f68';
+                button.style.borderColor = '#6c63ff';
                 button.style.transform = 'translateY(-2px)';
             });
             
             button.addEventListener('mouseleave', () => {
-                button.style.backgroundColor = '#f0f0f0';
+                button.style.backgroundColor = '#2c3050';
+                button.style.borderColor = '#3d4568';
                 button.style.transform = 'translateY(0)';
             });
             
@@ -267,67 +337,144 @@ export function initMetaWallet() {
         actionButtons.appendChild(receiveButton);
         actionButtons.appendChild(swapButton);
         
-        // Add recent activity section
-        const activitySection = document.createElement('div');
-        activitySection.style.flex = '1';
-        
-        const activityTitle = document.createElement('h4');
-        activityTitle.textContent = 'Recent Activity';
-        activityTitle.style.margin = '10px 0';
-        activityTitle.style.color = '#5a5a5a';
-        
-        const activityList = document.createElement('div');
-        activityList.style.fontSize = '14px';
-        activityList.style.color = '#888';
-        activityList.style.textAlign = 'center';
-        activityList.style.padding = '20px 0';
-        activityList.textContent = 'No recent transactions';
-        
-        activitySection.appendChild(activityTitle);
-        activitySection.appendChild(activityList);
-        
         // Assemble content
+        content.appendChild(accountSection);
         content.appendChild(balanceSection);
         content.appendChild(actionButtons);
-        content.appendChild(activitySection);
+        
+        // Add token list heading
+        const tokensHeading = document.createElement('div');
+        tokensHeading.style.display = 'flex';
+        tokensHeading.style.justifyContent = 'space-between';
+        tokensHeading.style.alignItems = 'center';
+        tokensHeading.style.marginBottom = '10px';
+        
+        const tokensTitle = document.createElement('h4');
+        tokensTitle.textContent = 'Tokens';
+        tokensTitle.style.margin = '0';
+        tokensTitle.style.fontSize = '14px';
+        tokensTitle.style.fontWeight = '600';
+        tokensTitle.style.color = '#a0a8cc';
+        
+        const addTokenButton = document.createElement('button');
+        addTokenButton.textContent = '+';
+        addTokenButton.style.width = '24px';
+        addTokenButton.style.height = '24px';
+        addTokenButton.style.borderRadius = '50%';
+        addTokenButton.style.border = '1px solid #3d4568';
+        addTokenButton.style.backgroundColor = 'transparent';
+        addTokenButton.style.color = '#a0a8cc';
+        addTokenButton.style.fontSize = '14px';
+        addTokenButton.style.display = 'flex';
+        addTokenButton.style.alignItems = 'center';
+        addTokenButton.style.justifyContent = 'center';
+        addTokenButton.style.cursor = 'pointer';
+        addTokenButton.style.transition = 'all 0.2s';
+        
+        // Add hover effect to add token button
+        addTokenButton.addEventListener('mouseenter', () => {
+            addTokenButton.style.backgroundColor = 'rgba(108, 99, 255, 0.1)';
+            addTokenButton.style.borderColor = '#6c63ff';
+            addTokenButton.style.color = '#e0e0ff';
+        });
+        
+        addTokenButton.addEventListener('mouseleave', () => {
+            addTokenButton.style.backgroundColor = 'transparent';
+            addTokenButton.style.borderColor = '#3d4568';
+            addTokenButton.style.color = '#a0a8cc';
+        });
+        
+        tokensHeading.appendChild(tokensTitle);
+        tokensHeading.appendChild(addTokenButton);
+        
+        content.appendChild(tokensHeading);
+        
+        // Add connect button at the bottom
+        const connectButton = document.createElement('button');
+        connectButton.textContent = 'Connect Wallet';
+        connectButton.style.marginTop = '15px';
+        connectButton.style.padding = '12px';
+        connectButton.style.backgroundColor = '#6c63ff';
+        connectButton.style.border = 'none';
+        connectButton.style.borderRadius = '10px';
+        connectButton.style.color = 'white';
+        connectButton.style.fontSize = '14px';
+        connectButton.style.fontWeight = '600';
+        connectButton.style.cursor = 'pointer';
+        connectButton.style.transition = 'all 0.2s';
+        connectButton.style.boxShadow = '0 4px 10px rgba(108, 99, 255, 0.3)';
+        
+        // Add hover effect to connect button
+        connectButton.addEventListener('mouseenter', () => {
+            connectButton.style.backgroundColor = '#5b52eb';
+            connectButton.style.transform = 'translateY(-2px)';
+            connectButton.style.boxShadow = '0 6px 15px rgba(108, 99, 255, 0.4)';
+        });
+        
+        connectButton.addEventListener('mouseleave', () => {
+            connectButton.style.backgroundColor = '#6c63ff';
+            connectButton.style.transform = 'translateY(0)';
+            connectButton.style.boxShadow = '0 4px 10px rgba(108, 99, 255, 0.3)';
+        });
+        
+        // Handle connect button click
+        connectButton.addEventListener('click', () => {
+            connectToMetaMask();
+        });
+        
+        content.appendChild(connectButton);
+        
+        // Assemble the wallet box
+        walletBox.appendChild(header);
         walletBox.appendChild(content);
         
-        // Make the wallet box draggable by the header
+        // Append to body
+        document.body.appendChild(walletBox);
+        
+        // Make the wallet box draggable
+        makeElementDraggable(walletBox, header);
+    };
+    
+    // Make an element draggable by dragging its handle
+    const makeElementDraggable = (element, handle) => {
         let isDragging = false;
         let offsetX, offsetY;
         
-        header.addEventListener('mousedown', (e) => {
+        handle.style.cursor = 'grab';
+        
+        // Mouse down event on the handle
+        handle.addEventListener('mousedown', (e) => {
             isDragging = true;
+            offsetX = e.clientX - element.getBoundingClientRect().left;
+            offsetY = e.clientY - element.getBoundingClientRect().top;
+            handle.style.cursor = 'grabbing';
             
-            // Calculate the offset of the mouse pointer relative to the wallet box
-            const rect = walletBox.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
-            
-            // Prevent default behavior to avoid text selection during drag
+            // Prevent default behavior
             e.preventDefault();
         });
         
+        // Mouse move event to move the element
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             
-            // Update the wallet box position based on mouse position and offset
+            // Update element position
             const x = e.clientX - offsetX;
             const y = e.clientY - offsetY;
             
-            walletBox.style.left = `${x}px`;
-            walletBox.style.top = `${y}px`;
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
         });
         
+        // Mouse up event to stop dragging
         document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            
             isDragging = false;
+            handle.style.cursor = 'grab';
         });
-        
-        // Add the wallet box to the document
-        document.body.appendChild(walletBox);
     };
     
-    // Initialize by creating the draggable icon
+    // Create the draggable icon
     createDraggableMetaMaskIcon();
 }
 
@@ -434,6 +581,12 @@ export function spawnMetamaskFox(scene) {
       // Set tracking variables
       metamaskFoxLoaded = true;
       metamaskFoxModel = model;
+      
+      // Make the model clickable
+      model.userData = { 
+        clickable: true, 
+        type: 'metamask' 
+      };
       
       console.log("Metamask fox added to scene");
     },

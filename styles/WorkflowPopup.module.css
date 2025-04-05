@@ -4,9 +4,9 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,18 +15,19 @@
 }
 
 .container {
+  background-color: #1a1e2e;
+  color: #e0e0ff;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
   width: 90%;
-  max-width: 600px;
-  height: 80%;
-  max-height: 700px;
-  background-color: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 650px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
   animation: fadeIn 0.3s ease-out;
+  border: 1px solid #2c3050;
 }
 
 @keyframes fadeIn {
@@ -35,219 +36,223 @@
 }
 
 .header {
+  padding: 16px 20px;
+  background-color: #151b30;
   display: flex;
   align-items: center;
-  padding: 15px 20px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-  border-bottom: 1px solid #e0e0e0;
-  border-radius: 20px 20px 0 0;
+  justify-content: space-between;
+  border-bottom: 1px solid #2c3050;
 }
 
 .logoContainer {
   position: relative;
-  margin-right: 15px;
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .logoGlow {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
-  border-radius: 10px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.3;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-}
-
-.header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #333;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.3) 0%, rgba(0, 0, 0, 0) 70%);
+  border-radius: 50%;
+  z-index: -1;
 }
 
 .closeButton {
-  margin-left: auto;
   background: none;
   border: none;
-  font-size: 1.8rem;
-  color: #888;
+  color: #8f96b3;
+  font-size: 28px;
   cursor: pointer;
-  transition: color 0.2s;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
 }
 
 .closeButton:hover {
-  color: #333;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .content {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  max-height: calc(90vh - 70px);
 }
 
 .examplesSection {
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 .examplesTitle {
+  margin-bottom: 10px;
+  color: #a0a8cc;
   font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 8px;
 }
 
 .exampleButtons {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 15px;
 }
 
 .exampleButton {
-  padding: 6px 12px;
-  background-color: #f0f0f0;
+  background-color: #2c3050;
+  color: #d0d6ff;
   border: none;
-  border-radius: 15px;
-  font-size: 0.85rem;
-  color: #444;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: 'Baloo 2', cursive;
 }
 
 .exampleButton:hover {
-  background-color: #e0e0e0;
-  transform: translateY(-2px);
+  background-color: #3a3f68;
 }
 
 .workflowForm {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .workflowInput {
   width: 100%;
   min-height: 100px;
   padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-family: 'Baloo 2', cursive;
-  font-size: 1rem;
+  border: 1px solid #2c3050;
+  border-radius: 8px;
+  background-color: #242942;
+  color: #ffffff;
   resize: vertical;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.workflowInput:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+}
+
+.workflowInput::placeholder {
+  color: #8f96b3;
 }
 
 .parseButton {
-  align-self: flex-end;
-  padding: 10px 15px;
-  background-color: #0084ff;
+  background-color: #6c63ff;
   color: white;
   border: none;
-  border-radius: 20px;
-  font-family: 'Baloo 2', cursive;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.parseButton:hover {
+  background-color: #5b52eb;
+}
+
+.parseButton:disabled {
+  background-color: #3a3f68;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.resultSection {
+  margin-top: 20px;
+  border-top: 1px solid #2c3050;
+  padding-top: 20px;
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.tryAgainButton {
+  background-color: #2c3050;
+  color: #d0d6ff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tryAgainButton:hover {
+  background-color: #3a3f68;
+}
+
+.approveButton {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.parseButton:hover:not(:disabled) {
-  background-color: #0070d1;
-  transform: translateY(-2px);
+.approveButton:hover {
+  background-color: #43a047;
 }
 
-.parseButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.resultSection {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 15px;
-  border: 1px solid #eee;
-}
-
-.resultTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 10px 0;
-}
-
-.parsedItems {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.parsedItem {
-  display: flex;
-  align-items: flex-start;
-}
-
-.itemType {
-  width: 90px;
-  font-weight: 600;
-  color: #555;
-  flex-shrink: 0;
-}
-
-.itemContent {
-  flex: 1;
-}
-
+/* Flow Chart Styles */
 .flowchartContainer {
   width: 100%;
-  margin: 20px 0;
-  padding: 10px 0;
-  overflow: hidden;
+  margin-top: 10px;
 }
 
 .flowchartTitle {
-  font-size: 1.1rem;
   margin-bottom: 15px;
-  font-weight: 600;
-  text-align: left;
-  width: 100%;
+  color: #a0a8cc;
 }
 
 .flowchartScroller {
-  width: 100%;
   overflow-x: auto;
-  padding: 10px 0 20px;
+  padding-bottom: 10px;
 }
 
 .flowchartContent {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   min-width: min-content;
-  padding: 0 10px;
+}
+
+.node {
+  background-color: #2c3050;
+  border: 1px solid #4a517a;
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 120px;
+  text-align: center;
+  font-weight: 500;
+  color: #d0d6ff;
 }
 
 .flowStep {
@@ -255,97 +260,39 @@
   align-items: center;
 }
 
-.node {
-  background-color: rgba(242, 230, 255, 0.7);
-  border-radius: 15px;
-  padding: 15px 20px;
-  min-width: 120px;
-  min-height: 40px;
-  text-align: center;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.95rem;
-}
-
 .arrowContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 10px;
-  min-width: 80px;
+  margin: 0 12px;
 }
 
 .arrowLabel {
   font-size: 0.8rem;
-  color: #666;
-  margin-bottom: 3px;
-  white-space: nowrap;
-  font-weight: 400;
+  color: #8f96b3;
+  margin-bottom: 5px;
+  text-align: center;
+  max-width: 130px;
 }
 
 .arrowLine {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: 100px;
 }
 
 .arrowStem {
-  height: 1.5px;
-  background-color: #aaa;
+  height: 2px;
+  background-color: #6c63ff;
   flex-grow: 1;
-  min-width: 40px;
 }
 
 .arrowHead {
   width: 0;
   height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 8px solid #aaa;
-}
-
-/* Action Buttons */
-.actionButtons {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  margin-top: 20px;
-}
-
-.approveButton, .tryAgainButton {
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.approveButton {
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  min-width: 150px;
-}
-
-.approveButton:hover {
-  background-color: #3367d6;
-  transform: translateY(-2px);
-}
-
-.tryAgainButton {
-  background-color: white;
-  color: #555;
-  border: 1px solid #ccc;
-  min-width: 120px;
-}
-
-.tryAgainButton:hover {
-  background-color: #f5f5f5;
-  transform: translateY(-2px);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid #6c63ff;
 }
 
 /* Completion Screen Styles */
@@ -354,27 +301,19 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 30px 20px;
   text-align: center;
-  height: 100%;
 }
 
 .checkmarkContainer {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+  width: 70px;
+  height: 70px;
   background-color: #4caf50;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
-  animation: scaleIn 0.5s ease-out;
-}
-
-@keyframes scaleIn {
-  0% { transform: scale(0); opacity: 0; }
-  70% { transform: scale(1.1); }
-  100% { transform: scale(1); opacity: 1; }
 }
 
 .checkmark {
@@ -383,215 +322,20 @@
   font-weight: bold;
 }
 
-.completionScreen h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 10px 0;
-}
-
-.completionScreen p {
-  font-size: 1rem;
-  color: #666;
-  margin: 0 0 30px 0;
-  max-width: 80%;
-}
-
 .doneButton {
-  padding: 12px 40px;
-  background-color: #6a5acd;
-  color: white;
-  border: none;
-  border-radius: 25px;
-  font-family: 'Baloo 2', cursive;
-  font-weight: 600;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-}
-
-.doneButton:hover {
-  background-color: #5a4abf;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
-}
-
-.doneButton:active {
-  transform: scale(0.98);
-  box-shadow: 0 2px 15px rgba(108, 99, 255, 0.2);
-}
-
-/* Saved Workflows Section */
-.savedWorkflowsSection {
-  margin-top: 25px;
-  border-top: 1px solid #eee;
-  padding-top: 20px;
-}
-
-.savedWorkflowsTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 15px 0;
-}
-
-.savedWorkflowsList {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.savedWorkflow {
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
-  border-radius: 12px;
-  padding: 15px;
-}
-
-.savedWorkflowHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.savedWorkflowInfo {
-  display: flex;
-  flex-direction: column;
-}
-
-.savedWorkflowDescription {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 5px 0;
-  padding: 3px 0;
-  border-radius: 4px;
-  word-break: break-word;
-}
-
-.savedWorkflowDate {
-  font-size: 0.75rem;
-  color: #888;
-  margin: 0;
-}
-
-.savedWorkflowActions {
-  display: flex;
-  gap: 8px;
-}
-
-.loadButton {
-  padding: 5px 10px;
-  background-color: #e3f2fd;
-  color: #1976d2;
-  border: 1px solid #bbdefb;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.loadButton:hover {
-  background-color: #bbdefb;
-  color: #0d47a1;
-  transform: translateY(-1px);
-}
-
-.deleteButton {
-  padding: 5px 10px;
-  background-color: #fff0f0;
-  color: #d32f2f;
-  border: 1px solid #ffcdd2;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.deleteButton:hover {
-  background-color: #ffebee;
-  color: #c62828;
-  transform: translateY(-1px);
-}
-
-.savedWorkflowsHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.workflowsCount {
-  font-size: 0.8rem;
-  color: #888;
-  background-color: #f0f0f0;
-  padding: 3px 8px;
-  border-radius: 10px;
-}
-
-.noWorkflowsMessage {
-  text-align: center;
-  padding: 30px;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  margin: 20px 0;
-}
-
-.noWorkflowsMessage p {
-  font-size: 0.95rem;
-  color: #666;
-  margin-bottom: 20px;
-}
-
-.createWorkflowButton {
-  padding: 10px 20px;
   background-color: #6c63ff;
   color: white;
   border: none;
-  border-radius: 25px;
-  font-family: 'Baloo 2', cursive;
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 8px rgba(108, 99, 255, 0.25);
-}
-
-.createWorkflowButton:hover {
-  background-color: #5a52e0;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(108, 99, 255, 0.3);
-}
-
-.viewToggleContainer {
-  display: flex;
-  justify-content: center;
-  margin-top: 25px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
-
-.viewToggleButton {
-  padding: 10px 20px;
-  background-color: #f0f0f0;
-  color: #333;
-  border: none;
-  border-radius: 25px;
-  font-family: 'Baloo 2', cursive;
-  font-weight: 500;
-  font-size: 0.9rem;
+  border-radius: 8px;
+  padding: 10px 30px;
+  font-weight: 600;
+  margin-top: 20px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.viewToggleButton:hover {
-  background-color: #e0e0e0;
+.doneButton:hover {
+  background-color: #5b52eb;
   transform: translateY(-2px);
 }
 
@@ -599,7 +343,7 @@
   font-size: 0.9rem;
   color: #6c63ff;
   margin-top: 5px;
-  background-color: #f6f5ff;
+  background-color: #232845;
   padding: 8px 15px;
   border-radius: 12px;
   border-left: 3px solid #6c63ff;
@@ -607,4 +351,154 @@
   max-width: 85%;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Saved Workflows Section */
+.savedWorkflowsSection {
+  margin-top: 20px;
+  border-top: 1px solid #2c3050;
+  padding-top: 20px;
+}
+
+.savedWorkflowsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.savedWorkflowsTitle {
+  margin: 0;
+  color: #a0a8cc;
+}
+
+.workflowsCount {
+  background-color: #2c3050;
+  color: #d0d6ff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+
+.savedWorkflowsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.savedWorkflow {
+  background-color: #242942;
+  border: 1px solid #2c3050;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.savedWorkflowHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  align-items: flex-start;
+}
+
+.savedWorkflowInfo {
+  flex: 1;
+  margin-right: 15px;
+}
+
+.savedWorkflowDescription {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  color: #d0d6ff;
+  word-break: break-word;
+  padding: 8px;
+  background-color: #2c3050;
+  border-radius: 8px;
+}
+
+.savedWorkflowDate {
+  font-size: 0.75rem;
+  color: #8f96b3;
+  margin: 0;
+}
+
+.savedWorkflowActions {
+  display: flex;
+  gap: 5px;
+  align-items: flex-start;
+  padding-top: 5px;
+}
+
+.deleteButton {
+  background-color: rgba(220, 53, 69, 0.15);
+  color: #ff5a5a;
+  border: none;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background-color: rgba(220, 53, 69, 0.3);
+  transform: translateY(-2px);
+}
+
+.noWorkflowsMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #8f96b3;
+}
+
+.createWorkflowButton {
+  margin-top: 15px;
+  background-color: #6c63ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.createWorkflowButton:hover {
+  background-color: #5b52eb;
+}
+
+.viewToggleContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.viewToggleButton {
+  background-color: #2c3050;
+  color: #d0d6ff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewToggleButton:hover {
+  background-color: #3a3f68;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #e0e0ff;
+  flex: 1;
+  margin-left: 10px;
 } 

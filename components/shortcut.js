@@ -237,41 +237,80 @@ export default function Shortcut({ onClose, onDrop }) {
   return (
     <div className={styles.overlay}>
       <div 
-        ref={popupRef}
         className={`${styles.popup} ${isDraggingOver ? styles.dragOver : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        ref={popupRef}
       >
         <div className={styles.header}>
           <h2 className={styles.title}>Create a workflow here</h2>
-          <button className={styles.closeButton} onClick={onClose}>×</button>
+          <button 
+            className={styles.closeButton} 
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ×
+          </button>
         </div>
         
         <div className={styles.content}>
           <div className={styles.iconRow}>
             <div className={styles.logoContainer}>
-              <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
+              <img 
+                src="/icon/metamask.png" 
+                alt="MetaMask" 
+                className={styles.shortcutIcon}
+                draggable="true"
+              />
               <div className={styles.logoGlow}></div>
             </div>
             <div className={styles.logoContainer}>
-              <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
+              <img 
+                src="/icon/gmail.png" 
+                alt="Gmail" 
+                className={styles.shortcutIcon}
+                draggable="true"
+              />
               <div className={styles.logoGlow}></div>
             </div>
             <div className={styles.logoContainer}>
-              <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
+              <img 
+                src="/icon/1inch.png" 
+                alt="1inch" 
+                className={styles.shortcutIcon}
+                draggable="true"
+              />
               <div className={styles.logoGlow}></div>
             </div>
           </div>
           
           <div className={styles.iconRow}>
             <div className={styles.logoContainer}>
-              <img src="/icon/polygon.png" alt="Polygon" className={styles.shortcutIcon} />
+              <img 
+                src="/icon/polygon.png" 
+                alt="Polygon" 
+                className={styles.shortcutIcon}
+                draggable="true"
+              />
               <div className={styles.logoGlow}></div>
             </div>
             <div className={styles.logoContainer}>
-              <img src="/icon/celo.png" alt="Celo" className={styles.shortcutIcon} />
+              <img 
+                src="/icon/celo.png" 
+                alt="Celo" 
+                className={styles.shortcutIcon}
+                draggable="true"
+              />
               <div className={styles.logoGlow}></div>
             </div>
             <div className={styles.logoContainer}>
-              <img src="/icon/spreadsheet.png" alt="Spreadsheet" className={styles.shortcutIcon} />
+              <img 
+                src="/icon/spreadsheet.png" 
+                alt="Spreadsheet" 
+                className={styles.shortcutIcon}
+                draggable="true"
+              />
               <div className={styles.logoGlow}></div>
             </div>
           </div>
@@ -335,7 +374,7 @@ export default function Shortcut({ onClose, onDrop }) {
             </button>
           </div>
         </div>
-
+        
         {/* Add inline styles to override the module CSS */}
         <style jsx global>{`
           .${styles.overlay} {
@@ -351,25 +390,26 @@ export default function Shortcut({ onClose, onDrop }) {
             padding: 20px 30px 30px 30px !important;
             display: flex !important;
             flex-direction: column !important;
-            background-color: white !important;
-            border-radius: 20px !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+            background-color: #1a1e2e !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
           }
           
           .${styles.header} {
             margin-bottom: 15px !important;
-            background-color: #f0f3f9 !important;
+            background-color: #151b30 !important;
             border-radius: 12px !important;
             padding: 15px 20px !important;
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
+            border: 1px solid #2c3050 !important;
           }
           
           .${styles.title} {
-            font-size: 22px !important;
+            font-size: 1.4rem !important;
             margin: 0 !important;
-            color: #333a52 !important;
+            color: #e0e0ff !important;
             font-weight: 600 !important;
             font-family: 'Poppins', sans-serif !important;
             position: relative !important;
@@ -390,12 +430,19 @@ export default function Shortcut({ onClose, onDrop }) {
           .${styles.closeButton} {
             background: none !important;
             border: none !important;
-            font-size: 24px !important;
-            color: #6e7891 !important;
+            font-size: 28px !important;
+            color: #8f96b3 !important;
             cursor: pointer !important;
             padding: 0 !important;
             margin: 0 !important;
             line-height: 1 !important;
+            transition: all 0.2s ease !important;
+          }
+          
+          .${styles.closeButton}:hover {
+            color: #e0e0ff !important;
+            background-color: rgba(108, 99, 255, 0.1) !important;
+            transform: scale(1.1) !important;
           }
           
           .${styles.content} {
@@ -409,6 +456,9 @@ export default function Shortcut({ onClose, onDrop }) {
             margin: 15px 0 !important;
             justify-content: space-around !important;
             display: flex !important;
+            background-color: #2c3050 !important;
+            border-radius: 10px !important;
+            padding: 15px 10px !important;
           }
           
           .${styles.logoContainer} {
@@ -416,7 +466,7 @@ export default function Shortcut({ onClose, onDrop }) {
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)) !important;
+            position: relative !important;
           }
           
           .${styles.shortcutIcon} {
@@ -424,14 +474,32 @@ export default function Shortcut({ onClose, onDrop }) {
             height: 50px !important;
             transition: transform 0.2s ease !important;
             object-fit: contain !important;
+            z-index: 2 !important;
           }
           
           .${styles.shortcutIcon}:hover {
             transform: scale(1.1) !important;
           }
           
+          .${styles.logoGlow} {
+            position: absolute !important;
+            width: 40px !important;
+            height: 40px !important;
+            background: rgba(108, 99, 255, 0.15) !important;
+            border-radius: 50% !important;
+            filter: blur(15px) !important;
+            z-index: 1 !important;
+            transition: all 0.3s ease !important;
+          }
+          
+          .${styles.logoContainer}:hover .${styles.logoGlow} {
+            width: 55px !important;
+            height: 55px !important;
+            background: rgba(108, 99, 255, 0.3) !important;
+          }
+          
           .${styles.dropZoneBox} {
-            border: 2px dashed #6e7891 !important;
+            border: 2px dashed #3d4568 !important;
             border-radius: 16px !important;
             padding: 30px 15px !important;
             margin: 15px auto !important;
@@ -439,7 +507,7 @@ export default function Shortcut({ onClose, onDrop }) {
             height: 150px !important;
             text-align: center !important;
             transition: all 0.3s ease !important;
-            background-color: #f0f7ff !important;
+            background-color: #232845 !important;
             cursor: pointer !important;
             display: flex !important;
             flex-direction: column !important;
@@ -448,10 +516,10 @@ export default function Shortcut({ onClose, onDrop }) {
           }
           
           .${styles.dropZoneActive} {
-            border-color: #4a9eff !important;
-            background-color: rgba(74, 158, 255, 0.1) !important;
+            border-color: #6c63ff !important;
+            background-color: rgba(108, 99, 255, 0.1) !important;
             transform: scale(1.02) !important;
-            box-shadow: 0 0 15px rgba(74, 158, 255, 0.3) !important;
+            box-shadow: 0 0 15px rgba(108, 99, 255, 0.3) !important;
           }
           
           .${styles.mainInstructions} {
@@ -463,13 +531,13 @@ export default function Shortcut({ onClose, onDrop }) {
             font-size: 18px !important;
             line-height: 1.5 !important;
             margin: 0 !important;
-            color: #4a7bff !important;
+            color: #a0a8cc !important;
             font-family: 'Poppins', sans-serif !important;
             font-weight: 500 !important;
           }
           
           .${styles.dropZoneActive} .${styles.mainInstructions} p {
-            color: #4a9eff !important;
+            color: #6c63ff !important;
             transform: scale(1.05) !important;
           }
           
@@ -477,13 +545,13 @@ export default function Shortcut({ onClose, onDrop }) {
             margin-top: 20px !important;
             text-align: center !important;
             padding: 10px 0 !important;
-            border-top: 1px solid rgba(110, 120, 145, 0.15) !important;
+            border-top: 1px solid rgba(60, 70, 90, 0.3) !important;
           }
           
           .${styles.alternativeMethod} p {
             font-size: 16px !important;
             margin: 10px 0 !important;
-            color: #6e7891 !important;
+            color: #a0a8cc !important;
             font-family: 'Poppins', sans-serif !important;
           }
           

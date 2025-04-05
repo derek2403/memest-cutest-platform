@@ -190,10 +190,10 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.logoContainer}>
-            <img src="/icon/spreadsheet.png" alt="Workflow" className={styles.logo} />
+            <img src="/icon/polygon.png" alt="Workflow" className={styles.logo} />
             <div className={styles.logoGlow}></div>
           </div>
-          <h2>{readOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>
+          <h2 className={styles.headerTitle}>{readOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
@@ -300,8 +300,11 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                               <button 
                                 className={styles.deleteButton}
                                 onClick={() => deleteWorkflow(saved.id)}
+                                aria-label="Delete workflow"
                               >
-                                Delete
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M2.5 1C2.5 0.447715 2.94772 0 3.5 0H12.5C13.0523 0 13.5 0.447715 13.5 1V2H15C15.5523 2 16 2.44772 16 3C16 3.55228 15.5523 4 15 4H14V14C14 15.1046 13.1046 16 12 16H4C2.89543 16 2 15.1046 2 14V4H1C0.447715 4 0 3.55228 0 3C0 2.44772 0.447715 2 1 2H2.5V1ZM4.5 2H11.5V1H4.5V2ZM4 4V14H12V4H4ZM6 6C6.55228 6 7 6.44772 7 7V11C7 11.5523 6.55228 12 6 12C5.44772 12 5 11.5523 5 11V7C5 6.44772 5.44772 6 6 6ZM10 6C10.5523 6 11 6.44772 11 7V11C11 11.5523 10.5523 12 10 12C9.44772 12 9 11.5523 9 11V7C9 6.44772 9.44772 6 10 6Z" />
+                                </svg>
                               </button>
                             </div>
                           </div>
