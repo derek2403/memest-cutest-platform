@@ -687,10 +687,15 @@ export default function Home() {
 
     // Floor (specific color)
     const floorGeometry = new THREE.BoxGeometry(roomWidth, 0.2, roomDepth); // Make floor thicker
+    const floorTexture = new THREE.TextureLoader().load('/assets/floor.png');
+    floorTexture.wrapS = THREE.RepeatWrapping;
+    floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(3, 3); // Adjust the repeat values as needed
+
     const floorMaterial = [
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Right edge - darker
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Left edge - darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#D2B48C") }), // Top surface - unchanged
+      new THREE.MeshStandardMaterial({ map: floorTexture }), // Top surface - now using texture
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#704628") }), // Bottom - even darker
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Front edge - darker
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") })  // Back edge - darker
@@ -702,10 +707,15 @@ export default function Home() {
     floor.name = "floor"; // Name the floor for raycasting
     scene.add(floor);
     
-    // Left wall (light blue color) - make it thicker with different colored edges
+    // Left wall - replace solid color with wallpaper texture
     const leftWallGeometry = new THREE.BoxGeometry(0.2, roomHeight, roomDepth);
+    const wallpaperTexture = new THREE.TextureLoader().load('/assets/wallpaper.png');
+    wallpaperTexture.wrapS = THREE.RepeatWrapping;
+    wallpaperTexture.wrapT = THREE.RepeatWrapping;
+    wallpaperTexture.repeat.set(2, 2); // Adjust the repeat values as needed
+
     const leftWallMaterial = [
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#5A87B5") }), // Right - inner surface (unchanged)
+      new THREE.MeshStandardMaterial({ map: wallpaperTexture }), // Right - inner surface
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Left - outer surface (darker)
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Top edge (darker)
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Bottom edge (darker)
@@ -718,14 +728,14 @@ export default function Home() {
     leftWall.receiveShadow = false;
     scene.add(leftWall);
 
-    // Back wall (slightly darker color) - make it thicker with different colored edges
+    // Back wall - also use wallpaper texture
     const backWallGeometry = new THREE.BoxGeometry(roomWidth, roomHeight, 0.2);
     const backWallMaterial = [
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Right edge (darker)
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Left edge (darker)
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Top edge (darker)
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Bottom edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#D0D0D0") }), // Front - inner surface (unchanged)
+      new THREE.MeshStandardMaterial({ map: wallpaperTexture }), // Front - inner surface
       new THREE.MeshStandardMaterial({ color: new THREE.Color("#A0A0A0") })  // Back - outer surface (darker)
     ];
 
