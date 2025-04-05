@@ -29,40 +29,34 @@ export function loadAIAgent(scene, callbacks = {}) {
       const bodyMaterial = new THREE.MeshStandardMaterial({
         map: bodyTexture,
         skinning: true,
-        color: new THREE.Color('#FF9D00'), // Bright orange for body
-        roughness: 0.9, // Much higher roughness to reduce shine
-        metalness: 0.0 // No metalness for a matte look
+        roughness: 1.0, // Maximum roughness for matte finish
+        metalness: 0.0 // No metalness for non-reflective surface
       });
       
-      const greenPartsMaterial = new THREE.MeshStandardMaterial({
-        map: bodyTexture,
-        skinning: true,
-        color: new THREE.Color('#1D8A77'), // Teal/green for limbs
-        roughness: 0.9, // Much higher roughness to reduce shine
-        metalness: 0.0 // No metalness for a matte look
-      });
-      
-      const eyesMaterial = new THREE.MeshStandardMaterial({
-        skinning: true,
-        color: new THREE.Color('#00FFEE'), // Cyan for eyes
-        emissive: new THREE.Color('#00FFEE'),
-        emissiveIntensity: 0.6, // Reduced intensity for less glow
-        roughness: 0.5, // More roughness but still some glow
-        metalness: 0.0 // No metalness
-      });
-      
-      // Apply materials based on mesh names or positions
+      // Apply material to all mesh parts to preserve texture colors
       fbx.traverse((child) => {
         if (child.isMesh) {
-          // Try to identify parts by name
-          const name = child.name.toLowerCase();
+          // Apply the same material to all parts to preserve texture
+          child.material = bodyMaterial.clone(); // Clone to avoid shared material issues
           
-          if (name.includes('eye') || name.includes('screen') || name.includes('face')) {
-            child.material = eyesMaterial;
-          } else if (name.includes('arm') || name.includes('leg') || name.includes('limb')) {
-            child.material = greenPartsMaterial;
-          } else {
-            child.material = bodyMaterial;
+          // Only change material for eyes which need to glow
+          if (child.name.toLowerCase().includes('eye') || 
+              child.name.toLowerCase().includes('screen') || 
+              child.name.toLowerCase().includes('face')) {
+            child.material = new THREE.MeshStandardMaterial({
+              skinning: true,
+              color: new THREE.Color('#00FFFF'), // Bright cyan for eyes
+              emissive: new THREE.Color('#00FFFF'),
+              emissiveIntensity: 0.8, // Slightly reduced glow
+              roughness: 0.8, // High roughness for less shine
+              metalness: 0.0 // No metalness for non-reflective surface
+            });
+          }
+          
+          // Ensure no color transformations
+          if (child.material.map) {
+            child.material.map.encoding = THREE.LinearEncoding;
+            child.material.needsUpdate = true;
           }
           
           child.castShadow = false;
