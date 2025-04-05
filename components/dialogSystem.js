@@ -2,44 +2,6 @@ import React, { useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { loadAIAgent } from './aiagent.js';
 
-// DialogButton component
-export function DialogButton({ onClick }) {
-  return (
-    <button 
-      className="dialog-button" 
-      onClick={onClick}
-      style={{
-        position: 'fixed',
-        top: '20px',
-        left: '20px',
-        zIndex: 1000,
-        padding: '10px 15px',
-        backgroundColor: '#ff9800',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        fontFamily: 'Baloo 2, cursive',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-        transition: 'all 0.2s ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#f57c00';
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.3)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#ff9800';
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-      }}
-    >
-      Chat with Fox
-    </button>
-  );
-}
-
 // DialogIcon component - shows above the AI agent
 export function DialogIcon({ agentRef }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });

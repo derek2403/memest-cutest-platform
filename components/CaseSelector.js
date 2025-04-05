@@ -660,8 +660,8 @@ export default function CaseSelector({ onSelectCase }) {
     <div
       style={{
         position: 'fixed',
-        top: '80px',  // Position below the "Chat with Fox" button
-        left: '20px',  // Align with the left edge like the Fox button
+        top: '20px',  // Update position to be at the top since the Fox button is gone
+        left: '20px',  // Keep the left alignment
         background: 'rgba(0, 0, 0, 0.8)',
         padding: '15px',
         borderRadius: '8px',

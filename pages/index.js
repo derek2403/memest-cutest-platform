@@ -21,9 +21,7 @@ import ConnectWallet from '../components/ConnectWallet';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
 const WorkflowPopup = dynamic(() => import('../components/WorkflowPopup'), { ssr: false });
-// After line 22 (imports), add these new imports
-import { DialogIcon, appendDialogStyles } from "../components/dialogSystem.js";
-import { FoxDialogButton } from "../components/foxDialog.js";
+// Add back the necessary imports (but not the dialog-related ones)
 import CaseSelector from '../components/CaseSelector';
 import AgentNavigator from '../components/AgentNavigator';
 
@@ -46,8 +44,7 @@ export default function Home() {
   const [showShortcutPopup, setShowShortcutPopup] = useState(false);
   const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
   const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
-  const [showDialogIcon, setShowDialogIcon] = useState(false); // Keep dialog icon state
-  
+
   // Add the handler for case selection
   const handleCaseSelection = (targetPosition) => {
     if (targetPosition && window.aiAgent) {
@@ -60,9 +57,6 @@ export default function Home() {
   useEffect(() => {
     // Exit early if the ref isn't set
     if (!mountRef.current) return;
-
-    // Apply dialog system styles
-    appendDialogStyles();
 
     // Initialize global plugins tracking
     window.pluginsInRoom = {
@@ -169,7 +163,7 @@ export default function Home() {
   ];
 
   // Debug mode for visualizing obstacles
-  const DEBUG_MODE = true;
+  const DEBUG_MODE = false;
   // Larger buffer for obstacle avoidance
   const OBSTACLE_BUFFER = 1.0;
   // Use simple grid-based movement (horizontal/vertical only)
@@ -2224,18 +2218,6 @@ export default function Home() {
           overflow: 'hidden',
         }}
       ></div>
-      
-      {/* Fox Dialog Button - use the modular component */}
-      <FoxDialogButton 
-        scene={sceneRef || window.scene} 
-        onDialogStart={() => setShowDialogIcon(true)}
-        onDialogEnd={() => setShowDialogIcon(false)}
-      />
-
-      {/* Dialog icon - use the modular component */}
-      {showDialogIcon && window.aiAgent && (
-        <DialogIcon agentRef={window.aiAgent} />
-      )}
       
       {/* Case Selector Component */}
       <CaseSelector onSelectCase={handleCaseSelection} />
