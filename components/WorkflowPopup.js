@@ -72,7 +72,6 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
-  const [showWorkflowsOnly, setShowWorkflowsOnly] = useState(readOnly); // Show creation form only when not in readOnly mode
   const savedSectionRef = React.useRef(null);
   
   // Load saved workflows from localStorage when the component mounts
@@ -249,13 +248,6 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     }
   };
   
-  // Toggle between workflows-only view and creation view (only if not in readOnly mode)
-  const toggleWorkflowsView = () => {
-    if (!readOnly) {
-      setShowWorkflowsOnly(!showWorkflowsOnly);
-    }
-  };
-  
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -264,7 +256,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
             <img src="/icon/metamask.png" alt="Workflow" className={styles.logo} />
             <div className={styles.logoGlow}></div>
           </div>
-          <h2>{readOnly ? "Saved Workflows" : (showWorkflowsOnly ? "Saved Workflows" : "Workflow Assistant")}</h2>
+          <h2>{readOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
@@ -276,13 +268,14 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
               </div>
               <h3>Workflow Approved!</h3>
               <p>Your AI workflow has been successfully created and is now active.</p>
+              <p className={styles.bookTip}>You can access all your saved workflows by clicking on the books on the coffee table.</p>
               <button className={styles.doneButton} onClick={onClose}>
                 Done
               </button>
             </div>
           ) : (
             <>
-              {!showWorkflowsOnly && (
+              {!readOnly && (
                 <>
                   {/* Example workflows */}
                   <div className={styles.examplesSection}>
@@ -346,62 +339,45 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                 </>
               )}
 
-              {/* Saved Workflows Section */}
-              {savedWorkflows.length > 0 ? (
-                <div ref={savedSectionRef} className={styles.savedWorkflowsSection}>
-                  <div className={styles.savedWorkflowsHeader}>
-                    <h3 className={styles.savedWorkflowsTitle}>Saved Workflows</h3>
-                    {!showWorkflowsOnly && <span className={styles.workflowsCount}>{savedWorkflows.length} workflows</span>}
-                  </div>
-                  <div className={styles.savedWorkflowsList}>
-                    {savedWorkflows.map((saved) => (
-                      <div key={saved.id} className={styles.savedWorkflow}>
-                        <div className={styles.savedWorkflowHeader}>
-                          <div className={styles.savedWorkflowInfo}>
-                            <h4 className={styles.savedWorkflowDescription}>
-                              {saved.description}
-                            </h4>
-                            <p className={styles.savedWorkflowDate}>
-                              Saved on {new Date(saved.createdAt).toLocaleString()}
-                            </p>
+              {/* Saved Workflows Section - Only show in readOnly mode */}
+              {readOnly && (
+                savedWorkflows.length > 0 ? (
+                  <div ref={savedSectionRef} className={styles.savedWorkflowsSection}>
+                    <div className={styles.savedWorkflowsHeader}>
+                      <h3 className={styles.savedWorkflowsTitle}>Saved Workflows</h3>
+                      <span className={styles.workflowsCount}>{savedWorkflows.length} workflows</span>
+                    </div>
+                    <div className={styles.savedWorkflowsList}>
+                      {savedWorkflows.map((saved) => (
+                        <div key={saved.id} className={styles.savedWorkflow}>
+                          <div className={styles.savedWorkflowHeader}>
+                            <div className={styles.savedWorkflowInfo}>
+                              <h4 className={styles.savedWorkflowDescription}>
+                                {saved.description}
+                              </h4>
+                              <p className={styles.savedWorkflowDate}>
+                                Saved on {new Date(saved.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className={styles.savedWorkflowActions}>
+                              <button 
+                                className={styles.deleteButton}
+                                onClick={() => deleteWorkflow(saved.id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </div>
-                          <div className={styles.savedWorkflowActions}>
-                            <button 
-                              className={styles.deleteButton}
-                              onClick={() => deleteWorkflow(saved.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          <FlowChart workflow={saved.workflow} />
                         </div>
-                        <FlowChart workflow={saved.workflow} />
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className={styles.noWorkflowsMessage}>
-                  <p>{readOnly ? "No saved workflows yet." : "No saved workflows yet. Create a new workflow to get started!"}</p>
-                  {!readOnly && showWorkflowsOnly && (
-                    <button 
-                      className={styles.createWorkflowButton}
-                      onClick={toggleWorkflowsView}
-                    >
-                      Create New Workflow
-                    </button>
-                  )}
-                </div>
-              )}
-              
-              {!readOnly && savedWorkflows.length > 0 && (
-                <div className={styles.viewToggleContainer}>
-                  <button 
-                    className={styles.viewToggleButton}
-                    onClick={toggleWorkflowsView}
-                  >
-                    {showWorkflowsOnly ? "Create New Workflow" : "Show Saved Workflows Only"}
-                  </button>
-                </div>
+                ) : (
+                  <div className={styles.noWorkflowsMessage}>
+                    <p>No saved workflows yet.</p>
+                  </div>
+                )
               )}
             </>
           )}
