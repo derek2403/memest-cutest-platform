@@ -4,6 +4,7 @@ import styles from '../styles/Shortcut.module.css';
 
 export default function Shortcut({ onClose, onDrop }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const popupRef = useRef(null);
   const dropZoneRef = useRef(null);
@@ -28,6 +29,7 @@ export default function Shortcut({ onClose, onDrop }) {
     if (e.currentTarget === dropZoneRef.current) {
       e.preventDefault();
       setIsDraggingOver(false);
+      setIsDragging(false);
       
       // Get the dragged button ID
       const buttonId = e.dataTransfer.getData('text/plain');
@@ -141,8 +143,26 @@ export default function Shortcut({ onClose, onDrop }) {
         // Set the data based on the icon's alt text
         const iconType = icon.alt.toLowerCase();
         e.dataTransfer.setData('text/plain', `${iconType}-icon`);
+        // Indicate that dragging has started
+        setIsDragging(true);
+      });
+      
+      icon.addEventListener('dragend', () => {
+        // Reset dragging state when drag ends
+        setIsDragging(false);
       });
     });
+    
+    // Add global dragend event to handle cases when drag is canceled
+    const handleDragEnd = () => {
+      setIsDragging(false);
+      setIsDraggingOver(false);
+    };
+    
+    document.addEventListener('dragend', handleDragEnd);
+    return () => {
+      document.removeEventListener('dragend', handleDragEnd);
+    };
   }, []);
 
   // Handle direct drop of the icon (without using drag events)
@@ -176,6 +196,9 @@ export default function Shortcut({ onClose, onDrop }) {
           onClose();
         }
       }
+      
+      // Reset dragging state
+      setIsDragging(false);
     };
     
     document.addEventListener('mouseup', handleMouseUp);
@@ -247,7 +270,7 @@ export default function Shortcut({ onClose, onDrop }) {
   return (
     <div className={styles.overlay}>
       <div 
-        className={`${styles.popup} ${isDraggingOver ? styles.dragOver : ''}`}
+        className={`${styles.popup}`}
         ref={popupRef}
       >
         <div className={styles.header}>
@@ -324,15 +347,18 @@ export default function Shortcut({ onClose, onDrop }) {
           
           {/* Specific drop zone box */}
           <div 
-            className={`${styles.dropZoneBox} ${isDraggingOver ? styles.dropZoneActive : ''}`}
+            className={`${styles.dropZoneBox} ${isDraggingOver ? styles.dropZoneActive : ''} ${isDragging ? styles.dropZoneHighlighted : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             ref={dropZoneRef}
           >
             <div className={styles.mainInstructions}>
-              {isDraggingOver ? (
-                <p>Drop to create shortcut</p>
+              {isDragging || isDraggingOver ? (
+                <>
+                  <div className={styles.dropArrow}>↓</div>
+                  <p>Drop here to create shortcut</p>
+                </>
               ) : (
                 <p>Drag a button to create a shortcut</p>
               )}
@@ -509,10 +535,10 @@ export default function Shortcut({ onClose, onDrop }) {
           .${styles.dropZoneBox} {
             border: 2px dashed #3d4568 !important;
             border-radius: 16px !important;
-            padding: 30px 15px !important;
+            padding: 50px 15px !important;
             margin: 15px auto !important;
             width: 90% !important;
-            height: 150px !important;
+            height: 450px !important;
             text-align: center !important;
             transition: all 0.3s ease !important;
             background-color: #232845 !important;
@@ -530,7 +556,37 @@ export default function Shortcut({ onClose, onDrop }) {
             box-shadow: 0 0 15px rgba(108, 99, 255, 0.3) !important;
           }
           
+          .${styles.dropZoneHighlighted} {
+            border-color: #6c63ff !important;
+            border-width: 3px !important;
+            background-color: rgba(108, 99, 255, 0.2) !important;
+            box-shadow: 0 0 30px rgba(108, 99, 255, 0.6) !important;
+            animation: pulseHighlight 1.5s infinite alternate !important;
+            position: relative !important;
+            overflow: hidden !important;
+          }
+          
+          .${styles.dropZoneHighlighted}::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: repeating-linear-gradient(
+              -45deg,
+              rgba(108, 99, 255, 0.15),
+              rgba(108, 99, 255, 0.15) 15px,
+              rgba(108, 99, 255, 0.05) 15px,
+              rgba(108, 99, 255, 0.05) 30px
+            ) !important;
+            animation: moveBackground 3s linear infinite !important;
+            z-index: 0 !important;
+          }
+          
           .${styles.mainInstructions} {
+            position: relative !important;
+            z-index: 1 !important;
             text-align: center !important;
             padding: 0 !important;
           }
@@ -547,6 +603,52 @@ export default function Shortcut({ onClose, onDrop }) {
           .${styles.dropZoneActive} .${styles.mainInstructions} p {
             color: #6c63ff !important;
             transform: scale(1.05) !important;
+          }
+          
+          .${styles.dropZoneHighlighted} .${styles.mainInstructions} p {
+            color: white !important;
+            text-shadow: 0 0 10px rgba(108, 99, 255, 0.8) !important;
+            font-weight: 600 !important;
+            transform: scale(1.05) !important;
+          }
+          
+          @keyframes moveBackground {
+            0% {
+              background-position: 0 0;
+            }
+            100% {
+              background-position: 40px 40px;
+            }
+          }
+          
+          @keyframes pulseHighlight {
+            0% {
+              box-shadow: 0 0 20px rgba(108, 99, 255, 0.4) !important;
+              border-color: rgba(108, 99, 255, 0.7) !important;
+              transform: scale(1) !important;
+            }
+            100% {
+              box-shadow: 0 0 35px rgba(108, 99, 255, 0.8) !important;
+              border-color: #6c63ff !important;
+              transform: scale(1.03) !important;
+            }
+          }
+          
+          .${styles.dropArrow} {
+            font-size: 48px !important;
+            color: #6c63ff !important;
+            margin-bottom: 15px !important;
+            animation: bounceArrow 1s ease infinite !important;
+            text-shadow: 0 0 15px rgba(108, 99, 255, 0.8) !important;
+          }
+          
+          @keyframes bounceArrow {
+            0%, 100% {
+              transform: translateY(0) !important;
+            }
+            50% {
+              transform: translateY(-10px) !important;
+            }
           }
           
           .${styles.alternativeMethod} {
