@@ -97,13 +97,28 @@ Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, a
 
 
 ## Tech Stack Overview🛠️
-
+- **Next.js 14** – Front-end React framework
+- **Three.js** – 3D interactive visualizations and room rendering
+- **Tailwind CSS** – UI styling and responsive design
+- **Magic UI** – UI components library
+- **RainbowKit** – Wallet connection and management
+- **Wagmi** – React hooks for Ethereum
+- **Ethers.js 6** – Blockchain interaction and smart contract integration
+- **Framer Motion** – Animations and transitions
+- **Base & Sepolia** – Primary blockchain networks for testing
+- **Polygon Amoy** – Testnet for event monitoring
+- **Viem** – TypeScript interface for Ethereum
+- **Tanstack Query** – Data fetching and state management
+- **Anthropic AI SDK** – AI integration for platform features
 
 
 ---
 
 ## Important Code Directories📂 
+Here's a brief overview of important directories in our repository:
 
+**3D Models & Assets**
+- ****
 
 
 
