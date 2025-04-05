@@ -79,7 +79,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           });
           
           // Position the low table in front of the couch - adjusted for 6x6 room
-          lowTable.position.set(-0.5, 0.1, 1.5); // Centered in front of couch
+          lowTable.position.set(-0.5, 0.05, 1.5); // Centered in front of couch, lowered slightly
           
           // Rotate the table
           lowTable.rotation.y = Math.PI / 2; // 45 degrees rotation
@@ -210,7 +210,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the rug - adjusted for 6x6 room
-      rug.position.set(-0.5, 0, 1.5); // Centered in the living area
+      rug.position.set(-0.5, -0.05, 1.5); // Centered in the living area, lowered slightly
       
       // Rotate the rug
       rug.rotation.y = 1.6;

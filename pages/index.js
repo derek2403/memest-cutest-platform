@@ -589,18 +589,151 @@ export default function Home() {
 
     // Floor (specific color)
     const floorGeometry = new THREE.BoxGeometry(roomWidth, 0.2, roomDepth); // Make floor thicker
+    
+    // Create a wooden floor texture
+    function createWoodenFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Base color for the wooden floor - slightly darker
+      ctx.fillStyle = '#8b6d4d';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Create wooden planks
+      const plankWidth = 60;
+      const plankGap = 2;
+      
+      // Draw the planks with grain
+      for (let x = 0; x < canvas.width; x += plankWidth + plankGap) {
+        const adjustedWidth = Math.min(plankWidth, canvas.width - x);
+        
+        // Use varying colors for each plank to create natural wood look - slightly darker
+        const baseHue = 28 + Math.random() * 10; // Darker brown
+        const baseSaturation = 45 + Math.random() * 20;
+        const baseLightness = 43 + Math.random() * 12; // Reduced lightness for darker appearance
+        
+        ctx.fillStyle = `hsl(${baseHue}, ${baseSaturation}%, ${baseLightness}%)`;
+        ctx.fillRect(x, 0, adjustedWidth, canvas.height);
+        
+        // Add grain lines
+        const grainCount = 40 + Math.floor(Math.random() * 30);
+        ctx.globalAlpha = 0.15;
+        
+        for (let i = 0; i < grainCount; i++) {
+          const grainY = Math.random() * canvas.height;
+          const grainLength = 50 + Math.random() * 150;
+          const grainThickness = 1 + Math.random() * 2;
+          
+          // Adjust grain color based on position - slightly more contrast
+          const grainDarkness = Math.random() * 25;
+          ctx.fillStyle = `hsl(${baseHue}, ${baseSaturation}%, ${baseLightness - grainDarkness}%)`;
+          
+          ctx.fillRect(x, grainY, adjustedWidth, grainThickness);
+        }
+        
+        ctx.globalAlpha = 1.0;
+        
+        // Add darker edges to simulate plank separation
+        if (x + adjustedWidth < canvas.width) {
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(x + adjustedWidth, 0, plankGap, canvas.height);
+        }
+      }
+      
+      // Add some knots in the wood
+      const knotCount = 5 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < knotCount; i++) {
+        const knotX = Math.random() * canvas.width;
+        const knotY = Math.random() * canvas.height;
+        const knotRadius = 3 + Math.random() * 5;
+        
+        const gradient = ctx.createRadialGradient(
+          knotX, knotY, 0,
+          knotX, knotY, knotRadius
+        );
+        
+        gradient.addColorStop(0, 'rgba(50, 25, 0, 0.8)');
+        gradient.addColorStop(0.8, 'rgba(80, 55, 30, 0.3)');
+        gradient.addColorStop(1, 'rgba(100, 75, 50, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(knotX, knotY, knotRadius * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Create texture from canvas
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(2, 2); // Repeat the texture to make planks smaller
+      
+      // For better quality
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      
+      return texture;
+    }
+    
+    // Create the wooden texture
+    const woodTexture = createWoodenFloorTexture();
+    
+    // Create normal map for added depth
+    function createWoodNormalMap() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill with neutral normal color (r=128, g=128, b=255)
+      ctx.fillStyle = '#8080ff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add normal details for plank gaps
+      const plankWidth = 60;
+      const plankGap = 2;
+      
+      ctx.fillStyle = '#6060ff'; // Darker for depth
+      
+      for (let x = 0; x < canvas.width; x += plankWidth + plankGap) {
+        if (x + plankWidth < canvas.width) {
+          ctx.fillRect(x + plankWidth, 0, plankGap, canvas.height);
+        }
+      }
+      
+      const normalTexture = new THREE.CanvasTexture(canvas);
+      normalTexture.wrapS = THREE.RepeatWrapping;
+      normalTexture.wrapT = THREE.RepeatWrapping;
+      normalTexture.repeat.set(2, 2);
+      
+      return normalTexture;
+    }
+    
+    const woodNormalMap = createWoodNormalMap();
+    
+    // Create material with texture
+    const woodMaterial = new THREE.MeshStandardMaterial({
+      map: woodTexture,
+      normalMap: woodNormalMap,
+      roughness: 0.7,
+      metalness: 0.1,
+      normalScale: new THREE.Vector2(0.5, 0.5)
+    });
+    
+    // Use the wooden material for the top face, darker wood for sides
     const floorMaterial = [
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Right edge - darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Left edge - darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#D2B48C") }), // Top surface - unchanged
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#704628") }), // Bottom - even darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") }), // Front edge - darker
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#8B5A2B") })  // Back edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Right edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Left edge - darker
+      woodMaterial, // Top surface - wooden texture
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#4d3118"), roughness: 0.9 }), // Bottom - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Front edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") })  // Back edge - darker
     ];
 
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.position.y = -0.1; // Lower the floor to center it
-    floor.receiveShadow = false;
+    floor.receiveShadow = true; // Enable shadows on floor
     floor.name = "floor"; // Name the floor for raycasting
     scene.add(floor);
     
