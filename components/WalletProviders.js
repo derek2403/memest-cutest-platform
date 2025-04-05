@@ -1,5 +1,5 @@
 import React from 'react';
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { baseSepolia } from 'wagmi/chains';
@@ -66,12 +66,25 @@ const config = getDefaultConfig({
   projectId: '5bc0351a37ff1fa0a3a9ff4875d3a3ba', // WalletConnect project ID
   chains: [polygonAmoy, baseSepolia, celoAlfajores, celoMainnet],
   ssr: true,
+  // Add WalletConnect configuration with connection retries and fallbacks
+  walletConnectParameters: {
+    projectId: '5bc0351a37ff1fa0a3a9ff4875d3a3ba',
+    metadata: {
+      name: 'Memest Cutest Platform',
+      description: 'Web3 Platform',
+      url: 'https://memest-cutest-platform.vercel.app',
+      icons: ['https://walletconnect.com/walletconnect-logo.png']
+    },
+    relayUrl: 'wss://relay.walletconnect.org',
+    connectTries: 3,
+    connectTimeout: 30000,
+  }
 });
 
 export default function WalletProviders({ children }) {
   return (
     <WagmiProvider config={config}>
-      <RainbowKitProvider>
+      <RainbowKitProvider theme={darkTheme()} modalSize="compact">
         {children}
       </RainbowKitProvider>
     </WagmiProvider>
