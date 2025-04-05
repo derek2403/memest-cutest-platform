@@ -3,7 +3,7 @@ _A gamified, cross app based Model Context Protocol platform_
 
 ![Logo](https://github.com/derek2403/memest-cutest-platform/blob/main/public/logo.png?raw=true)
 
-We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more—into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
+We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
 
 We’ve deployed a **live demonstration of MCP** at [**(Link Coming Soon)**](#).
 
@@ -21,6 +21,15 @@ Thus, **Memest Cutest Project (MCP)** was born, a unified space where all your s
 
 ## The Problem🚧
 
+1. **Fragmented Wallet Connections:** Each web3 service like MetaMask, 1inch, Uniswap and many more forces you to connect your wallet separately, creating a repetitive and disjointed user experience.
+
+2. **Multiple Platform Juggling:** Users constantly switch between various websites and applications (Web2 and Web3 alike), wasting time and effort on repeated logins and manual data transfers.
+
+3. **Lack of Web2–Web3 Bridging:** Traditional Web2 tools (e.g., Gmail, Microsoft Excel) don’t talk directly to Web3 services, preventing streamlined, cross-platform workflows.
+
+4. **Limited Automation:** Without a unified interface, automating tasks (like notifying yourself by email whenever funds arrive in your wallet) is cumbersome and requires technical skill or third-party hacks.
+
+5. **Poor Visibility & Usability:** Managing multiple services and credentials in different tabs or windows makes it difficult to understand what’s happening at a glance or to trust that you haven’t missed any critical event.
 
 
 ---
