@@ -71,6 +71,16 @@ export default function CaseSelector({ onSelectCase }) {
           window.animations.idle.stop();
         }
         window.animations.walk.reset();
+        
+        // Adjust animation speed based on agent's stride length
+        // This helps synchronize steps with actual movement distance
+        const strideLength = 0.5; // Estimated length of one step in the walk animation
+        const walkSpeed = 1.3; // Base animation speed multiplier - increased to make feet move faster
+        
+        if (window.animations.walk.timeScale !== undefined) {
+          window.animations.walk.timeScale = walkSpeed;
+        }
+        
         window.animations.walk.play();
         window.currentAnimation = 'walk';
       }
@@ -326,13 +336,17 @@ export default function CaseSelector({ onSelectCase }) {
         currentPoint = waypoint.clone();
       }
       
-      const walkDuration = Math.min(Math.max(totalDistance * 500, 1000), 5000); // Between 1-5 seconds based on distance
+      // Calculate a more appropriate walk duration based on stride length and steps
+      // Slower movement for more natural walking animation (more steps per distance)
+      const averageWalkingSpeed = 1.8; // meters per second - keeping the same movement speed
+      const walkDuration = Math.max(totalDistance / averageWalkingSpeed * 1000, 1000);
       
       console.log(`Walking distance: ${totalDistance}, duration: ${walkDuration}ms, waypoints: ${waypoints.length}`);
       
       // Animate the walking with waypoints
       const startTime = Date.now();
       let lastWaypointIndex = -1;
+      let lastAnimationSync = 0;
       
       const walkAnimation = () => {
         const elapsedTime = Date.now() - startTime;
@@ -380,6 +394,23 @@ export default function CaseSelector({ onSelectCase }) {
             if (window.aiAgent.rotation) {
               const angle = Math.atan2(toPoint.x - fromPoint.x, toPoint.z - fromPoint.z);
               window.aiAgent.rotation.y = angle;
+            }
+            
+            // Synchronize animation speed with movement every 500ms
+            // This helps prevent animation/movement mismatch over long distances
+            const now = Date.now();
+            if (now - lastAnimationSync > 500 && window.animations && window.animations.walk) {
+              // Calculate current movement speed (distance per second)
+              const instantSpeed = (pathProgress - lastAnimationSync) / ((now - lastAnimationSync) / 1000);
+              
+              // Adjust animation speed to match current movement speed
+              // Increased animation speed factor to better sync with movement
+              if (window.animations.walk.timeScale !== undefined) {
+                const newTimeScale = Math.min(Math.max(instantSpeed * 0.8, 1.5), 2.5); // Increased animation speed ranges
+                window.animations.walk.timeScale = newTimeScale;
+              }
+              
+              lastAnimationSync = pathProgress;
             }
           }
           
