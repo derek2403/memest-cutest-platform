@@ -12,6 +12,7 @@ import { spawnPolygonModel } from "../components/polygon.js";
 import { spawnCeloModel } from "../components/celo.js";
 import { spawnGmailModel } from "../components/gmail.js";
 import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
+import { spawnIslandModel } from "../components/island.js";
 import dynamic from 'next/dynamic';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
@@ -603,77 +604,16 @@ export default function Home() {
     floor.name = "floor"; // Name the floor for raycasting
     scene.add(floor);
     
-    // Left wall (light blue color) - make it thicker with different colored edges
-    const leftWallGeometry = new THREE.BoxGeometry(0.2, roomHeight, roomDepth);
-    const leftWallMaterial = [
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#5A87B5") }), // Right - inner surface (unchanged)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Left - outer surface (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Top edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Bottom edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") }), // Front edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#3A5780") })  // Back edge (darker)
-    ];
-
-    const leftWall = new THREE.Mesh(leftWallGeometry, leftWallMaterial);
-    leftWall.position.set(-roomWidth / 2 + 0.1, roomHeight / 2, 0); // Adjust position for thickness
-    leftWall.receiveShadow = false;
-    scene.add(leftWall);
-
-    // Back wall (slightly darker color) - make it thicker with different colored edges
-    const backWallGeometry = new THREE.BoxGeometry(roomWidth, roomHeight, 0.2);
-    const backWallMaterial = [
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Right edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Left edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Top edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#B0B0B0") }), // Bottom edge (darker)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#D0D0D0") }), // Front - inner surface (unchanged)
-      new THREE.MeshStandardMaterial({ color: new THREE.Color("#A0A0A0") })  // Back - outer surface (darker)
-    ];
-
-    const backWall = new THREE.Mesh(backWallGeometry, backWallMaterial);
-    backWall.position.set(0, roomHeight / 2, -roomDepth / 2 + 0.1); // Adjust position for thickness
-    backWall.receiveShadow = false;
-    scene.add(backWall);
-
-    // Create a window cutout in the left wall - adjust for the new wall thickness
-    const windowWidth = 1.2;
-    const windowHeight = 1.2;
-    const windowX = -roomWidth/2 + 0.21; // Slightly in front of the wall, adjusted for thickness
-    const windowY = 2.2; // Height position
-    const windowZ = -2; // Same Z position as the bed and window frame
-
-    // Create a white glass for the window
-    const windowGlassGeometry = new THREE.PlaneGeometry(
-      windowWidth,
-      windowHeight
-    );
-    const windowGlassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff, // Pure white color
-      transparent: true,
-      opacity: 0.8, // More opaque
-      transmission: 0.2, // Less transmission for white appearance
-      roughness: 0.05,
-      metalness: 0.0,
-      clearcoat: 1.0,
-      side: THREE.DoubleSide,
-    });
-
-    const windowGlass = new THREE.Mesh(
-      windowGlassGeometry,
-      windowGlassMaterial
-    );
-    windowGlass.position.set(windowX, windowY, windowZ);
-    windowGlass.rotation.y = Math.PI / 2; // Same rotation as the wall
-    windowGlass.receiveShadow = false;
-    scene.add(windowGlass);
-    
     // Light rays and dust particles removed from the room for a cleaner interior look
-
+    
     // Control variables
     agentTargetPosition = new THREE.Vector3(0, 0, 0); // Initialize target position
 
     // Load all furniture
     loadFurniture(scene, roomWidth, roomHeight, roomDepth);
+    
+    // Load the island model in the center of the room
+    spawnIslandModel(scene);
     
     // Visualize the obstacle boundaries in debug mode
     if (DEBUG_MODE) {
