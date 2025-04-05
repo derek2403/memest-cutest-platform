@@ -1,5 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/WorkflowPopup.module.css';
+
+// Contract addresses and network configuration
+const NETWORKS = {
+  POLYGON_AMOY: {
+    name: "Polygon Amoy",
+    contractAddress: "0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1",
+    chainId: "80002", // Polygon Amoy chainId
+    rpcUrl: "https://polygon-amoy.g.alchemy.com/v2/FgSucpeM2ptJ9lxAtCUQ5AqtJl4W8kzN"
+  },
+  CELO_TESTNET: {
+    name: "Celo Alfajores Testnet",
+    contractAddress: "0x74544b05aE0F30028bBf35CACE0114Faf0E794cc",
+    chainId: "44787", // Celo Testnet chainId
+    rpcUrl: "https://alfajores-forno.celo-testnet.org"
+  }
+};
 
 // Flow Chart Component to visualize the workflow
 const FlowChart = ({ workflow }) => {
@@ -139,6 +155,27 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const [transactionAmount, setTransactionAmount] = useState('');
   const [inputsComplete, setInputsComplete] = useState(false);
   
+  // Event monitoring state
+  const [monitorPolygon, setMonitorPolygon] = useState(false);
+  const [monitorCelo, setMonitorCelo] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [activeMonitoringId, setActiveMonitoringId] = useState(null);
+  const [polygonEvents, setPolygonEvents] = useState(null);
+  const [celoEvents, setCeloEvents] = useState(null);
+  const [fetchingPolygon, setFetchingPolygon] = useState(false);
+  const [fetchingCelo, setFetchingCelo] = useState(false);
+  const [notificationLog, setNotificationLog] = useState([]);
+  const [monitoringStats, setMonitoringStats] = useState({
+    polygonEventsDetected: 0,
+    celoEventsDetected: 0,
+    notificationsSent: 0,
+    lastEventTime: null
+  });
+  
+  // Previous events tracking
+  const polygonEventHashesRef = useRef(new Set());
+  const celoEventHashesRef = useRef(new Set());
+  
   // Helper to check if inputs are complete based on the workflow type
   const checkInputsComplete = (workflowText, email, recipient, amount) => {
     const lowerText = workflowText.toLowerCase();
@@ -146,16 +183,16 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     // Basic validation - always require email
     if (!email) return false;
     
+    // For event monitoring workflows, only require email
+    if (lowerText.includes("listen") || lowerText.includes("event")) {
+      return email.length > 0;
+    }
+    
     // For USDC bridge or MetaMask transactions, require all fields
     if (lowerText.includes("usdc") || 
         lowerText.includes("metamask") || 
         lowerText.includes("transfer")) {
       return email && recipient && amount;
-    }
-    
-    // For event monitoring, only require email
-    if (lowerText.includes("listen") || lowerText.includes("event")) {
-      return email.length > 0;
     }
     
     // Default case
@@ -294,6 +331,37 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   // Delete a saved workflow
   const deleteWorkflow = (id) => {
     try {
+      // Find the workflow to be deleted
+      const workflowToDelete = savedWorkflows.find(workflow => workflow.id === id);
+      
+      // Check if it's an event monitoring workflow
+      if (workflowToDelete && 
+         (workflowToDelete.description.toLowerCase().includes('event') || 
+          workflowToDelete.description.toLowerCase().includes('listen'))) {
+        
+        // Show confirmation with info about stopping monitoring
+        const confirmDelete = window.confirm(
+          "This will stop the event monitoring for this workflow. Are you sure you want to delete it?"
+        );
+        
+        if (!confirmDelete) return;
+        
+        // If this is the active monitoring workflow, stop monitoring
+        if (id === activeMonitoringId) {
+          setIsListening(false);
+          setActiveMonitoringId(null);
+          // Reset monitoring stats
+          setMonitoringStats({
+            polygonEventsDetected: 0,
+            celoEventsDetected: 0,
+            notificationsSent: 0,
+            lastEventTime: null
+          });
+          // Clear notification log
+          setNotificationLog([]);
+        }
+      }
+      
       const updatedWorkflows = savedWorkflows.filter(workflow => workflow.id !== id);
       setSavedWorkflows(updatedWorkflows);
       localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
@@ -306,6 +374,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   // Render input fields based on workflow type
   const renderInputFields = () => {
     const lowerText = workflowInput.toLowerCase();
+    const isEventMonitoring = lowerText.includes('listen') || lowerText.includes('event');
     
     return (
       <div className={styles.inputFields}>
@@ -322,11 +391,15 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
             className={styles.inputField}
             required
           />
-          <p className={styles.inputHelp}>For signing transactions</p>
+          <p className={styles.inputHelp}>
+            {isEventMonitoring 
+              ? "Where to receive event notifications" 
+              : "For signing transactions"}
+          </p>
         </div>
         
-        {/* Show recipient and amount for transfer/bridge workflows */}
-        {(lowerText.includes("metamask") || lowerText.includes("transfer") || lowerText.includes("usdc")) && (
+        {/* Only show recipient and amount for non-event monitoring workflows */}
+        {!isEventMonitoring && (lowerText.includes("metamask") || lowerText.includes("transfer") || lowerText.includes("usdc")) && (
           <>
             <div className={styles.inputGroup}>
               <label className={styles.inputLabel}>Recipient Address <span className={styles.required}>*</span></label>
@@ -356,11 +429,123 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
             </div>
           </>
         )}
+        
+        {/* For event monitoring workflows, show which chain is being monitored */}
+        {isEventMonitoring && (
+          <div className={styles.monitorInfo}>
+            <p>
+              {lowerText.includes('polygon') 
+                ? '🟣 Monitoring Polygon chain events' 
+                : lowerText.includes('celo') 
+                  ? '🟢 Monitoring Celo chain events' 
+                  : '🟣 🟢 Monitoring blockchain events'}
+            </p>
+          </div>
+        )}
       </div>
     );
   };
   
-  // Execute the workflow by making an API call
+  // Continuous monitoring effect - runs when isListening, activeMonitoringId, or monitoring settings change
+  useEffect(() => {
+    // Only run if we're actively listening and have a workflow to monitor
+    if (!isListening || !activeMonitoringId) return;
+    
+    console.log("Starting event monitoring for workflow:", activeMonitoringId);
+    
+    // Initial fetch to populate event sets - we just want to mark existing events as seen
+    // without sending notifications for them, only monitor new events from now onwards
+    const initialFetch = async () => {
+      // Reset event tracking sets for fresh start
+      polygonEventHashesRef.current = new Set();
+      celoEventHashesRef.current = new Set();
+      
+      if (monitorPolygon) {
+        console.log("Setting up Polygon event monitoring...");
+        try {
+          const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/api/events/counter?contractAddress=${NETWORKS.POLYGON_AMOY.contractAddress}`);
+          const data = await response.json();
+          
+          // Mark existing events as seen so we don't send notifications for them
+          if (data.success && data.events) {
+            data.events.forEach(event => {
+              polygonEventHashesRef.current.add(createEventHash(event));
+            });
+            console.log(`Recorded ${data.events.length} existing Polygon events (will not trigger notifications)`);
+          }
+        } catch (error) {
+          console.error("Error initializing Polygon monitoring:", error);
+        }
+      }
+      
+      if (monitorCelo) {
+        console.log("Setting up Celo event monitoring...");
+        try {
+          const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/api/events/counter?contractAddress=${NETWORKS.CELO_TESTNET.contractAddress}&chainId=${NETWORKS.CELO_TESTNET.chainId}`);
+          const data = await response.json();
+          
+          // Mark existing events as seen so we don't send notifications for them
+          if (data.success && data.events) {
+            data.events.forEach(event => {
+              celoEventHashesRef.current.add(createEventHash(event));
+            });
+            console.log(`Recorded ${data.events.length} existing Celo events (will not trigger notifications)`);
+          }
+          
+          // We may need to try direct RPC connection for Celo
+          if (!data.success || !data.events || data.events.length === 0) {
+            console.log("API didn't return Celo events, initializing direct RPC tracking");
+            
+            // We don't need to do anything else here for initialization, 
+            // as the actual fetch logic will handle RPC connection
+          }
+        } catch (error) {
+          console.error("Error initializing Celo monitoring:", error);
+        }
+      }
+    };
+    
+    initialFetch();
+    
+    // Set up continuous event checking
+    let checkingInterval;
+    const startEventChecking = () => {
+      // We'll use a very short interval to make it feel continuous
+      checkingInterval = setInterval(() => {
+        if (isListening) {
+          // Only fetch from chains that are being monitored
+          if (monitorPolygon) {
+            fetchPolygonEvents();
+          }
+          
+          if (monitorCelo) {
+            fetchCeloEvents();
+          }
+        }
+      }, 3000); // Check every 3 seconds, same as counterEvents.js
+    };
+    
+    startEventChecking();
+    
+    // Update status message to show which chains are being monitored
+    setExecutionStatus({
+      success: true,
+      message: `Monitoring active for ${monitorPolygon && monitorCelo 
+        ? 'Polygon and Celo' 
+        : monitorPolygon 
+          ? 'Polygon' 
+          : 'Celo'} chains. Event tracking has started.`,
+      monitoring: true
+    });
+    
+    // Cleanup function
+    return () => {
+      console.log("Stopping event monitoring for workflow:", activeMonitoringId);
+      clearInterval(checkingInterval);
+    };
+  }, [isListening, activeMonitoringId, monitorPolygon, monitorCelo]);
+  
+  // Update the execute workflow function to handle event monitoring
   const handleExecuteWorkflow = async () => {
     // Find the most recently saved workflow
     const mostRecentWorkflow = savedWorkflows[savedWorkflows.length - 1];
@@ -370,19 +555,68 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
       return;
     }
     
-    // Get the email and transaction details from the saved workflow
+    // Get the email and workflow details
     const emailToUse = mostRecentWorkflow.email;
-    const recipientToUse = mostRecentWorkflow.recipient;
-    const amountToUse = mostRecentWorkflow.amount;
+    const workflowDescription = mostRecentWorkflow.description.toLowerCase();
     
-    if (!emailToUse || !recipientToUse || !amountToUse) {
-      console.error('Missing required workflow details');
-      return;
-    }
+    // Determine if this is an event monitoring workflow
+    const isEventMonitoring = workflowDescription.includes('listen') || workflowDescription.includes('event');
+    const isPolygonMonitoring = workflowDescription.includes('polygon');
+    const isCeloMonitoring = workflowDescription.includes('celo');
     
     setExecutingWorkflow(true);
     
     try {
+      if (isEventMonitoring) {
+        // For event monitoring workflows, we'll directly start monitoring here
+        // Set which chains to monitor based on the workflow description
+        
+        // If neither chain is explicitly mentioned, we don't default to both - 
+        // instead, we prioritize based on what's in the description
+        if (isPolygonMonitoring) {
+          setMonitorPolygon(true);
+          setMonitorCelo(false);
+          console.log("Starting Polygon-specific monitoring");
+        } else if (isCeloMonitoring) {
+          setMonitorPolygon(false);
+          setMonitorCelo(true);
+          console.log("Starting Celo-specific monitoring");
+        } else {
+          // Only if nothing specified, monitor both
+          setMonitorPolygon(true);
+          setMonitorCelo(true);
+          console.log("Starting monitoring for both chains");
+        }
+        
+        // Start listening and set the active workflow ID
+        setIsListening(true);
+        setActiveMonitoringId(mostRecentWorkflow.id);
+        
+        // Set initial success status (will be updated by the monitoring effect)
+        setExecutionStatus({
+          success: true,
+          message: `Initializing event monitoring for ${isPolygonMonitoring ? 'Polygon' : isCeloMonitoring ? 'Celo' : 'blockchain'} events...`,
+          monitoring: true
+        });
+        
+        setExecutingWorkflow(false);
+        return;
+      }
+      
+      // For transaction workflows (non-event monitoring)
+      const recipientToUse = mostRecentWorkflow.recipient;
+      const amountToUse = mostRecentWorkflow.amount;
+      
+      if (!emailToUse || !recipientToUse || !amountToUse) {
+        console.error('Missing required workflow details');
+        setExecutionStatus({
+          success: false,
+          message: 'Missing required details for this workflow.'
+        });
+        setExecutingWorkflow(false);
+        return;
+      }
+      
       // Call the external transaction endpoint
       const response = await fetch('https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/transaction', {
         method: 'POST',
@@ -444,6 +678,292 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     }
   };
   
+  // Function to create a unique hash for an event to track which ones we've seen
+  const createEventHash = (event) => {
+    return `${event.blockNumber}-${event.transactionHash}-${event.args?.newCount || '0'}`;
+  };
+  
+  // Function to format event details
+  const formatEventDetail = (event) => {
+    // Include count value if available
+    if (event.args?.newCount) {
+      return `Block ${event.blockNumber}: Count updated to ${event.args.newCount}`;
+    }
+    // Otherwise just show the block number and any available info
+    return `Block ${event.blockNumber}: Event detected`;
+  };
+  
+  // Function to fetch counter events from Polygon Amoy
+  const fetchPolygonEvents = async () => {
+    if (!monitorPolygon) return null;
+    setFetchingPolygon(true);
+    
+    try {
+      const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/api/events/counter?contractAddress=${NETWORKS.POLYGON_AMOY.contractAddress}`);
+      const data = await response.json();
+      
+      // Debug log for Polygon events
+      console.log("Polygon events API response:", data);
+      
+      // Set the Polygon events state
+      setPolygonEvents(data);
+      
+      // Check for new events
+      if (data.success && data.events && data.events.length > 0) {
+        const newEvents = [];
+        
+        // Process each event
+        data.events.forEach(event => {
+          const eventHash = createEventHash(event);
+          
+          // If we haven't seen this event before
+          if (!polygonEventHashesRef.current.has(eventHash)) {
+            polygonEventHashesRef.current.add(eventHash);
+            newEvents.push(event);
+          }
+        });
+        
+        // If we found new events, notify - always send email for any event
+        if (newEvents.length > 0 && activeMonitoringId) {
+          const monitorWorkflow = savedWorkflows.find(w => w.id === activeMonitoringId);
+          if (monitorWorkflow && monitorWorkflow.email) {
+            console.log(`Sending notification for ${newEvents.length} new Polygon events`);
+            sendServerEmail("Polygon Amoy", newEvents, monitorWorkflow.email);
+            setMonitoringStats(prev => ({
+              ...prev,
+              polygonEventsDetected: prev.polygonEventsDetected + newEvents.length,
+              notificationsSent: prev.notificationsSent + 1,
+              lastEventTime: new Date()
+            }));
+          }
+        }
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error fetching Polygon events:", error);
+      setPolygonEvents({
+        success: false,
+        message: `Error fetching Polygon Amoy events: ${error.message}`,
+        error: error.message
+      });
+      return null;
+    } finally {
+      setFetchingPolygon(false);
+    }
+  };
+  
+  // Function to fetch counter events from Celo testnet
+  const fetchCeloEvents = async () => {
+    if (!monitorCelo) return null;
+    setFetchingCelo(true);
+    
+    try {
+      // First try with the API (as before)
+      const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/api/events/counter?contractAddress=${NETWORKS.CELO_TESTNET.contractAddress}&chainId=${NETWORKS.CELO_TESTNET.chainId}`);
+      const data = await response.json();
+      
+      // Debug log for Celo events
+      console.log("Celo events API response:", data);
+      
+      let eventData = data;
+      
+      // If API doesn't return events, try direct ethers approach like in counterEvents.js
+      if (!data.success || !data.events || data.events.length === 0) {
+        console.log("API didn't return Celo events, trying direct RPC connection");
+        try {
+          // Import ethers dynamically if needed
+          if (typeof window !== 'undefined') {
+            // Using dynamic import for ethers
+            const ethersModule = await import('ethers');
+            const { ethers } = ethersModule;
+            
+            // Basic ABI for Counter contract's CountUpdated event
+            const counterABI = [
+              "event CountUpdated(uint256 newCount)"
+            ];
+            
+            // Connect to Celo testnet directly
+            const celoProvider = new ethers.JsonRpcProvider(NETWORKS.CELO_TESTNET.rpcUrl);
+            const contract = new ethers.Contract(NETWORKS.CELO_TESTNET.contractAddress, counterABI, celoProvider);
+            
+            // Get logs from past events
+            const logs = await celoProvider.getLogs({
+              address: NETWORKS.CELO_TESTNET.contractAddress,
+              topics: [ethers.id("CountUpdated(uint256)")],
+              fromBlock: 0,
+              toBlock: "latest"
+            });
+            
+            console.log("Direct Celo RPC logs:", logs);
+            
+            // Format events
+            const formattedEvents = await Promise.all(logs.map(async (log) => {
+              try {
+                const parsedLog = contract.interface.parseLog({
+                  topics: log.topics,
+                  data: log.data
+                });
+                
+                const block = await celoProvider.getBlock(log.blockNumber);
+                
+                return {
+                  name: 'CountUpdated',
+                  blockNumber: log.blockNumber,
+                  transactionHash: log.transactionHash,
+                  logIndex: log.index || log.logIndex,
+                  timestamp: block ? new Date(block.timestamp * 1000).toISOString() : null,
+                  args: {
+                    newCount: parsedLog.args[0].toString()
+                  }
+                };
+              } catch (err) {
+                console.error('Error parsing Celo log:', err);
+                return {
+                  name: 'CountUpdated',
+                  blockNumber: log.blockNumber,
+                  transactionHash: log.transactionHash,
+                  error: 'Could not parse event data'
+                };
+              }
+            }));
+            
+            console.log("Formatted Celo events from RPC:", formattedEvents);
+            
+            // Create success response similar to the API
+            eventData = {
+              success: true,
+              events: formattedEvents,
+              message: "Events fetched directly via RPC"
+            };
+          }
+        } catch (directError) {
+          console.error("Error with direct Celo RPC connection:", directError);
+          // In case of failure, we'll continue with API response
+        }
+      }
+      
+      // Set the Celo events state with whatever data we have
+      setCeloEvents(eventData);
+      
+      // Check for new events using our data
+      if (eventData.success && eventData.events && eventData.events.length > 0) {
+        const newEvents = [];
+        
+        // Process each event
+        eventData.events.forEach(event => {
+          const eventHash = createEventHash(event);
+          
+          // If we haven't seen this event before
+          if (!celoEventHashesRef.current.has(eventHash)) {
+            celoEventHashesRef.current.add(eventHash);
+            newEvents.push(event);
+          }
+        });
+        
+        // If we found new events, notify - always send email for any event
+        if (newEvents.length > 0 && activeMonitoringId) {
+          const monitorWorkflow = savedWorkflows.find(w => w.id === activeMonitoringId);
+          if (monitorWorkflow && monitorWorkflow.email) {
+            console.log(`Sending notification for ${newEvents.length} new Celo events`);
+            sendServerEmail("Celo Testnet", newEvents, monitorWorkflow.email);
+            setMonitoringStats(prev => ({
+              ...prev,
+              celoEventsDetected: prev.celoEventsDetected + newEvents.length,
+              notificationsSent: prev.notificationsSent + 1,
+              lastEventTime: new Date()
+            }));
+          }
+        }
+      }
+      
+      return eventData;
+    } catch (error) {
+      console.error("Error fetching Celo events:", error);
+      setCeloEvents({
+        success: false,
+        message: `Error fetching Celo Testnet events: ${error.message}`,
+        error: error.message
+      });
+      return null;
+    } finally {
+      setFetchingCelo(false);
+    }
+  };
+  
+  // Send email using the server's email service (Gmail)
+  const sendServerEmail = async (network, events, emailAddress) => {
+    if (!emailAddress) return;
+    
+    // Create notification entry first
+    const notification = {
+      id: Date.now(),
+      network,
+      time: new Date(),
+      events,
+      emailSent: false
+    };
+    
+    setNotificationLog(prev => [notification, ...prev]);
+    
+    // Format ALL event data - no filtering based on count values
+    const eventDetails = events.map(formatEventDetail).join('\n');
+    
+    // Email content
+    const subject = `New Counter Events on ${network}`;
+    const body = `
+New Counter Events Detected on ${network}
+--------------------
+
+Contract: ${network === "Polygon Amoy" ? NETWORKS.POLYGON_AMOY.contractAddress : NETWORKS.CELO_TESTNET.contractAddress}
+
+${eventDetails || 'Event detected (no details available)'}
+
+Timestamp: ${new Date().toLocaleString()}
+    `;
+    
+    try {
+      // Send email using our server endpoint that uses the .env email credentials
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          to: emailAddress,
+          subject: subject,
+          body: body
+        })
+      });
+      
+      const result = await response.json();
+      
+      // Update notification status based on result
+      setNotificationLog(prev => 
+        prev.map(item => 
+          item.id === notification.id 
+            ? {...item, emailSent: result.success} 
+            : item
+        )
+      );
+      
+      return result;
+    } catch (error) {
+      console.error("Error sending notification email:", error);
+      
+      // Update notification to show failure
+      setNotificationLog(prev => 
+        prev.map(item => 
+          item.id === notification.id 
+            ? {...item, emailSent: false, error: error.message} 
+            : item
+        )
+      );
+      
+      return { success: false, error: error.message };
+    }
+  };
+  
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -472,13 +992,124 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                 </div>
               )}
               
-              <button 
-                className={styles.executeButton} 
-                onClick={handleExecuteWorkflow}
-                disabled={executingWorkflow}
-              >
-                {executingWorkflow ? 'Executing...' : 'Execute Workflow'}
-              </button>
+              {/* Only show Execute button if saved workflow exists and no execution is in progress */}
+              {savedWorkflows.length > 0 && !executingWorkflow && !executionStatus && (
+                <button 
+                  className={styles.executeButton} 
+                  onClick={handleExecuteWorkflow}
+                  disabled={executingWorkflow}
+                >
+                  {/* Check if this is an event monitoring workflow */}
+                  {savedWorkflows[savedWorkflows.length - 1]?.description?.toLowerCase().includes('event') || 
+                   savedWorkflows[savedWorkflows.length - 1]?.description?.toLowerCase().includes('listen')
+                    ? 'Start Monitoring' 
+                    : 'Execute Workflow'}
+                </button>
+              )}
+              
+              {/* Show executing status */}
+              {executingWorkflow && (
+                <div className={styles.executingStatus}>
+                  <div className={styles.spinner}></div>
+                  <p>Processing workflow...</p>
+                </div>
+              )}
+              
+              {/* Show monitoring stats when active */}
+              {isListening && activeMonitoringId && (
+                <div className={styles.monitoringStats}>
+                  <div className={styles.monitoringHeader}>
+                    <h4>
+                      <span className={styles.monitoringDot}></span>
+                      Live Event Monitoring
+                    </h4>
+                    <button 
+                      onClick={() => {
+                        setIsListening(false);
+                        setExecutionStatus(null);
+                      }}
+                      className={styles.stopMonitoringButton}
+                    >
+                      Stop Monitoring
+                    </button>
+                  </div>
+                  
+                  <div className={styles.statsGrid}>
+                    <div className={styles.statItem}>
+                      <span className={styles.statLabel}>Polygon Events:</span>
+                      <span className={styles.statValue}>{monitoringStats.polygonEventsDetected}</span>
+                    </div>
+                    <div className={styles.statItem}>
+                      <span className={styles.statLabel}>Celo Events:</span>
+                      <span className={styles.statValue}>{monitoringStats.celoEventsDetected}</span>
+                    </div>
+                    <div className={styles.statItem}>
+                      <span className={styles.statLabel}>Notifications:</span>
+                      <span className={styles.statValue}>{monitoringStats.notificationsSent}</span>
+                    </div>
+                    <div className={styles.statItem}>
+                      <span className={styles.statLabel}>Last Event:</span>
+                      <span className={styles.statValue}>{monitoringStats.lastEventTime 
+                        ? new Date(monitoringStats.lastEventTime).toLocaleTimeString() 
+                        : 'None'}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Display recent notifications */}
+                  {notificationLog.length > 0 && (
+                    <div className={styles.notificationsSection}>
+                      <h4>Recent Notifications</h4>
+                      <div className={styles.notificationsList}>
+                        {notificationLog.slice(0, 3).map(notification => (
+                          <div 
+                            key={notification.id} 
+                            className={styles.notificationItem}
+                          >
+                            <div className={styles.notificationHeader}>
+                              <span className={`${styles.networkBadge} ${
+                                notification.network === "Polygon Amoy" 
+                                  ? styles.polygonBadge 
+                                  : styles.celoBadge
+                              }`}>
+                                {notification.network}
+                              </span>
+                              <span className={styles.notificationTime}>
+                                {notification.time.toLocaleTimeString()}
+                              </span>
+                              <span className={styles.emailStatus}>
+                                {notification.emailSent 
+                                  ? '✓ Email sent' 
+                                  : notification.error 
+                                    ? '✗ Failed' 
+                                    : '⟳ Sending...'}
+                              </span>
+                            </div>
+                            
+                            <div className={styles.eventsList}>
+                              {notification.events.slice(0, 2).map((event, idx) => (
+                                <div key={idx} className={styles.eventItem}>
+                                  {formatEventDetail(event)}
+                                </div>
+                              ))}
+                              {notification.events.length > 2 && (
+                                <div className={styles.moreEvents}>
+                                  + {notification.events.length - 2} more events
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {notificationLog.length > 3 && (
+                          <div className={styles.moreNotifications}>
+                            + {notificationLog.length - 3} more notifications
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <>
