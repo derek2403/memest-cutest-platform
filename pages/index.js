@@ -139,7 +139,7 @@ export default function Home() {
   ];
 
   // Debug mode for visualizing obstacles
-  const DEBUG_MODE = true;
+  const DEBUG_MODE = false;
   // Larger buffer for obstacle avoidance
   const OBSTACLE_BUFFER = 1.0;
   // Use simple grid-based movement (horizontal/vertical only)
