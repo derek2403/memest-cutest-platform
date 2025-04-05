@@ -66,11 +66,35 @@ const EXAMPLE_WORKFLOWS = [
   }
 ];
 
-export default function WorkflowPopup({ initialInput = '', onClose }) {
+export default function WorkflowPopup({ initialInput = '', onClose, showSavedSection = false, readOnly = false }) {
   const [workflowInput, setWorkflowInput] = useState(initialInput);
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
+  const [serverResponse, setServerResponse] = useState(null);
+  const [savedWorkflows, setSavedWorkflows] = useState([]);
+  const savedSectionRef = React.useRef(null);
+  
+  // Load saved workflows from localStorage when the component mounts
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('savedWorkflows');
+      if (saved) {
+        setSavedWorkflows(JSON.parse(saved));
+        
+        // If showSavedSection is true and we have saved workflows, scroll to them
+        if (showSavedSection && JSON.parse(saved).length > 0) {
+          setTimeout(() => {
+            if (savedSectionRef.current) {
+              savedSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 300); // Short delay to ensure component is fully rendered
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved workflows:', error);
+    }
+  }, [showSavedSection]);
   
   // Parse the workflow when component mounts if initialInput is provided
   useEffect(() => {
@@ -189,6 +213,72 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
     }
   };
 
+  // Send workflow to server
+  const handleApproveWorkflow = async () => {
+    try {
+      setWorkflowLoading(true);
+      
+      // Send the workflow description to the server
+      const response = await fetch('http://localhost:3001/api/workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ workflowInput }),
+      });
+      
+      const data = await response.json();
+      console.log('Server response:', data);
+      
+      // Store the server response
+      setServerResponse(data);
+      
+      // Update UI to show approval
+      setWorkflowApproved(true);
+      setWorkflowLoading(false);
+    } catch (error) {
+      console.error('Error sending workflow to server:', error);
+      alert('Failed to create workflow. Please try again.');
+      setWorkflowLoading(false);
+    }
+  };
+
+  // Save the current parsed workflow to localStorage
+  const saveWorkflow = () => {
+    if (!workflowParsed || workflowParsed.length === 0) return;
+    
+    try {
+      const newSavedWorkflow = {
+        id: Date.now(), // Generate a unique ID based on timestamp
+        description: workflowInput,
+        workflow: workflowParsed,
+        createdAt: new Date().toISOString()
+      };
+      
+      const updatedWorkflows = [...savedWorkflows, newSavedWorkflow];
+      setSavedWorkflows(updatedWorkflows);
+      localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
+      
+      // Show approval screen after saving
+      setWorkflowApproved(true);
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      alert('Failed to save workflow');
+    }
+  };
+
+  // Delete a saved workflow
+  const deleteWorkflow = (id) => {
+    try {
+      const updatedWorkflows = savedWorkflows.filter(workflow => workflow.id !== id);
+      setSavedWorkflows(updatedWorkflows);
+      localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+      alert('Failed to delete workflow');
+    }
+  };
+  
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -197,7 +287,7 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
             <img src="/icon/metamask.png" alt="Workflow" className={styles.logo} />
             <div className={styles.logoGlow}></div>
           </div>
-          <h2>Workflow Assistant</h2>
+          <h2>{readOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
@@ -209,72 +299,134 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
               </div>
               <h3>Workflow Approved!</h3>
               <p>Your AI workflow has been successfully created and is now active.</p>
+              {serverResponse && (
+                <div className={styles.serverResponseInfo}>
+                  <p className={styles.workflowName}>
+                    <strong>{serverResponse.functions?.workflowName || 'Custom Workflow'}</strong>
+                  </p>
+                  <p className={styles.workflowDesc}>
+                    {serverResponse.functions?.description || 'Your custom workflow is now active.'}
+                  </p>
+                </div>
+              )}
+              <p className={styles.bookTip}>You can access all your saved workflows by clicking on the books on the coffee table.</p>
               <button className={styles.doneButton} onClick={onClose}>
                 Done
               </button>
             </div>
           ) : (
             <>
-              {/* Example workflows */}
-              <div className={styles.examplesSection}>
-                <p className={styles.examplesTitle}>Try one of these examples:</p>
-                <div className={styles.exampleButtons}>
-                  {EXAMPLE_WORKFLOWS.map((example, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleLoadExample(example)}
-                      className={styles.exampleButton}
-                    >
-                      {example.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <form onSubmit={handleParseWorkflow} className={styles.workflowForm}>
-                <textarea
-                  value={workflowInput}
-                  onChange={(e) => setWorkflowInput(e.target.value)}
-                  placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Solana on 1inch"
-                  className={styles.workflowInput}
-                  disabled={workflowLoading}
-                />
-                <button
-                  type="submit"
-                  className={styles.parseButton}
-                  disabled={workflowLoading || !workflowInput.trim()}
-                >
-                  {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
-                </button>
-              </form>
-    
-              {workflowParsed.length > 0 && (
-                <div className={styles.resultSection}>
-                  {/* Visual Flow Chart */}
-                  <div className={styles.flowchartSection}>
-                    <FlowChart workflow={workflowParsed} />
+              {!readOnly && (
+                <>
+                  {/* Example workflows */}
+                  <div className={styles.examplesSection}>
+                    <p className={styles.examplesTitle}>Try one of these examples:</p>
+                    <div className={styles.exampleButtons}>
+                      {EXAMPLE_WORKFLOWS.map((example, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleLoadExample(example)}
+                          className={styles.exampleButton}
+                        >
+                          {example.title}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   
-                  {/* Action Buttons */}
-                  <div className={styles.actionButtons}>
-                    <button 
-                      className={styles.tryAgainButton}
-                      onClick={() => {
-                        setWorkflowParsed([]);
-                      }}
+                  <form onSubmit={handleParseWorkflow} className={styles.workflowForm}>
+                    <textarea
+                      value={workflowInput}
+                      onChange={(e) => setWorkflowInput(e.target.value)}
+                      placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Solana on 1inch"
+                      className={styles.workflowInput}
+                      disabled={workflowLoading}
+                    />
+                    <button
+                      type="submit"
+                      className={styles.parseButton}
+                      disabled={workflowLoading || !workflowInput.trim()}
                     >
                       Try Again
                     </button>
                     <button 
                       className={styles.approveButton}
-                      onClick={() => {
-                        setWorkflowApproved(true);
-                      }}
+                      onClick={handleApproveWorkflow}
+                      disabled={workflowLoading}
                     >
-                      Approve Workflow
+                      {workflowLoading ? 'Creating...' : 'Approve Workflow'}
+                      {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
                     </button>
+                  </form>
+        
+                  {workflowParsed.length > 0 && (
+                    <div className={styles.resultSection}>
+                      {/* Visual Flow Chart */}
+                      <div className={styles.flowchartSection}>
+                        <FlowChart workflow={workflowParsed} />
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className={styles.actionButtons}>
+                        <button 
+                          className={styles.tryAgainButton}
+                          onClick={() => {
+                            setWorkflowParsed([]);
+                          }}
+                        >
+                          Try Again
+                        </button>
+                        <button 
+                          className={styles.approveButton}
+                          onClick={saveWorkflow}
+                        >
+                          Approve Workflow
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Saved Workflows Section - Only show in readOnly mode */}
+              {readOnly && (
+                savedWorkflows.length > 0 ? (
+                  <div ref={savedSectionRef} className={styles.savedWorkflowsSection}>
+                    <div className={styles.savedWorkflowsHeader}>
+                      <h3 className={styles.savedWorkflowsTitle}>Saved Workflows</h3>
+                      <span className={styles.workflowsCount}>{savedWorkflows.length} workflows</span>
+                    </div>
+                    <div className={styles.savedWorkflowsList}>
+                      {savedWorkflows.map((saved) => (
+                        <div key={saved.id} className={styles.savedWorkflow}>
+                          <div className={styles.savedWorkflowHeader}>
+                            <div className={styles.savedWorkflowInfo}>
+                              <h4 className={styles.savedWorkflowDescription}>
+                                {saved.description}
+                              </h4>
+                              <p className={styles.savedWorkflowDate}>
+                                Saved on {new Date(saved.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className={styles.savedWorkflowActions}>
+                              <button 
+                                className={styles.deleteButton}
+                                onClick={() => deleteWorkflow(saved.id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                          <FlowChart workflow={saved.workflow} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className={styles.noWorkflowsMessage}>
+                    <p>No saved workflows yet.</p>
+                  </div>
+                )
               )}
             </>
           )}

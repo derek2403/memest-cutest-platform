@@ -418,6 +418,193 @@
 }
 
 .doneButton:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transform: scale(0.98);
+  box-shadow: 0 2px 15px rgba(108, 99, 255, 0.2);
+}
+
+/* Saved Workflows Section */
+.savedWorkflowsSection {
+  margin-top: 25px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.savedWorkflowsTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 15px 0;
+}
+
+.savedWorkflowsList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.savedWorkflow {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+.savedWorkflowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.savedWorkflowInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.savedWorkflowDescription {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px 0;
+  padding: 3px 0;
+  border-radius: 4px;
+  word-break: break-word;
+}
+
+.savedWorkflowDate {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 0;
+}
+
+.savedWorkflowActions {
+  display: flex;
+  gap: 8px;
+}
+
+.loadButton {
+  padding: 5px 10px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.loadButton:hover {
+  background-color: #bbdefb;
+  color: #0d47a1;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  padding: 5px 10px;
+  background-color: #fff0f0;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background-color: #ffebee;
+  color: #c62828;
+  transform: translateY(-1px);
+}
+
+.savedWorkflowsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.workflowsCount {
+  font-size: 0.8rem;
+  color: #888;
+  background-color: #f0f0f0;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.noWorkflowsMessage {
+  text-align: center;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  margin: 20px 0;
+}
+
+.noWorkflowsMessage p {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.createWorkflowButton {
+  padding: 10px 20px;
+  background-color: #6c63ff;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-family: 'Baloo 2', cursive;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 8px rgba(108, 99, 255, 0.25);
+}
+
+.createWorkflowButton:hover {
+  background-color: #5a52e0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(108, 99, 255, 0.3);
+}
+
+.viewToggleContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.viewToggleButton {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: none;
+  border-radius: 25px;
+  font-family: 'Baloo 2', cursive;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.viewToggleButton:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-2px);
+}
+
+.bookTip {
+  font-size: 0.9rem;
+  color: #6c63ff;
+  margin-top: 5px;
+  background-color: #f6f5ff;
+  padding: 8px 15px;
+  border-radius: 12px;
+  border-left: 3px solid #6c63ff;
+  margin-bottom: 15px;
+  max-width: 85%;
+  margin-left: auto;
+  margin-right: auto;
 } 
