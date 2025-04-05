@@ -582,13 +582,13 @@ export function spawnMetamaskFox(scene) {
       metamaskFoxLoaded = true;
       metamaskFoxModel = model;
       
-      // Make the model clickable
+      // Set userData to make the model NON-clickable
       model.userData = { 
-        clickable: true, 
-        type: 'metamask' 
+        clickable: false,
+        type: 'metamask'
       };
       
-      console.log("Metamask fox added to scene");
+      console.log("Metamask fox added to scene (not clickable)");
     },
     (xhr) => {
       // Progress callback
