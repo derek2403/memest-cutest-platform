@@ -87,39 +87,6 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           scene.add(lowTable);
           console.log("Low table loaded successfully");
           
-          // Now load the cactus to place on the table
-          const cactusLoader = new GLTFLoader();
-          cactusLoader.load(
-            "/gltf/cactus_small_A.gltf",
-            (gltf) => {
-              const cactus = gltf.scene;
-              
-              // Disable shadows for the model
-              cactus.traverse((node) => {
-                if (node.isMesh) {
-                  node.castShadow = false;
-                  node.receiveShadow = false;
-                }
-              });
-              
-              // Position the cactus on the low table - adjusted for 6x6 room
-              cactus.position.set(-0.5, 0.6, 1.5); // Centered on table
-              
-              scene.add(cactus);
-              console.log("Small cactus loaded successfully");
-            },
-            (progress) => {
-              console.log(
-                "Loading cactus progress:",
-                (progress.loaded / progress.total) * 100,
-                "%"
-              );
-            },
-            (error) => {
-              console.error("Error loading cactus model:", error);
-            }
-          );
-          
           // Load the book set to place on the table
           const bookSetLoader = new GLTFLoader();
           bookSetLoader.load(
