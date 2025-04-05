@@ -10,6 +10,7 @@ import { spawn1inchUnicorn } from "../components/oneinch.js";
 import { spawnMetamaskFox } from "../components/metawallet.js";
 import { spawnPolygonModel } from "../components/polygon.js";
 import { spawnCeloModel } from "../components/celo.js";
+import { spawnGmailModel } from "../components/gmail.js";
 import dynamic from 'next/dynamic';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
@@ -2109,6 +2110,8 @@ export default function Home() {
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");
+        // Add Gmail functionality to spawn the model
+        spawnGmailModel(scene);
       },
       'oneinch-button': () => {
         console.log("1inch button clicked");
