@@ -4,6 +4,7 @@ import styles from '../styles/Shortcut.module.css';
 
 export default function Shortcut({ onClose, onDrop }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [inputMessage, setInputMessage] = useState('');
   const popupRef = useRef(null);
 
   const handleDragOver = (e) => {
@@ -33,39 +34,25 @@ export default function Shortcut({ onClose, onDrop }) {
       icon.parentNode.removeChild(icon);
     }
     
-    // Navigate to the appropriate page based on the button ID or dragged element
+    // Handle different assistants based on the dragged icon
     if (buttonId === 'metamask-button' || buttonId === 'metamask-icon') {
-      // Instead of redirecting, render the MetaMask shortcut component
-      import('../components/metamask_shortcut').then(module => {
-        const MetamaskShortcut = module.default;
-        // Create a container for the MetaMask shortcut if it doesn't exist
-        let container = document.getElementById('metamask-shortcut-container');
-        if (!container) {
-          container = document.createElement('div');
-          container.id = 'metamask-shortcut-container';
-          document.body.appendChild(container);
-        }
-        
-        // Render the MetaMask shortcut component
-        const root = ReactDOM.createRoot(container);
-        root.render(
-          <MetamaskShortcut 
-            onClose={() => {
-              // Clean up when closed
-              if (container && container.parentNode) {
-                container.parentNode.removeChild(container);
-              }
-            }} 
-          />
-        );
-      });
-      
-      // Close the shortcut popup
+      renderAssistant('metamask');
       onClose();
     } else if (buttonId === 'gmail-button' || buttonId === 'gmail-icon') {
-      window.location.href = '/gmail_shortcut';
+      renderAssistant('gmail');
+      onClose();
     } else if (buttonId === '1inch-button' || buttonId === '1inch-icon') {
-      window.location.href = '/1inch_shortcut';
+      renderAssistant('1inch');
+      onClose();
+    } else if (buttonId === 'polygon-button' || buttonId === 'polygon-icon') {
+      renderAssistant('polygon');
+      onClose();
+    } else if (buttonId === 'celo-button' || buttonId === 'celo-icon') {
+      renderAssistant('celo');
+      onClose();
+    } else if (buttonId === 'spreadsheet-button' || buttonId === 'spreadsheet-icon') {
+      renderAssistant('spreadsheet');
+      onClose();
     } else {
       // Check if the dragged element was one of the icons in the shortcut component
       const dataTransfer = e.dataTransfer;
@@ -76,45 +63,62 @@ export default function Shortcut({ onClose, onDrop }) {
               dataTransfer.items[i].type.indexOf('image') !== -1) {
             const file = dataTransfer.items[i].getAsFile();
             if (file.name.includes('metamask')) {
-              // Instead of redirecting, render the MetaMask shortcut component
-              import('../components/metamask_shortcut').then(module => {
-                const MetamaskShortcut = module.default;
-                // Create a container for the MetaMask shortcut if it doesn't exist
-                let container = document.getElementById('metamask-shortcut-container');
-                if (!container) {
-                  container = document.createElement('div');
-                  container.id = 'metamask-shortcut-container';
-                  document.body.appendChild(container);
-                }
-                
-                // Render the MetaMask shortcut component
-                const root = ReactDOM.createRoot(container);
-                root.render(
-                  <MetamaskShortcut 
-                    onClose={() => {
-                      // Clean up when closed
-                      if (container && container.parentNode) {
-                        container.parentNode.removeChild(container);
-                      }
-                    }} 
-                  />
-                );
-              });
-              
-              // Close the shortcut popup
+              renderAssistant('metamask');
               onClose();
               break;
             } else if (file.name.includes('gmail')) {
-              window.location.href = '/gmail_shortcut';
+              renderAssistant('gmail');
+              onClose();
               break;
             } else if (file.name.includes('1inch')) {
-              window.location.href = '/1inch_shortcut';
+              renderAssistant('1inch');
+              onClose();
+              break;
+            } else if (file.name.includes('polygon')) {
+              renderAssistant('polygon');
+              onClose();
+              break;
+            } else if (file.name.includes('celo')) {
+              renderAssistant('celo');
+              onClose();
+              break;
+            } else if (file.name.includes('spreadsheet')) {
+              renderAssistant('spreadsheet');
+              onClose();
               break;
             }
           }
         }
       }
     }
+  };
+
+  // Helper function to render the appropriate assistant
+  const renderAssistant = (assistantType) => {
+    import('./shortcutdetails').then(module => {
+      const AssistantShortcut = module.default;
+      // Create a container for the assistant shortcut if it doesn't exist
+      let container = document.getElementById(`${assistantType}-shortcut-container`);
+      if (!container) {
+        container = document.createElement('div');
+        container.id = `${assistantType}-shortcut-container`;
+        document.body.appendChild(container);
+      }
+      
+      // Render the assistant shortcut component with the appropriate type
+      const root = ReactDOM.createRoot(container);
+      root.render(
+        <AssistantShortcut 
+          assistantType={assistantType}
+          onClose={() => {
+            // Clean up when closed
+            if (container && container.parentNode) {
+              container.parentNode.removeChild(container);
+            }
+          }} 
+        />
+      );
+    });
   };
 
   // Make the icons in the shortcut component draggable
@@ -156,6 +160,10 @@ export default function Shortcut({ onClose, onDrop }) {
           if (icon.parentNode) {
             icon.parentNode.removeChild(icon);
           }
+          
+          // Render the MetaMask assistant
+          renderAssistant('metamask');
+          onClose();
         }
       }
     };
@@ -183,6 +191,48 @@ export default function Shortcut({ onClose, onDrop }) {
     };
   }, [onClose]);
 
+  // Handle send button click
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
+    
+    console.log("Message sent:", inputMessage);
+    
+    // Create a container for the workflow popup if it doesn't exist
+    let container = document.getElementById('workflow-popup-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'workflow-popup-container';
+      document.body.appendChild(container);
+    }
+    
+    // Import and render the workflow popup component
+    import('./WorkflowPopup').then(module => {
+      const WorkflowPopup = module.default;
+      
+      // Render the workflow popup component
+      const root = ReactDOM.createRoot(container);
+      root.render(
+        <WorkflowPopup 
+          initialInput={inputMessage}
+          onClose={() => {
+            // Clean up when closed
+            if (container && container.parentNode) {
+              container.parentNode.removeChild(container);
+            }
+          }} 
+        />
+      );
+    }).catch(err => {
+      console.error("Error loading WorkflowPopup:", err);
+    });
+    
+    // Clear the input field
+    setInputMessage('');
+    
+    // Close the shortcut popup
+    onClose();
+  };
+
   return (
     <div className={styles.overlay}>
       <div 
@@ -193,22 +243,90 @@ export default function Shortcut({ onClose, onDrop }) {
         onDrop={handleDrop}
       >
         <div className={styles.header}>
-          <h3>Drag a shortcut here</h3>
+          <h2 className={styles.title}>Drag a shortcut here</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
-        <div className={styles.iconRow}>
-          <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
-          <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
-          <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
-        </div>
-        
         <div className={styles.content}>
-          {isDraggingOver ? (
-            <p>Drop to create shortcut</p>
-          ) : (
-            <p>Drag a button from the sidebar to create a shortcut</p>
-          )}
+          <div className={styles.iconRow}>
+            <div className={styles.logoContainer}>
+              <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+          </div>
+          
+          <div className={styles.iconRow}>
+            <div className={styles.logoContainer}>
+              <img src="/icon/polygon.png" alt="Polygon" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/celo.png" alt="Celo" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+            <div className={styles.logoContainer}>
+              <img src="/icon/spreadsheet.png" alt="Spreadsheet" className={styles.shortcutIcon} />
+              <div className={styles.logoGlow}></div>
+            </div>
+          </div>
+          
+          <div className={styles.mainInstructions}>
+            {isDraggingOver ? (
+              <p>Drop to create shortcut</p>
+            ) : (
+              <p>Drag a button from the sidebar to create a shortcut</p>
+            )}
+          </div>
+          
+          <div className={styles.alternativeMethod}>
+            <p>Or use AI agents method</p>
+            <button 
+              className={styles.aiMethodButton}
+              onClick={() => {
+                // Create a container for the workflow popup
+                let container = document.getElementById('workflow-popup-container');
+                if (!container) {
+                  container = document.createElement('div');
+                  container.id = 'workflow-popup-container';
+                  document.body.appendChild(container);
+                }
+                
+                // Import and render the workflow popup
+                import('./WorkflowPopup').then(module => {
+                  const WorkflowPopup = module.default;
+                  
+                  // Render the workflow popup component
+                  const root = ReactDOM.createRoot(container);
+                  root.render(
+                    <WorkflowPopup 
+                      initialInput=""
+                      onClose={() => {
+                        // Clean up when closed
+                        if (container && container.parentNode) {
+                          container.parentNode.removeChild(container);
+                        }
+                      }} 
+                    />
+                  );
+                }).catch(err => {
+                  console.error("Error loading WorkflowPopup:", err);
+                });
+                
+                // Close the shortcut popup
+                onClose();
+              }}
+            >
+              Create AI Workflow
+            </button>
+          </div>
         </div>
       </div>
     </div>

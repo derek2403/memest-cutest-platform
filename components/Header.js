@@ -6,7 +6,9 @@ const Header = () => {
       <div className="flex items-center">
         <h1 className="text-xl font-bold">Memest Cutest Platform</h1>
       </div>
-      <ConnectButton />
+      <div className="mr-10">
+        <ConnectButton />
+      </div>
     </header>
   );
 };
