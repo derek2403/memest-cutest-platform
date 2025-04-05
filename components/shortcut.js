@@ -30,31 +30,6 @@ export default function Shortcut({ onClose, onDrop }) {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Listen for active state changes from the sidebar
-  useEffect(() => {
-    const handleActiveStateChanged = (event) => {
-      console.log("Active state changed event received:", event.detail);
-      // Make sure we're getting the activeStates object correctly
-      if (event.detail && event.detail.activeStates) {
-        setActiveButtons(event.detail.activeStates);
-      }
-    };
-
-    // Listen for both event types that might be dispatched from sidebar.js
-    document.addEventListener('activeStateChanged', handleActiveStateChanged);
-    document.addEventListener('sidebarActiveStatesChanged', handleActiveStateChanged);
-    
-    // Initial fetch of active states from sidebar if available
-    if (window.sidebarAPI && typeof window.sidebarAPI.getAllActiveStates === 'function') {
-      setActiveButtons(window.sidebarAPI.getAllActiveStates());
-    }
-    
-    return () => {
-      document.removeEventListener('activeStateChanged', handleActiveStateChanged);
-      document.removeEventListener('sidebarActiveStatesChanged', handleActiveStateChanged);
-    };
-  }, []);
-
   const handleDragOver = (e) => {
     // Only allow drag over the drop zone box
     if (e.currentTarget === dropZoneRef.current) {
@@ -384,54 +359,6 @@ export default function Shortcut({ onClose, onDrop }) {
     onClose();
   };
 
-  // Update the anyActiveButtons check to ensure it's correctly identifying active buttons
-  const anyActiveButtons = Object.values(activeButtons).some(isActive => isActive === true);
-
-  // Add some debugging to help identify issues
-  useEffect(() => {
-    console.log("Active buttons updated:", activeButtons);
-    console.log("Metamask active:", activeButtons['metamask-button']);
-    console.log("Any active buttons:", anyActiveButtons);
-  }, [activeButtons]);
-
-  // Add debugging to help identify issues with active buttons
-  useEffect(() => {
-    console.log("Active buttons state updated in shortcut component:", activeButtons);
-  }, [activeButtons]);
-
-  // Helper function to get icon path based on button ID
-  const getIconPath = (buttonId) => {
-    let iconPath = '';
-    if (buttonId === 'metamask-button') iconPath = '/icon/metamask.png';
-    else if (buttonId === 'gmail-button') iconPath = '/icon/gmail.png';
-    else if (buttonId === 'oneinch-button') iconPath = '/icon/1inch.png';
-    else if (buttonId === 'polygon-button') iconPath = '/icon/polygon.png';
-    else if (buttonId === 'celo-button') iconPath = '/icon/celo.png';
-    else if (buttonId === 'spreadsheet-button') iconPath = '/icon/spreadsheet.png';
-    
-    console.log(`Getting icon path for ${buttonId}:`, iconPath);
-    return iconPath;
-  };
-
-  // Helper function to get icon name based on button ID
-  const getIconName = (buttonId) => {
-    if (buttonId === 'metamask-button') return 'Metamask';
-    if (buttonId === 'gmail-button') return 'Gmail';
-    if (buttonId === 'oneinch-button') return '1inch';
-    if (buttonId === 'polygon-button') return 'Polygon';
-    if (buttonId === 'celo-button') return 'Celo';
-    if (buttonId === 'spreadsheet-button') return 'Spreadsheet';
-    return '';
-  };
-
-  console.log("Rendering shortcut with active buttons:", activeButtons);
-  console.log("Any active buttons?", anyActiveButtons);
-
-  useEffect(() => {
-    console.log("Rendering shortcut with active buttons:", activeButtons);
-    console.log("Any active buttons?", anyActiveButtons);
-  }, [activeButtons, anyActiveButtons]);
-
   return (
     <div className={styles.overlay}>
       <div 
@@ -467,11 +394,7 @@ export default function Shortcut({ onClose, onDrop }) {
                   <p>Drop here to create shortcut</p>
                 </>
               ) : (
-                !anyActiveButtons ? (
-                  <p>Activate your items in sidebar!</p>
-                ) : (
-                  <p>Drag icons to create workflows</p>
-                )
+                <p>Drag a button to create a shortcut</p>
               )}
             </div>
           </div>
@@ -597,7 +520,9 @@ export default function Shortcut({ onClose, onDrop }) {
             justify-content: flex-start !important;
           }
           
-          .${styles.iconContainer} {
+          .${styles.iconRow} {
+            margin: 15px 0 !important;
+            justify-content: space-around !important;
             display: flex !important;
             background-color: #2c3050 !important;
             border-radius: 10px !important;
