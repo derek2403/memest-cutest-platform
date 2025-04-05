@@ -7,7 +7,7 @@ import { initSidebar } from "../components/sidebar.js";
 import { loadFurniture } from "../components/furniture.js";
 import { loadAIAgent } from "../components/aiagent.js";
 import { spawn1inchUnicorn } from "../components/oneinch.js";
-import { spawnMetamaskWolf } from "../components/metawallet.js";
+import { spawnMetamaskFox } from "../components/metawallet.js";
 import dynamic from 'next/dynamic';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
@@ -2088,9 +2088,9 @@ export default function Home() {
           console.error("Scene is undefined in Metamask callback");
           return;
         }
-        console.log("About to spawn Metamask wolf with scene:", scene);
-        // This will now spawn the Metamask wolf
-        spawnMetamaskWolf(scene);
+        console.log("About to spawn Metamask fox with scene:", scene);
+        // This will now spawn the Metamask fox
+        spawnMetamaskFox(scene);
       },
       'gmail-button': () => {
         console.log("Gmail button clicked");

@@ -358,39 +358,39 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // Track if the model has been loaded
-let metamaskWolfLoaded = false;
-let metamaskWolfModel = null;
+let metamaskFoxLoaded = false;
+let metamaskFoxModel = null;
 
-// Function to load and place the Metamask wolf model
-export function spawnMetamaskWolf(scene) {
+// Function to load and place the Metamask fox model
+export function spawnMetamaskFox(scene) {
   // Check if scene is valid
   if (!scene) {
-    console.error("No scene provided to spawnMetamaskWolf function");
+    console.error("No scene provided to spawnMetamaskFox function");
     return;
   }
   
-  console.log("spawnMetamaskWolf called with scene:", scene);
+  console.log("spawnMetamaskFox called with scene:", scene);
   
   // If model already exists, just toggle visibility instead of reloading
-  if (metamaskWolfLoaded && metamaskWolfModel) {
-    metamaskWolfModel.visible = !metamaskWolfModel.visible;
-    console.log(`Metamask wolf visibility set to: ${metamaskWolfModel.visible}`);
+  if (metamaskFoxLoaded && metamaskFoxModel) {
+    metamaskFoxModel.visible = !metamaskFoxModel.visible;
+    console.log(`Metamask fox visibility set to: ${metamaskFoxModel.visible}`);
     return;
   }
   
-  console.log("Loading Metamask wolf model...");
+  console.log("Loading Metamask fox model...");
   const gltfLoader = new GLTFLoader();
   
   // Log the full path being used
-  const modelPath = "/models/metamask_wolf/metamask_wolf.glb";
+  const modelPath = "/models/metamask_fox/metamask_fox.glb";
   console.log("Loading model from path:", modelPath);
   
-  // Load the Metamask wolf model with the correct path
+  // Load the Metamask fox model with the correct path
   gltfLoader.load(
     modelPath,
     (gltf) => {
       // Success callback
-      console.log("Metamask wolf model loaded successfully", gltf);
+      console.log("Metamask fox model loaded successfully", gltf);
       
       // Get the model
       const model = gltf.scene;
@@ -432,10 +432,10 @@ export function spawnMetamaskWolf(scene) {
       scene.add(model);
       
       // Set tracking variables
-      metamaskWolfLoaded = true;
-      metamaskWolfModel = model;
+      metamaskFoxLoaded = true;
+      metamaskFoxModel = model;
       
-      console.log("Metamask wolf added to scene");
+      console.log("Metamask fox added to scene");
     },
     (xhr) => {
       // Progress callback
@@ -443,7 +443,7 @@ export function spawnMetamaskWolf(scene) {
     },
     (error) => {
       // Error callback
-      console.error("Error loading Metamask wolf model:", error);
+      console.error("Error loading Metamask fox model:", error);
     }
   );
 }
