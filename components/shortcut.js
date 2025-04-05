@@ -5,7 +5,33 @@ import styles from '../styles/Shortcut.module.css';
 export default function Shortcut({ onClose, onDrop }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  const [activeButtons, setActiveButtons] = useState({});
   const popupRef = useRef(null);
+
+  // Listen for active state changes from the sidebar
+  useEffect(() => {
+    const handleActiveStateChanged = (event) => {
+      console.log("Active state changed event received:", event.detail);
+      // Make sure we're getting the activeStates object correctly
+      if (event.detail && event.detail.activeStates) {
+        setActiveButtons(event.detail.activeStates);
+      }
+    };
+
+    // Listen for both event types that might be dispatched from sidebar.js
+    document.addEventListener('activeStateChanged', handleActiveStateChanged);
+    document.addEventListener('sidebarActiveStatesChanged', handleActiveStateChanged);
+    
+    // Initial fetch of active states from sidebar if available
+    if (window.sidebarAPI && typeof window.sidebarAPI.getAllActiveStates === 'function') {
+      setActiveButtons(window.sidebarAPI.getAllActiveStates());
+    }
+    
+    return () => {
+      document.removeEventListener('activeStateChanged', handleActiveStateChanged);
+      document.removeEventListener('sidebarActiveStatesChanged', handleActiveStateChanged);
+    };
+  }, []);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -41,7 +67,7 @@ export default function Shortcut({ onClose, onDrop }) {
     } else if (buttonId === 'gmail-button' || buttonId === 'gmail-icon') {
       renderAssistant('gmail');
       onClose();
-    } else if (buttonId === '1inch-button' || buttonId === '1inch-icon') {
+    } else if (buttonId === '1inch-button' || buttonId === '1inch-icon' || buttonId === 'oneinch-button' || buttonId === 'oneinch-icon') {
       renderAssistant('1inch');
       onClose();
     } else if (buttonId === 'polygon-button' || buttonId === 'polygon-icon') {
@@ -133,7 +159,7 @@ export default function Shortcut({ onClose, onDrop }) {
         e.dataTransfer.setData('text/plain', `${iconType}-icon`);
       });
     });
-  }, []);
+  }, [activeButtons]); // Re-run when active buttons change
 
   // Handle direct drop of the icon (without using drag events)
   useEffect(() => {
@@ -233,6 +259,54 @@ export default function Shortcut({ onClose, onDrop }) {
     onClose();
   };
 
+  // Update the anyActiveButtons check to ensure it's correctly identifying active buttons
+  const anyActiveButtons = Object.values(activeButtons).some(isActive => isActive === true);
+
+  // Add some debugging to help identify issues
+  useEffect(() => {
+    console.log("Active buttons updated:", activeButtons);
+    console.log("Metamask active:", activeButtons['metamask-button']);
+    console.log("Any active buttons:", anyActiveButtons);
+  }, [activeButtons]);
+
+  // Add debugging to help identify issues with active buttons
+  useEffect(() => {
+    console.log("Active buttons state updated in shortcut component:", activeButtons);
+  }, [activeButtons]);
+
+  // Helper function to get icon path based on button ID
+  const getIconPath = (buttonId) => {
+    let iconPath = '';
+    if (buttonId === 'metamask-button') iconPath = '/icon/metamask.png';
+    else if (buttonId === 'gmail-button') iconPath = '/icon/gmail.png';
+    else if (buttonId === 'oneinch-button') iconPath = '/icon/1inch.png';
+    else if (buttonId === 'polygon-button') iconPath = '/icon/polygon.png';
+    else if (buttonId === 'celo-button') iconPath = '/icon/celo.png';
+    else if (buttonId === 'spreadsheet-button') iconPath = '/icon/spreadsheet.png';
+    
+    console.log(`Getting icon path for ${buttonId}:`, iconPath);
+    return iconPath;
+  };
+
+  // Helper function to get icon name based on button ID
+  const getIconName = (buttonId) => {
+    if (buttonId === 'metamask-button') return 'Metamask';
+    if (buttonId === 'gmail-button') return 'Gmail';
+    if (buttonId === 'oneinch-button') return '1inch';
+    if (buttonId === 'polygon-button') return 'Polygon';
+    if (buttonId === 'celo-button') return 'Celo';
+    if (buttonId === 'spreadsheet-button') return 'Spreadsheet';
+    return '';
+  };
+
+  console.log("Rendering shortcut with active buttons:", activeButtons);
+  console.log("Any active buttons?", anyActiveButtons);
+
+  useEffect(() => {
+    console.log("Rendering shortcut with active buttons:", activeButtons);
+    console.log("Any active buttons?", anyActiveButtons);
+  }, [activeButtons, anyActiveButtons]);
+
   return (
     <div className={styles.overlay}>
       <div 
@@ -245,37 +319,52 @@ export default function Shortcut({ onClose, onDrop }) {
         </div>
         
         <div className={styles.content}>
-          <div className={styles.iconRow}>
-            <div className={styles.logoContainer}>
-              <img src="/icon/metamask.png" alt="Metamask" className={styles.shortcutIcon} />
-              <div className={styles.logoGlow}></div>
+          {/* Display active icons if any buttons are active */}
+          {anyActiveButtons && (
+            <div className={styles.iconContainer}>
+              {/* Group icons into rows of 3 */}
+              {(() => {
+                const activeIcons = Object.entries(activeButtons)
+                  .filter(([_, isActive]) => isActive)
+                  .map(([buttonId, _]) => {
+                    const iconPath = getIconPath(buttonId);
+                    const iconName = getIconName(buttonId);
+                    
+                    if (iconPath && iconName) {
+                      return { buttonId, iconPath, iconName };
+                    }
+                    return null;
+                  })
+                  .filter(icon => icon !== null);
+                
+                // Split icons into rows of 3
+                const rows = [];
+                for (let i = 0; i < activeIcons.length; i += 3) {
+                  rows.push(activeIcons.slice(i, i + 3));
+                }
+                
+                return rows.map((row, rowIndex) => (
+                  <div key={`row-${rowIndex}`} className={styles.iconRow}>
+                    {row.map(icon => (
+                      <div key={icon.buttonId} className={styles.logoContainer}>
+                        <img 
+                          src={icon.iconPath} 
+                          alt={icon.iconName} 
+                          className={styles.shortcutIcon} 
+                          draggable="true"
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', icon.buttonId);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ));
+              })()}
             </div>
-            <div className={styles.logoContainer}>
-              <img src="/icon/gmail.png" alt="Gmail" className={styles.shortcutIcon} />
-              <div className={styles.logoGlow}></div>
-            </div>
-            <div className={styles.logoContainer}>
-              <img src="/icon/1inch.png" alt="1inch" className={styles.shortcutIcon} />
-              <div className={styles.logoGlow}></div>
-            </div>
-          </div>
+          )}
           
-          <div className={styles.iconRow}>
-            <div className={styles.logoContainer}>
-              <img src="/icon/polygon.png" alt="Polygon" className={styles.shortcutIcon} />
-              <div className={styles.logoGlow}></div>
-            </div>
-            <div className={styles.logoContainer}>
-              <img src="/icon/celo.png" alt="Celo" className={styles.shortcutIcon} />
-              <div className={styles.logoGlow}></div>
-            </div>
-            <div className={styles.logoContainer}>
-              <img src="/icon/spreadsheet.png" alt="Spreadsheet" className={styles.shortcutIcon} />
-              <div className={styles.logoGlow}></div>
-            </div>
-          </div>
-          
-          {/* Specific drop zone box */}
+          {/* Drop zone for dragging - only show instruction when no active buttons */}
           <div 
             className={`${styles.dropZoneBox} ${isDraggingOver ? styles.dropZoneActive : ''}`}
             onDragOver={handleDragOver}
@@ -286,7 +375,11 @@ export default function Shortcut({ onClose, onDrop }) {
               {isDraggingOver ? (
                 <p>Drop to create shortcut</p>
               ) : (
-                <p>Drag a button to create a shortcut</p>
+                !anyActiveButtons ? (
+                  <p>Activate your items in sidebar!</p>
+                ) : (
+                  <p>Drag icons to create workflows</p>
+                )
               )}
             </div>
           </div>
@@ -403,10 +496,17 @@ export default function Shortcut({ onClose, onDrop }) {
             justify-content: flex-start !important;
           }
           
-          .${styles.iconRow} {
-            margin: 15px 0 !important;
-            justify-content: space-around !important;
+          .${styles.iconContainer} {
             display: flex !important;
+            flex-direction: column !important;
+            gap: 15px !important;
+            margin: 15px 0 !important;
+          }
+          
+          .${styles.iconRow} {
+            display: flex !important;
+            justify-content: space-around !important;
+            width: 100% !important;
           }
           
           .${styles.logoContainer} {

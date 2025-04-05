@@ -30,12 +30,15 @@ export function spawnCeloModel(scene) {
       // Scale the model to 60% of original size
       model.scale.set(0.5, 0.5, 0.5); // Reduced size for better fit
       
-      // Set the position to the provided coordinates, but raise the y value
+      // Set the position to be on top of the low table
       model.position.set(
-        -2.9630740035026912,
-        0.00, // Raised higher above the floor
-        -0.2628115592818347
+        -0.5,  // Same x position as the low table
+        0.6,   // Slightly above the table surface
+        1.5    // Same z position as the low table
       );
+      
+      // Rotate the model to face outward
+      model.rotation.y = Math.PI / 2; // Match the table's rotation
       
       // Make sure model casts and receives shadows
       model.traverse((node) => {
