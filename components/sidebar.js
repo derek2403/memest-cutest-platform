@@ -15,10 +15,32 @@ export function initSidebar(callbacks = {}, scene) {
     sidebar.id = 'sidebar';
     sidebar.classList.add('hidden'); // Add hidden class by default
     
-    // Create main heading
+    // Create main heading with aurora effect
     const mainHeading = document.createElement('h2');
-    mainHeading.textContent = 'PLUGINS';
     mainHeading.className = 'sidebar-heading main-heading';
+    
+    // Create the aurora text effect manually since we can't use React components directly
+    mainHeading.innerHTML = `
+        <span class="relative inline-block">
+            <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">PLUGINS</span>
+            <span 
+                class="animate-aurora"
+                style="
+                    display: inline-block;
+                    position: relative;
+                    background-image: linear-gradient(135deg, #FF0080, #FF0000, #FFA500, #FFFF00, #00FF00, #0000FF, #4B0082, #8B00FF, #FF0080, #FF0000);
+                    background-size: 200% 100%;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    color: transparent;
+                "
+                aria-hidden="true"
+            >
+                PLUGINS
+            </span>
+        </span>
+    `;
+    
     sidebar.appendChild(mainHeading);
     
     // Create wallet section

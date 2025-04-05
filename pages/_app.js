@@ -1,5 +1,6 @@
 import '../styles/globals.css';
 import '../styles/sidebar.css';
+import '../styles/aurora.css';
 import React, { useEffect, useState } from 'react';
 import '@rainbow-me/rainbowkit/styles.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
