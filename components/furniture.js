@@ -389,7 +389,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the air conditioner high on the wall - adjusted for larger room
-      fbx.position.set(0, roomHeight - 1, -roomDepth/2 + 0.1); // Top of back wall
+      fbx.position.set(0, roomHeight - 0.9, -roomDepth/2 + 0.3); // Top of back wall
       
       // Scale the model if needed (adjust these values based on the model size)
       fbx.scale.set(0.015, 0.015, 0.015);
@@ -430,7 +430,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the window frame on the left wall above the bed - adjusted for larger room
-      fbx.position.set(-roomWidth/2 + 0.05, 0.7, -2); // Left wall above the bed
+      fbx.position.set(-roomWidth/2 + 0.15, 0.7, -2); // Left wall above the bed
       
       // Scale the model if needed
       fbx.scale.set(0.01, 0.01, 0.01);

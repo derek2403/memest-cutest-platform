@@ -12,6 +12,7 @@ export function initSidebar(callbacks = {}, scene) {
     // Create sidebar container
     const sidebar = document.createElement('div');
     sidebar.id = 'sidebar';
+    sidebar.classList.add('hidden'); // Add hidden class by default
     
     // Create main heading
     const mainHeading = document.createElement('h2');
@@ -132,6 +133,23 @@ export function initSidebar(callbacks = {}, scene) {
             z-index: 1000;
             font-family: 'Poppins', sans-serif;
             border: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        
+        #sidebar.hidden {
+            transform: translateX(250px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Trigger area for showing the sidebar */
+        #sidebar-trigger {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 100%;
+            z-index: 999;
         }
         
         .sidebar-heading {
@@ -213,6 +231,34 @@ export function initSidebar(callbacks = {}, scene) {
         }
     `;
     document.head.appendChild(style);
+    
+    // Create trigger area for showing the sidebar
+    const sidebarTrigger = document.createElement('div');
+    sidebarTrigger.id = 'sidebar-trigger';
+    document.body.appendChild(sidebarTrigger);
+    
+    // Add event listeners for showing/hiding the sidebar
+    sidebarTrigger.addEventListener('mouseenter', () => {
+        sidebar.classList.remove('hidden');
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        // Show sidebar when mouse is near the right edge
+        const windowWidth = window.innerWidth;
+        if (e.clientX > windowWidth - 100) {
+            sidebar.classList.remove('hidden');
+        } else if (e.clientX < windowWidth - 300) {
+            // Hide sidebar when mouse moves away from the right side
+            sidebar.classList.add('hidden');
+        }
+    });
+    
+    // Hide sidebar when clicking elsewhere on the page
+    document.addEventListener('click', (e) => {
+        if (!sidebar.contains(e.target) && !sidebarTrigger.contains(e.target)) {
+            sidebar.classList.add('hidden');
+        }
+    });
 
     return sidebar;
 }
