@@ -1,5 +1,5 @@
 import React from 'react';
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { baseSepolia } from 'wagmi/chains';
@@ -71,7 +71,7 @@ const config = getDefaultConfig({
 export default function WalletProviders({ children }) {
   return (
     <WagmiProvider config={config}>
-      <RainbowKitProvider>
+      <RainbowKitProvider theme={darkTheme()} modalSize="compact">
         {children}
       </RainbowKitProvider>
     </WagmiProvider>

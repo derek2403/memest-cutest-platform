@@ -27,7 +27,7 @@ export default function ConnectWallet() {
         sidebarOpen ? 'right-[280px]' : 'right-5'
       }`}
     >
-      <div className="bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-gray-200">
+      <div className="bg-[#1a1f2e]/90 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-gray-700">
         <ConnectButton 
           label="Connect Wallet"
           showBalance={false}
