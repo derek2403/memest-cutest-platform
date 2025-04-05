@@ -598,3 +598,522 @@ export default function Home() {
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+
+    // Enable panning, but configure which buttons do what
+    controls.enablePan = true;
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: THREE.MOUSE.NONE // Disable right-click functionality
+    };
+
+    // Force the controls to orbit around the center of the room
+    controls.target.set(0, 1, 0); // Set target to center of room, at reasonable height
+    controls.update();
+
+    // Room dimensions (defined here so we can use them for lighting)
+    const roomWidth = 7;
+    const roomHeight = 3.5;
+    const roomDepth = 7;
+
+    // Lighting - adjusted for night scene
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increase ambient light intensity
+    scene.add(ambientLight);
+
+    // Add a warmer light inside the room
+    const roomLight = new THREE.AmbientLight(0xffffff, 0.9); // Adjust to more neutral white
+    roomLight.position.set(0, 2, 0);
+    scene.add(roomLight);
+
+    // Main directional light (moonlight)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7); // More neutral and less blue
+    directionalLight.position.set(50, 100, 30);
+    directionalLight.castShadow = false;
+    scene.add(directionalLight);
+
+    // Add a second directional light from another angle
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5); // More neutral, less warm
+    directionalLight2.position.set(-5, 8, -5);
+    directionalLight2.castShadow = false;
+    scene.add(directionalLight2);
+
+    // Add a small point light near the window to simulate moonlight coming in
+    const windowLight = new THREE.PointLight(0xffffff, 0.6); // Neutral white light
+    windowLight.position.set(-roomWidth/2 + 0.5, 2.2, -2); // Position near window
+    windowLight.distance = 10;
+    windowLight.decay = 2;
+    scene.add(windowLight);
+
+    // Floor (specific color)
+    const floorGeometry = new THREE.BoxGeometry(roomWidth, 0.2, roomDepth); // Make floor thicker
+    
+    // Create a wooden floor texture
+    function createWoodenFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Base color for the wooden floor - slightly darker
+      ctx.fillStyle = '#8b6d4d';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Create wooden planks
+      const plankWidth = 60;
+      const plankGap = 2;
+      
+      // Draw the planks with grain
+      for (let x = 0; x < canvas.width; x += plankWidth + plankGap) {
+        const adjustedWidth = Math.min(plankWidth, canvas.width - x);
+        
+        // Use varying colors for each plank to create natural wood look - slightly darker
+        const baseHue = 28 + Math.random() * 10; // Darker brown
+        const baseSaturation = 45 + Math.random() * 20;
+        const baseLightness = 43 + Math.random() * 12; // Reduced lightness for darker appearance
+        
+        ctx.fillStyle = `hsl(${baseHue}, ${baseSaturation}%, ${baseLightness}%)`;
+        ctx.fillRect(x, 0, adjustedWidth, canvas.height);
+        
+        // Add grain lines
+        const grainCount = 40 + Math.floor(Math.random() * 30);
+        ctx.globalAlpha = 0.15;
+        
+        for (let i = 0; i < grainCount; i++) {
+          const grainY = Math.random() * canvas.height;
+          const grainLength = 50 + Math.random() * 150;
+          const grainThickness = 1 + Math.random() * 2;
+          
+          // Adjust grain color based on position - slightly more contrast
+          const grainDarkness = Math.random() * 25;
+          ctx.fillStyle = `hsl(${baseHue}, ${baseSaturation}%, ${baseLightness - grainDarkness}%)`;
+          
+          ctx.fillRect(x, grainY, adjustedWidth, grainThickness);
+        }
+        
+        ctx.globalAlpha = 1.0;
+        
+        // Add darker edges to simulate plank separation
+        if (x + adjustedWidth < canvas.width) {
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(x + adjustedWidth, 0, plankGap, canvas.height);
+        }
+      }
+      
+      // Add some knots in the wood
+      const knotCount = 5 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < knotCount; i++) {
+        const knotX = Math.random() * canvas.width;
+        const knotY = Math.random() * canvas.height;
+        const knotRadius = 3 + Math.random() * 5;
+        
+        const gradient = ctx.createRadialGradient(
+          knotX, knotY, 0,
+          knotX, knotY, knotRadius
+        );
+        
+        gradient.addColorStop(0, 'rgba(50, 25, 0, 0.8)');
+        gradient.addColorStop(0.8, 'rgba(80, 55, 30, 0.3)');
+        gradient.addColorStop(1, 'rgba(100, 75, 50, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(knotX, knotY, knotRadius * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Create texture from canvas
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(2, 2); // Repeat the texture to make planks smaller
+      
+      // For better quality
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      
+      return texture;
+    }
+    
+    // Create the wooden texture
+    const woodTexture = createWoodenFloorTexture();
+    
+    // Create normal map for added depth
+    function createWoodNormalMap() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill with neutral normal color (r=128, g=128, b=255)
+      ctx.fillStyle = '#8080ff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add normal details for plank gaps
+      const plankWidth = 60;
+      const plankGap = 2;
+      
+      ctx.fillStyle = '#6060ff'; // Darker for depth
+      
+      for (let x = 0; x < canvas.width; x += plankWidth + plankGap) {
+        if (x + plankWidth < canvas.width) {
+          ctx.fillRect(x + plankWidth, 0, plankGap, canvas.height);
+        }
+      }
+      
+      const normalTexture = new THREE.CanvasTexture(canvas);
+      normalTexture.wrapS = THREE.RepeatWrapping;
+      normalTexture.wrapT = THREE.RepeatWrapping;
+      normalTexture.repeat.set(2, 2);
+      
+      return normalTexture;
+    }
+    
+    const woodNormalMap = createWoodNormalMap();
+    
+    // Create material with texture
+    const woodMaterial = new THREE.MeshStandardMaterial({
+      map: woodTexture,
+      normalMap: woodNormalMap,
+      roughness: 0.7,
+      metalness: 0.1,
+      normalScale: new THREE.Vector2(0.5, 0.5)
+    });
+    
+    // Use the wooden material for the top face, darker wood for sides
+    const floorMaterial = [
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Right edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Left edge - darker
+      woodMaterial, // Top surface - wooden texture
+      new THREE.MeshStandardMaterial({ color: new THREE.Color("#4d3118"), roughness: 0.9 }), // Bottom - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") }), // Front edge - darker
+      new THREE.MeshStandardMaterial({ map: woodTexture, normalMap: woodNormalMap, roughness: 0.8, color: new THREE.Color("#6d4b2a") })  // Back edge - darker
+    ];
+
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.position.y = -0.1; // Lower the floor to center it
+    floor.receiveShadow = true; // Enable shadows on floor
+    floor.name = "floor"; // Name the floor for raycasting
+    scene.add(floor);
+    
+    // Light rays and dust particles removed from the room for a cleaner interior look
+    
+    // Control variables
+    agentTargetPosition = new THREE.Vector3(0, 0, 0); // Initialize target position
+
+    // Load all furniture
+    loadFurniture(scene, roomWidth, roomHeight, roomDepth);
+    
+    // Load the island model in the center of the room
+    spawnIslandModel(scene);
+    
+    // Visualize the obstacle boundaries in debug mode
+    if (DEBUG_MODE) {
+      visualizeObstacles();
+      visualizeFloorBoundaries(floorBoundaries);
+    }
+    
+    // Function to visualize obstacles for debugging
+    function visualizeObstacles() {
+      furnitureObstacles.forEach(obstacle => {
+        // Create a material for the obstacle outline
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        
+        // Create points for the obstacle outline
+        const points = [];
+        for (const point of obstacle.points) {
+          points.push(new THREE.Vector3(point.x, 0.05, point.z)); // Slightly above floor
+        }
+        // Close the loop
+        points.push(new THREE.Vector3(obstacle.points[0].x, 0.05, obstacle.points[0].z));
+        
+        // Create the outline geometry
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        line.userData = { isDebugElement: true };
+        scene.add(line);
+        
+        // Add points at each corner
+        const sphereGeometry = new THREE.SphereGeometry(0.1);
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        
+        for (const point of obstacle.points) {
+          const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+          sphere.position.set(point.x, 0.1, point.z); // Slightly above floor
+          sphere.userData = { isDebugElement: true };
+          scene.add(sphere);
+        }
+      });
+    }
+
+    // Function to visualize the floor boundaries
+    function visualizeFloorBoundaries(boundaries) {
+      const boundaryMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff }); // Blue for floor boundaries
+      
+      // Create points for the boundary rectangle
+      const points = [
+        new THREE.Vector3(boundaries.minX, 0.05, boundaries.minZ),
+        new THREE.Vector3(boundaries.maxX, 0.05, boundaries.minZ),
+        new THREE.Vector3(boundaries.maxX, 0.05, boundaries.maxZ),
+        new THREE.Vector3(boundaries.minX, 0.05, boundaries.maxZ),
+        new THREE.Vector3(boundaries.minX, 0.05, boundaries.minZ)
+      ];
+      
+      // Create the boundary line
+      const boundaryGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const boundaryLine = new THREE.Line(boundaryGeometry, boundaryMaterial);
+      boundaryLine.userData = { isDebugElement: true };
+      scene.add(boundaryLine);
+    }
+
+    // Load AI Agent by default
+    loadAIAgent(scene, {
+      onAgentLoaded: (data) => {
+        aiAgent = data.agent;
+        mixer = data.mixer;
+        animations = data.animations;
+        currentAnimation = 'idle';
+        console.log("AI Agent loaded and ready");
+      }
+    });
+
+    // AI Agent loading and movement functions
+    function removeExistingAgents() {
+      if (scene) {
+        // Find all objects that might be AI agents
+        const agentsToRemove = [];
+        scene.traverse((object) => {
+          // Check if this is an AI agent by looking for specific properties
+          if (object.userData && object.userData.isAIAgent) {
+            agentsToRemove.push(object);
+          }
+        });
+        
+        // Remove all found agents
+        agentsToRemove.forEach(agent => {
+          console.log("Removing existing AI agent from scene");
+          scene.remove(agent);
+        });
+        
+        // Reset the aiAgent variable
+        aiAgent = null;
+        mixer = null;
+        animations = {};
+        currentAnimation = null;
+      }
+    }
+
+    /**
+     * Play a specific animation with crossfade
+     * @param {string} name Animation name ('idle' or 'walk')
+     * @param {number} fadeTime Duration of the crossfade in seconds
+     */
+    function playAnimation(name, fadeTime = 0.5) {
+      if (!mixer || !animations[name] || currentAnimation === name) return;
+      
+      const toPlay = animations[name];
+      
+      // If there's a current animation, crossfade to the new one
+      if (currentAnimation && animations[currentAnimation]) {
+        const fromAnim = animations[currentAnimation];
+        toPlay.reset();
+        toPlay.setEffectiveTimeScale(1);
+        toPlay.setEffectiveWeight(1);
+        
+        // Use a much shorter crossfade time for walk animation to prevent gliding
+        const actualFadeTime = name === 'walk' ? 0.1 : fadeTime;
+        
+        toPlay.crossFadeFrom(fromAnim, actualFadeTime, true);
+        toPlay.play();
+      } else {
+        // Just play the animation directly
+        toPlay.play();
+      }
+      
+      currentAnimation = name;
+    }
+
+    function updateAgentPosition(delta) {
+      if (aiAgent && isAgentWalking) {
+        // Calculate direction and distance to target
+        const direction = new THREE.Vector3()
+          .subVectors(agentTargetPosition, aiAgent.position)
+          .normalize();
+        const distance = aiAgent.position.distanceTo(agentTargetPosition);
+
+        // If we're close enough to the target, check for next waypoint
+        if (distance < 0.15) {
+          // If we have more waypoints, move to the next one
+          if (waypointQueue.length > 0) {
+            // Set the next waypoint as target
+            const nextWaypoint = waypointQueue.shift();
+            
+            // Ensure the waypoint is within floor boundaries
+            const constrainedWaypoint = constrainToFloor(nextWaypoint);
+            agentTargetPosition.copy(constrainedWaypoint);
+            
+            // Check if we still need to avoid obstacles between our current position and the next waypoint
+            for (const obstacle of furnitureObstacles) {
+              if (doesPathIntersectPolygon(aiAgent.position, agentTargetPosition, obstacle.points)) {
+                console.log("Path to next waypoint intersects obstacle, recalculating");
+                
+                // Find a new waypoint to go around this obstacle
+                const newWaypoints = findPathAroundObstacle(aiAgent.position, agentTargetPosition, obstacle);
+                
+                if (newWaypoints && newWaypoints.length > 0) {
+                  // Ensure all new waypoints are within floor boundaries
+                  const constrainedNewWaypoints = newWaypoints.map(wp => constrainToFloor(wp));
+                  
+                  // Insert these waypoints at the beginning of the queue
+                  waypointQueue.unshift(...constrainedNewWaypoints);
+                  agentTargetPosition.copy(constrainToFloor(waypointQueue.shift()));
+                }
+              }
+            }
+            
+            // Update direction and rotation to face next waypoint
+            const newDirection = new THREE.Vector3()
+              .subVectors(agentTargetPosition, aiAgent.position)
+              .normalize();
+            const targetRotation = Math.atan2(newDirection.x, newDirection.z);
+            aiAgent.rotation.y = targetRotation;
+            
+            console.log("Moving to next waypoint:", agentTargetPosition);
+            return;
+          }
+          
+          // Check if we reached our final destination
+          if (finalDestination && aiAgent.position.distanceTo(finalDestination) > 0.2) {
+            // If not at final destination yet, try to reach it
+            if (!doesAnyObstacleBlockPath(aiAgent.position, finalDestination)) {
+              // Direct path to final destination is clear
+              const constrainedDestination = constrainToFloor(finalDestination);
+              agentTargetPosition.copy(constrainedDestination);
+              
+              // Update direction and rotation
+              const newDirection = new THREE.Vector3()
+                .subVectors(agentTargetPosition, aiAgent.position)
+                .normalize();
+              const targetRotation = Math.atan2(newDirection.x, newDirection.z);
+              aiAgent.rotation.y = targetRotation;
+              
+              console.log("Final approach to destination");
+              return;
+            }
+          }
+          
+          // No more waypoints and at final destination, we're done walking
+          isAgentWalking = false;
+          playAnimation('idle'); // Switch to idle animation
+          console.log("Reached destination, stopping");
+          finalDestination = null;
+          return;
+        }
+
+        // Make sure walk animation is playing
+        if (currentAnimation !== 'walk') {
+          playAnimation('walk');
+        }
+
+        // Calculate new position
+        const newX = aiAgent.position.x + direction.x * walkingSpeed;
+        const newZ = aiAgent.position.z + direction.z * walkingSpeed;
+        
+        // Constrain the new position to the floor boundaries
+        const constrainedX = Math.max(floorBoundaries.minX, Math.min(floorBoundaries.maxX, newX));
+        const constrainedZ = Math.max(floorBoundaries.minZ, Math.min(floorBoundaries.maxZ, newZ));
+        
+        // Move the AI Agent towards the target with constrained position
+        aiAgent.position.x = constrainedX;
+        aiAgent.position.z = constrainedZ;
+
+        // Rotate the AI Agent to face the direction of movement
+        const targetRotation = Math.atan2(direction.x, direction.z);
+        aiAgent.rotation.y = targetRotation;
+
+        // Update animation mixer
+        if (mixer) {
+          mixer.update(delta);
+        }
+      } else if (mixer) {
+        // Keep updating mixer even when not walking for idle animation
+        mixer.update(delta);
+      }
+    }
+    
+    // Helper function to constrain a point to the floor boundaries
+    function constrainToFloor(point) {
+      const constrained = point.clone();
+      constrained.x = Math.max(floorBoundaries.minX, Math.min(floorBoundaries.maxX, constrained.x));
+      constrained.z = Math.max(floorBoundaries.minZ, Math.min(floorBoundaries.maxZ, constrained.z));
+      return constrained;
+    }
+    
+    // Helper function to check if any obstacle blocks a path
+    function doesAnyObstacleBlockPath(start, end) {
+      for (const obstacle of furnitureObstacles) {
+        if (doesPathIntersectPolygon(start, end, obstacle.points)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Function to spawn AI Agent when button is clicked
+    function spawnAIAgent() {
+      console.log("Spawn AI Agent button clicked");
+      if (!aiAgent) {
+        console.log("AI Agent not loaded yet, loading now...");
+        loadAIAgent(scene, {
+          onAgentLoaded: (data) => {
+            aiAgent = data.agent;
+            mixer = data.mixer;
+            animations = data.animations;
+            currentAnimation = 'idle';
+            console.log("AI Agent loaded and ready");
+          }
+        });
+      } else {
+        console.log(
+          "AI Agent already loaded, making visible and resetting position"
+        );
+        // If AI Agent exists but is not visible, make it visible
+        aiAgent.visible = true;
+
+        // Reset position to center if needed
+        aiAgent.position.set(0, 0, 0);
+
+        // Stop any ongoing walking
+        isAgentWalking = false;
+
+        // Force a render to show the AI Agent
+        renderer.render(scene, camera);
+
+        console.log("AI Agent is at position:", aiAgent.position);
+      }
+    }
+
+    // Function to check if a point is inside a polygon (furniture obstacle)
+    function isPointInPolygon(point, polygon) {
+      // Check if point or polygon is undefined
+      if (!point || !polygon || !Array.isArray(polygon) || polygon.length < 3) {
+        return false;
+      }
+      
+      const x = point.x;
+      const z = point.z;
+      let inside = false;
+      
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].x;
+        const zi = polygon[i].z;
+        const xj = polygon[j].x;
+        const zj = polygon[j].z;
+        
+        const intersect = ((zi > z) !== (zj > z)) && 
+                          (x < (xj - xi) * (z - zi) / (zj - zi) + xi);
+        if (intersect) inside = !inside;
+      }
+      
+      return inside;
+    }
+    
+    
