@@ -24,9 +24,7 @@ export function loadAIAgent(scene, callbacks = {}) {
       
       // Apply textures with proper colors
       const bodyTexture = textureLoader.load('/models/ai-agent/shaded.png');
-      // Set encoding to sRGB to preserve vibrant colors
-      bodyTexture.encoding = THREE.sRGBEncoding;
-      // Increase color saturation and brightness
+      // Set color space to preserve original colors (THREE.SRGBColorSpace is newer standard)
       bodyTexture.colorSpace = THREE.SRGBColorSpace;
       // Enhance texture quality
       bodyTexture.anisotropy = 16;
@@ -35,18 +33,18 @@ export function loadAIAgent(scene, callbacks = {}) {
       bodyTexture.magFilter = THREE.LinearFilter;
       
       // Create materials for different parts
-      const bodyMaterial = new THREE.MeshPhysicalMaterial({
+      const bodyMaterial = new THREE.MeshStandardMaterial({
         map: bodyTexture,
         skinning: true,
-        roughness: 0.4, // Lower roughness for more vibrant appearance
-        metalness: 0.15, // Slight metalness to enhance color
-        emissive: new THREE.Color(0x333333), // Increased emissive to enhance colors
-        emissiveMap: bodyTexture, // Use same texture for emissive to boost colors
-        emissiveIntensity: 0.15, // Moderate emissive intensity
-        clearcoat: 0.2, // Add subtle clearcoat for enhanced appearance
-        clearcoatRoughness: 0.8, // Keep the clearcoat mostly matte
-        transmission: 0.0, // No transmission
-        reflectivity: 0.2 // Slight reflectivity
+        roughness: 0.3, // Reduced roughness for more accurate color
+        metalness: 0.0, // Remove metalness to preserve texture colors
+        emissive: new THREE.Color(0x000000), // Remove emissive to not alter colors
+        // Remove emissiveMap to preserve original colors
+        // Remove emissiveIntensity
+        // Remove clearcoat
+        // Remove clearcoatRoughness
+        // Remove transmission
+        reflectivity: 0.0 // Remove reflectivity to maintain original colors
       });
       
       // Apply material to all mesh parts to preserve texture colors
@@ -71,10 +69,8 @@ export function loadAIAgent(scene, callbacks = {}) {
           
           // Ensure no color transformations
           if (child.material.map) {
-            // Use sRGB encoding for vibrant colors
-            child.material.map.encoding = THREE.sRGBEncoding;
+            // Use correct colorSpace setting
             child.material.map.colorSpace = THREE.SRGBColorSpace;
-            // Enable the texture to be more vibrant
             child.material.map.anisotropy = 16;
             child.material.needsUpdate = true;
           }

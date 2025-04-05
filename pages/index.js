@@ -658,28 +658,28 @@ export default function Home() {
     const roomDepth = 7;
 
     // Lighting - adjusted for night scene
-    const ambientLight = new THREE.AmbientLight(0x111122, 0.5); // Subtle blue ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increase ambient light intensity
     scene.add(ambientLight);
 
     // Add a warmer light inside the room
-    const roomLight = new THREE.AmbientLight(0xffffcc, 0.9); // Warm light for the room
+    const roomLight = new THREE.AmbientLight(0xffffff, 0.9); // Adjust to more neutral white
     roomLight.position.set(0, 2, 0);
     scene.add(roomLight);
 
     // Main directional light (moonlight)
-    const directionalLight = new THREE.DirectionalLight(0xaae0ff, 0.8); // Cooler blue light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7); // More neutral and less blue
     directionalLight.position.set(50, 100, 30);
     directionalLight.castShadow = false;
     scene.add(directionalLight);
 
     // Add a second directional light from another angle
-    const directionalLight2 = new THREE.DirectionalLight(0xffebcd, 0.4); // Warm secondary light
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5); // More neutral, less warm
     directionalLight2.position.set(-5, 8, -5);
     directionalLight2.castShadow = false;
     scene.add(directionalLight2);
 
     // Add a small point light near the window to simulate moonlight coming in
-    const windowLight = new THREE.PointLight(0xb0c4de, 0.9); // Light blue window light
+    const windowLight = new THREE.PointLight(0xffffff, 0.6); // Neutral white light
     windowLight.position.set(-roomWidth/2 + 0.5, 2.2, -2); // Position near window
     windowLight.distance = 10;
     windowLight.decay = 2;
