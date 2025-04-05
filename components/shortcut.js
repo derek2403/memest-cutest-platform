@@ -243,7 +243,7 @@ export default function Shortcut({ onClose, onDrop }) {
         onDrop={handleDrop}
       >
         <div className={styles.header}>
-          <h2 className={styles.title}>Drag a shortcut here</h2>
+          <h2 className={styles.title}>Create a workflow here</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
@@ -280,9 +280,9 @@ export default function Shortcut({ onClose, onDrop }) {
           
           <div className={styles.mainInstructions}>
             {isDraggingOver ? (
-              <p>Drop to create shortcut</p>
+              <p>Drop to create workflow</p>
             ) : (
-              <p>Drag a button from the sidebar to create a shortcut</p>
+              <p>Drag a button from the sidebar to create a workflow</p>
             )}
           </div>
           
