@@ -36,8 +36,8 @@ export function loadAIAgent(scene, callbacks = {}) {
       const bodyMaterial = new THREE.MeshStandardMaterial({
         map: bodyTexture,
         skinning: true,
-        roughness: 0.3, // Reduced roughness for more accurate color
-        metalness: 0.0, // Remove metalness to preserve texture colors
+        roughness: 0.7, // Increased roughness from 0.3 to 0.7 to reduce shininess
+        metalness: 0.0, // Keep metalness at 0
         emissive: new THREE.Color(0x000000), // Remove emissive to not alter colors
         // Remove emissiveMap to preserve original colors
         // Remove emissiveIntensity
@@ -61,9 +61,9 @@ export function loadAIAgent(scene, callbacks = {}) {
               skinning: true,
               color: new THREE.Color('#00FFFF'), // Bright cyan for eyes
               emissive: new THREE.Color('#00FFFF'),
-              emissiveIntensity: 1.0, // Increased glow
-              roughness: 0.4, // Reduced roughness for more shine
-              metalness: 0.2 // Slight metalness for reflective surface
+              emissiveIntensity: 0.8, // Reduced from 1.0 to 0.8 for less intensity
+              roughness: 0.6, // Increased from 0.4 to 0.6 for less shine
+              metalness: 0.1 // Reduced from 0.2 to 0.1 for less reflection
             });
           }
           
