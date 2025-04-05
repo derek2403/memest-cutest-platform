@@ -1457,3 +1457,770 @@ export default function Home() {
         });
       }
       
+      // Sort the paths by Manhattan distance (not Euclidean)
+      candidatePaths.sort((a, b) => a.distance - b.distance);
+      
+      // Function to check if a path crosses outside the floor boundaries
+      const doesPathCrossOutsideFloor = (pathPoints) => {
+        let lastPoint = constrainedStart;
+        for (const point of pathPoints) {
+          // Check if the direct line between lastPoint and point crosses outside the floor
+          // We do this by checking if any point along the line would be constrained
+          const steps = 10; // Check multiple points along the path
+          for (let i = 1; i <= steps; i++) {
+            const t = i / steps;
+            const checkPoint = new THREE.Vector3(
+              lastPoint.x + (point.x - lastPoint.x) * t,
+              0,
+              lastPoint.z + (point.z - lastPoint.z) * t
+            );
+            
+            const constrained = constrainToFloor(checkPoint.clone());
+            if (Math.abs(constrained.x - checkPoint.x) > 0.001 || 
+                Math.abs(constrained.z - checkPoint.z) > 0.001) {
+              return true; // Path would go outside floor
+            }
+          }
+          lastPoint = point;
+        }
+        
+        // Check final segment to end
+        const steps = 10;
+        for (let i = 1; i <= steps; i++) {
+          const t = i / steps;
+          const checkPoint = new THREE.Vector3(
+            lastPoint.x + (constrainedEnd.x - lastPoint.x) * t,
+            0,
+            lastPoint.z + (constrainedEnd.z - lastPoint.z) * t
+          );
+          
+          const constrained = constrainToFloor(checkPoint.clone());
+          if (Math.abs(constrained.x - checkPoint.x) > 0.001 || 
+              Math.abs(constrained.z - checkPoint.z) > 0.001) {
+            return true; // Path would go outside floor
+          }
+        }
+        
+        return false;
+      };
+      
+      // Check each path, starting with the shortest, until we find a valid one
+      for (const candidate of candidatePaths) {
+        // First check if the path stays entirely within floor boundaries
+        if (doesPathCrossOutsideFloor(candidate.path)) {
+          continue; // Skip paths that go outside the floor
+        }
+        
+        let isPathValid = true;
+        let lastPoint = constrainedStart;
+        
+        // Check each segment of the path
+        for (const point of candidate.path) {
+          if (doesPathIntersectPolygon(lastPoint, point, polygon)) {
+            isPathValid = false;
+            break;
+          }
+          lastPoint = point;
+        }
+        
+        // Check the final segment to the end point
+        if (isPathValid && !doesPathIntersectPolygon(lastPoint, constrainedEnd, polygon)) {
+          console.log("Selected path with Manhattan distance:", candidate.distance);
+          return candidate.path;
+        }
+      }
+      
+      // If we couldn't find a valid path, create a safe default path with additional waypoints
+      console.log("No valid direct path found, generating floor-following path");
+      
+      // Create a path that follows the floor edges
+      // Start by determining which quadrant of the floor the start and end points are in
+      const startQuadrant = {
+        x: constrainedStart.x < (floorBoundaries.minX + floorBoundaries.maxX) / 2 ? 'left' : 'right',
+        z: constrainedStart.z < (floorBoundaries.minZ + floorBoundaries.maxZ) / 2 ? 'top' : 'bottom'
+      };
+      
+      const endQuadrant = {
+        x: constrainedEnd.x < (floorBoundaries.minX + floorBoundaries.maxX) / 2 ? 'left' : 'right',
+        z: constrainedEnd.z < (floorBoundaries.minZ + floorBoundaries.maxZ) / 2 ? 'top' : 'bottom'
+      };
+      
+      // Generate waypoints depending on the quadrants
+      const safeWaypoints = [];
+      
+      // If start and end are in different quadrants, create intermediate points
+      if (startQuadrant.x !== endQuadrant.x || startQuadrant.z !== endQuadrant.z) {
+        // Create a path that goes around the edges of the floor
+        const padding = 0.5; // Distance from the edge
+        
+        // Select intermediate corner based on quadrants
+        if (startQuadrant.x === 'left' && startQuadrant.z === 'top') {
+          // Top-left corner
+          safeWaypoints.push(new THREE.Vector3(floorBoundaries.minX + padding, 0, floorBoundaries.minZ + padding));
+        } else if (startQuadrant.x === 'right' && startQuadrant.z === 'top') {
+          // Top-right corner
+          safeWaypoints.push(new THREE.Vector3(floorBoundaries.maxX - padding, 0, floorBoundaries.minZ + padding));
+        } else if (startQuadrant.x === 'left' && startQuadrant.z === 'bottom') {
+          // Bottom-left corner
+          safeWaypoints.push(new THREE.Vector3(floorBoundaries.minX + padding, 0, floorBoundaries.maxZ - padding));
+        } else {
+          // Bottom-right corner
+          safeWaypoints.push(new THREE.Vector3(floorBoundaries.maxX - padding, 0, floorBoundaries.maxZ - padding));
+        }
+        
+        // If diagonal movement across quadrants, add another waypoint
+        if (startQuadrant.x !== endQuadrant.x && startQuadrant.z !== endQuadrant.z) {
+          if (endQuadrant.x === 'left' && endQuadrant.z === 'top') {
+            // Top-left corner
+            safeWaypoints.push(new THREE.Vector3(floorBoundaries.minX + padding, 0, floorBoundaries.minZ + padding));
+          } else if (endQuadrant.x === 'right' && endQuadrant.z === 'top') {
+            // Top-right corner
+            safeWaypoints.push(new THREE.Vector3(floorBoundaries.maxX - padding, 0, floorBoundaries.minZ + padding));
+          } else if (endQuadrant.x === 'left' && endQuadrant.z === 'bottom') {
+            // Bottom-left corner
+            safeWaypoints.push(new THREE.Vector3(floorBoundaries.minX + padding, 0, floorBoundaries.maxZ - padding));
+          } else {
+            // Bottom-right corner
+            safeWaypoints.push(new THREE.Vector3(floorBoundaries.maxX - padding, 0, floorBoundaries.maxZ - padding));
+          }
+        }
+      }
+      
+      return safeWaypoints;
+    }
+    
+    // Helper to get the expanded bounding box of a polygon with buffer
+    function getExpandedBoundingBox(polygon, buffer) {
+      if (!polygon || !Array.isArray(polygon) || polygon.length === 0) {
+        console.error("Invalid polygon in getExpandedBoundingBox:", polygon);
+        return { minX: -5, minZ: -5, maxX: 5, maxZ: 5 }; // Default fallback
+      }
+      
+      let minX = Infinity, minZ = Infinity;
+      let maxX = -Infinity, maxZ = -Infinity;
+      
+      // Find min/max coordinates
+      for (const point of polygon) {
+        if (!point || typeof point.x !== 'number' || typeof point.z !== 'number') {
+          continue; // Skip invalid points
+        }
+        minX = Math.min(minX, point.x);
+        minZ = Math.min(minZ, point.z);
+        maxX = Math.max(maxX, point.x);
+        maxZ = Math.max(maxZ, point.z);
+      }
+      
+      // If we didn't find valid coordinates, return a default
+      if (minX === Infinity || minZ === Infinity || maxX === -Infinity || maxZ === -Infinity) {
+        console.error("Failed to calculate bounding box, using default");
+        return { minX: -5, minZ: -5, maxX: 5, maxZ: 5 };
+      }
+      
+      // Expand by buffer
+      return {
+        minX: minX - buffer,
+        minZ: minZ - buffer,
+        maxX: maxX + buffer,
+        maxZ: maxZ + buffer
+      };
+    }
+    
+    // Find the farthest corner from both start and end points
+    function findFarthestCorner(polygon, start, end) {
+      let farthestDist = -Infinity;
+      let farthestPoint = null;
+      
+      for (const point of polygon) {
+        const totalDist = start.distanceTo(point) + end.distanceTo(point);
+        if (totalDist > farthestDist) {
+          farthestDist = totalDist;
+          farthestPoint = point;
+        }
+      }
+      
+      return farthestPoint;
+    }
+    
+    // Helper function to get the center of a polygon
+    function getCenterOfPolygon(polygon) {
+      const center = new THREE.Vector3();
+      for (const point of polygon) {
+        center.add(point);
+      }
+      center.divideScalar(polygon.length);
+      return center;
+    }
+
+    // Add right-click event listener for movement
+    function onRightClick(event) {
+      event.preventDefault(); // Prevent the default context menu
+
+      // Only proceed if the AI Agent exists
+      if (!aiAgent) {
+        console.log(
+          "AI Agent doesn't exist yet. Please summon the AI Agent first."
+        );
+        return;
+      }
+
+      // Calculate mouse position in normalized device coordinates (-1 to +1)
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      // Update the raycaster with the camera and mouse position
+      raycaster.setFromCamera(mouse, camera);
+
+      // Find intersections with the floor
+      const floorObjects = scene.children.filter((obj) => obj.name === "floor");
+      console.log("Floor objects found:", floorObjects.length);
+
+      const intersects = raycaster.intersectObjects(floorObjects);
+
+      if (intersects.length > 0) {
+        console.log("Right click detected on floor", intersects[0].point);
+
+        // Start walk animation immediately (before pathfinding)
+        // This prevents the brief gliding effect
+        isAgentWalking = true;
+        playAnimation('walk', 0.1);
+        
+        // Set the target position where the AI Agent should move to
+        let clickPosition = intersects[0].point.clone();
+        
+        // Constrain the click position to the floor boundaries
+        clickPosition = constrainToFloor(clickPosition);
+        
+        // Check if the click is inside any obstacle and adjust if needed
+        let isInsideObstacle = false;
+        let closestObstacle = null;
+        
+        for (const obstacle of furnitureObstacles) {
+          if (!obstacle || !obstacle.points) continue;
+          
+          // Get the expanded bounding box for visual purposes
+          const boundingBox = getExpandedBoundingBox(obstacle.points, 0); // No extra buffer
+          
+          // Check if the click is inside this bounding box
+          if (clickPosition.x >= boundingBox.minX && clickPosition.x <= boundingBox.maxX &&
+              clickPosition.z >= boundingBox.minZ && clickPosition.z <= boundingBox.maxZ) {
+            console.log("Click detected inside obstacle bounding box");
+            isInsideObstacle = true;
+            closestObstacle = obstacle;
+            break;
+          }
+        }
+        
+        // If the click is inside an obstacle, redirect to nearest edge
+        if (isInsideObstacle && closestObstacle) {
+          console.log("Moving target position to nearest edge of obstacle");
+          
+          // Get the obstacle bounding box
+          const boundingBox = getExpandedBoundingBox(closestObstacle.points, 0.3); // With small buffer
+          
+          // Get the position of the agent
+          const agentPos = aiAgent.position;
+          
+          // Calculate the nearest edge point based on agent position
+          const nearestEdgePoint = findNearestEdgePoint(clickPosition, boundingBox, agentPos);
+          
+          // Use this edge point as the new target (and ensure it's on the floor)
+          clickPosition.copy(constrainToFloor(nearestEdgePoint));
+          
+          // Visualize the adjusted point if in debug mode
+          if (DEBUG_MODE) {
+            visualizePoint(clickPosition, 0xff0000); // Red marker for adjusted point
+          }
+        }
+        
+        // Store this as our ultimate destination
+        finalDestination = clickPosition.clone();
+        
+        // Reset waypoint queue
+        waypointQueue = [];
+        
+        // Check if the direct path intersects with any furniture obstacle
+        let pathBlocked = false;
+        let immediateTarget = clickPosition.clone();
+        let currentPosition = aiAgent.position.clone();
+        
+        try {
+          // Check each obstacle
+          for (const obstacle of furnitureObstacles) {
+            if (!obstacle || !obstacle.points) {
+              console.warn("Invalid obstacle found:", obstacle);
+              continue;
+            }
+            
+            if (doesPathIntersectPolygon(currentPosition, immediateTarget, obstacle.points)) {
+              console.log("Path intersects with obstacle, finding path around");
+              pathBlocked = true;
+              
+              // Find waypoints to route around the obstacle - pass the entire obstacle object
+              const waypoints = findPathAroundObstacle(currentPosition, immediateTarget, obstacle);
+              
+              if (waypoints && waypoints.length > 0) {
+                console.log("Found waypoints around obstacle:", waypoints);
+                
+                // If it's a multi-waypoint path
+                if (waypoints.length > 1) {
+                  // Add all waypoints except the first one to the queue
+                  for (let i = 1; i < waypoints.length; i++) {
+                    // Ensure each waypoint is within floor boundaries
+                    waypointQueue.push(constrainToFloor(waypoints[i]));
+                  }
+                  // The first waypoint becomes our immediate target
+                  immediateTarget = constrainToFloor(waypoints[0]);
+                } else {
+                  // Single waypoint, just use it
+                  immediateTarget = constrainToFloor(waypoints[0]);
+                }
+              }
+            }
+          }
+          
+          // Ensure we're not setting a target inside an obstacle
+          for (const obstacle of furnitureObstacles) {
+            if (obstacle && obstacle.points && isPointInPolygon(immediateTarget, obstacle.points)) {
+              console.warn("Target point is inside obstacle, finding safer point");
+              immediateTarget = constrainToFloor(findSafestPoint(currentPosition, clickPosition));
+              break;
+            }
+          }
+          
+          // Double-check the path is clear from our current position to immediateTarget
+          // If not, try a more aggressive avoidance strategy
+          if (doesAnyObstacleBlockPath(currentPosition, immediateTarget)) {
+            // Try picking a point that's far away from all obstacles
+            console.log("Path still blocked, finding safest point");
+            immediateTarget = constrainToFloor(findSafestPoint(currentPosition, clickPosition));
+          }
+          
+          // Visualize path for debugging
+          if (DEBUG_MODE) {
+            visualizePath(currentPosition, immediateTarget, waypointQueue, pathBlocked);
+          }
+          
+          // Copy the final calculated target position
+          agentTargetPosition.copy(immediateTarget);
+
+        // Calculate direction and update AI Agent rotation
+        const direction = new THREE.Vector3()
+          .subVectors(agentTargetPosition, aiAgent.position)
+          .normalize();
+
+        // Set the AI Agent's rotation to face the direction of movement
+        const targetRotation = Math.atan2(direction.x, direction.z);
+        aiAgent.rotation.y = targetRotation;
+
+        // Animation is already started, no need to call these again
+        // isAgentWalking = true;
+        // playAnimation('walk');
+        console.log("Started walking to: ", agentTargetPosition);
+        } catch (error) {
+          console.error("Error in pathfinding:", error);
+          // Fallback to direct movement if pathfinding fails
+          agentTargetPosition.copy(constrainToFloor(clickPosition));
+          // Animation already started above, no need to call these again
+          // isAgentWalking = true; 
+          // playAnimation('walk');
+        }
+      } else {
+        console.log("No intersection with floor detected");
+      }
+    }
+    
+    // Function to find the nearest edge point of a bounding box
+    function findNearestEdgePoint(point, boundingBox, referencePoint) {
+      // Determine which edge of the bounding box is closest to the reference point
+      
+      // Calculate distances to each edge
+      const distToLeft = Math.abs(boundingBox.minX - referencePoint.x);
+      const distToRight = Math.abs(boundingBox.maxX - referencePoint.x);
+      const distToTop = Math.abs(boundingBox.minZ - referencePoint.z);
+      const distToBottom = Math.abs(boundingBox.maxZ - referencePoint.z);
+      
+      // Find the minimum distance
+      const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+      
+      // Create the edge point based on which edge is closest
+      const edgePoint = new THREE.Vector3();
+      
+      if (minDist === distToLeft) {
+        // Left edge is closest
+        edgePoint.set(boundingBox.minX, 0, point.z);
+      } else if (minDist === distToRight) {
+        // Right edge is closest
+        edgePoint.set(boundingBox.maxX, 0, point.z);
+      } else if (minDist === distToTop) {
+        // Top edge is closest
+        edgePoint.set(point.x, 0, boundingBox.minZ);
+      } else {
+        // Bottom edge is closest
+        edgePoint.set(point.x, 0, boundingBox.maxZ);
+      }
+      
+      // Clamp the edge point to be within the bounds of the edge
+      edgePoint.x = Math.max(boundingBox.minX, Math.min(boundingBox.maxX, edgePoint.x));
+      edgePoint.z = Math.max(boundingBox.minZ, Math.min(boundingBox.maxZ, edgePoint.z));
+      
+      return edgePoint;
+    }
+    
+    // Function to visualize a point for debugging
+    function visualizePoint(point, color = 0xffff00) {
+      // Remove any existing point visualization with the same color
+      scene.children.forEach(child => {
+        if (child.userData && child.userData.isPointVisualization && child.userData.color === color) {
+          scene.remove(child);
+        }
+      });
+      
+      // Create a sphere to mark the point
+      const geometry = new THREE.SphereGeometry(0.1);
+      const material = new THREE.MeshBasicMaterial({ color: color });
+      const sphere = new THREE.Mesh(geometry, material);
+      
+      sphere.position.copy(point);
+      sphere.userData = { isPointVisualization: true, color: color };
+      
+      scene.add(sphere);
+    }
+
+    // Find a safe point away from all obstacles
+    function findSafestPoint(start, end) {
+      if (USE_GRID_MOVEMENT) {
+        // In grid movement mode, prefer cardinal directions
+        const directions = [
+          new THREE.Vector3(1, 0, 0),  // Right
+          new THREE.Vector3(-1, 0, 0), // Left
+          new THREE.Vector3(0, 0, 1),  // Down
+          new THREE.Vector3(0, 0, -1)  // Up
+        ];
+        
+        // Try each cardinal direction
+        for (let distance = OBSTACLE_BUFFER; distance <= OBSTACLE_BUFFER * 3; distance += OBSTACLE_BUFFER) {
+          for (const dir of directions) {
+            const safePoint = new THREE.Vector3()
+              .copy(start)
+              .add(dir.clone().multiplyScalar(distance));
+              
+            if (!doesAnyObstacleBlockPath(start, safePoint)) {
+              return safePoint;
+            }
+          }
+        }
+      }
+      
+      // Fall back to the original approach if grid movement fails
+      // Start with a point perpendicular to the direct path
+      const directVector = new THREE.Vector3().subVectors(end, start).normalize();
+      
+      // Perpendicular vector
+      const perpVector = new THREE.Vector3(-directVector.z, 0, directVector.x);
+      
+      // Try points at increasing distances in both perpendicular directions
+      for (let distance = OBSTACLE_BUFFER; distance <= OBSTACLE_BUFFER * 3; distance += OBSTACLE_BUFFER) {
+        // Try left side
+        const leftPoint = new THREE.Vector3()
+          .copy(start)
+          .add(perpVector.clone().multiplyScalar(distance));
+          
+        if (!doesAnyObstacleBlockPath(start, leftPoint)) {
+          return leftPoint;
+        }
+        
+        // Try right side
+        const rightPoint = new THREE.Vector3()
+          .copy(start)
+          .add(perpVector.clone().multiplyScalar(-distance));
+          
+        if (!doesAnyObstacleBlockPath(start, rightPoint)) {
+          return rightPoint;
+        }
+      }
+      
+      // If all else fails, just return a point behind the agent
+      return new THREE.Vector3()
+        .copy(start)
+        .add(directVector.clone().multiplyScalar(-OBSTACLE_BUFFER * 2));
+    }
+
+    // Function to visualize the path for debugging
+    function visualizePath(start, firstTarget, waypoints, pathBlocked) {
+      // Remove any existing path visualization
+      scene.children.forEach(child => {
+        if (child.userData && child.userData.isPathVisualization) {
+          scene.remove(child);
+        }
+      });
+      
+      // Create a material for the path
+      const pathMaterial = new THREE.LineBasicMaterial({ 
+        color: pathBlocked ? 0xffaa00 : 0x00ff00,
+        linewidth: 3
+      });
+      
+      // Create points for the complete path
+      const pathPoints = [
+        new THREE.Vector3(start.x, 0.1, start.z)
+      ];
+      
+      // Add first target
+      pathPoints.push(new THREE.Vector3(firstTarget.x, 0.1, firstTarget.z));
+      
+      // Add all waypoints
+      for (const waypoint of waypoints) {
+        pathPoints.push(new THREE.Vector3(waypoint.x, 0.1, waypoint.z));
+      }
+      
+      // Create the path line
+      const pathGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+      const pathLine = new THREE.Line(pathGeometry, pathMaterial);
+      pathLine.userData = { isPathVisualization: true };
+      scene.add(pathLine);
+      
+      // Add spheres at each waypoint for better visibility
+      const wpGeometry = new THREE.SphereGeometry(0.1);
+      const wpMaterial = new THREE.MeshBasicMaterial({ color: 0x00aaff });
+      
+      // First target gets a special color
+      const firstTargetSphere = new THREE.Mesh(wpGeometry, new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+      firstTargetSphere.position.set(firstTarget.x, 0.1, firstTarget.z);
+      firstTargetSphere.userData = { isPathVisualization: true };
+      scene.add(firstTargetSphere);
+      
+      // Add remaining waypoints
+      for (const waypoint of waypoints) {
+        const sphere = new THREE.Mesh(wpGeometry, wpMaterial);
+        sphere.position.set(waypoint.x, 0.1, waypoint.z);
+        sphere.userData = { isPathVisualization: true };
+        scene.add(sphere);
+      }
+    }
+
+    // Register the right-click event handler
+    renderer.domElement.addEventListener("contextmenu", onRightClick);
+
+    // Handle window resize
+    const handleResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Animation loop with performance optimizations
+    let lastFrameTime = 0;
+    const targetFPS = 60; // Higher FPS for smoother animation
+    const frameInterval = 1000 / targetFPS;
+
+    function animate(currentTime) {
+      animationFrameId = requestAnimationFrame(animate);
+
+      const deltaTime = currentTime - lastFrameTime;
+      if (deltaTime < frameInterval) return;
+
+      const delta = deltaTime / 1000; // Convert to seconds
+      lastFrameTime = currentTime - (deltaTime % frameInterval);
+      
+      // Update stars
+      updateStars(delta);
+      
+      // Update AI Agent position if it's moving
+      updateAgentPosition(delta);
+
+      // Animate any custom models that need animation (like the rotating planet)
+      if (window.customModelsToAnimate && window.customModelsToAnimate.length > 0) {
+        window.customModelsToAnimate.forEach(model => {
+          // Handle rotation
+          if (model && model.userData && model.userData.isRotating) {
+            // Apply rotation based on the model's rotation speed
+            model.rotation.y += model.userData.rotationSpeed || 0.005;
+          }
+          
+          // Handle pulsing glow effect
+          if (model && model.userData && model.userData.isPulsing && model.userData.updatePulse) {
+            model.userData.updatePulse(delta);
+          }
+        });
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate(0);
+
+    // Store the scene reference in state
+    setSceneRef(scene);
+
+    // Add click event handler for 3D objects
+    function onClick(event) {
+      // Calculate mouse position in normalized device coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      
+      // Update the raycaster
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Find all intersected objects
+      const intersects = raycaster.intersectObjects(scene.children, true);
+      
+      if (intersects.length > 0) {
+        // Find the first clickable object
+        let clickableObject = null;
+        
+        for (let i = 0; i < intersects.length; i++) {
+          const object = intersects[i].object;
+          let parent = object;
+          
+          // Traverse up to find a parent with userData
+          while (parent && !parent.userData?.clickable) {
+            parent = parent.parent;
+          }
+          
+          if (parent && parent.userData?.clickable) {
+            clickableObject = parent;
+            break;
+          }
+        }
+        
+        if (clickableObject) {
+          console.log('Clicked on:', clickableObject.userData.type);
+          
+          // Handle different clickable objects
+          if (clickableObject.userData.type === 'airConditioner') {
+            setShowShortcutPopup(true);
+          } else if (clickableObject.userData.type === 'books') {
+            // Show the workflow popup when books are clicked
+            setShowWorkflowPopup(true);
+          } else if (clickableObject.userData.type === 'metamask') {
+            // Show the MetaMask shortcut when fox is clicked
+            setShowMetamaskShortcut(true);
+          }
+        }
+      }
+    }
+    
+    // Register the click event handler
+    renderer.domElement.addEventListener('click', onClick);
+
+    // Initialize the sidebar with callbacks
+    console.log("Initializing sidebar with callbacks");
+    initSidebar({
+      'metamask-button': () => {
+        console.log("Metamask button clicked in index.js callback");
+        // Pass the scene parameter to the 3D implementation
+        spawnMetamaskFox(scene);
+      },
+      'polygon-button': () => {
+        console.log("Polygon button clicked");
+        // Add Polygon functionality to spawn the model
+        spawnPolygonModel(scene);
+      },
+      'celo-button': () => {
+        console.log("Celo button clicked");
+        // Add Celo functionality to spawn the model
+        spawnCeloModel(scene);
+      },
+      'oneinch-button': () => {
+        console.log("1inch button clicked");
+        // Add 1inch functionality to spawn the unicorn
+        spawn1inchUnicorn(scene);
+      },
+      'spreadsheet-button': () => {
+        console.log("Spreadsheet button clicked");
+        // Add Spreadsheet functionality to spawn the model
+        spawnSpreadsheetModel(scene);
+      },
+      'gmail-button': () => {
+        console.log("Gmail button clicked");
+        // Add Gmail functionality to spawn the model
+        spawnGmailModel(scene);
+      }
+    }, scene); // Pass the scene object here
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      renderer.domElement.removeEventListener("contextmenu", onRightClick);
+      renderer.domElement.removeEventListener('click', onClick);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      if (mountRef.current && renderer.domElement) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
+    };
+  }, []);
+
+  // Handle dropping a button on the shortcut popup
+  const handleShortcutDrop = (buttonId) => {
+    console.log('Button dropped:', buttonId);
+    setShowShortcutPopup(false);
+    
+    // Show the appropriate shortcut based on the button
+    if (buttonId === 'metamask-button') {
+      setShowMetamaskShortcut(true);
+    }
+    // Add handlers for other buttons if needed
+  };
+
+  return (
+    <>
+      <style jsx global>{`
+        html, body {
+          padding: 0;
+          margin: 0;
+          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        
+        .connect-button-wrapper {
+          position: fixed;
+          top: 20px;
+          right: 250px; /* Increased from 160px to move it left */
+          z-index: 1000;
+          font-family: 'Baloo 2', cursive;
+          background-color: rgba(255, 255, 255, 0.9);
+          border-radius: 15px;
+          padding: 5px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+          backdrop-filter: blur(5px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          animation: fadeIn 0.4s ease-out;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div style={{ width: "100%", height: "100vh" }} ref={mountRef}></div>
+      
+      {showShortcutPopup && (
+        <Shortcut 
+          onClose={() => setShowShortcutPopup(false)} 
+          onDrop={handleShortcutDrop} 
+        />
+      )}
+      
+      {showMetamaskShortcut && (
+        <MetamaskShortcut 
+          onClose={() => setShowMetamaskShortcut(false)} 
+        />
+      )}
+      
+      {showWorkflowPopup && (
+        <WorkflowPopup 
+          onClose={() => setShowWorkflowPopup(false)} 
+          showSavedSection={true}
+          readOnly={true}
+        />
+      )}
+    </>
+  );
+}
