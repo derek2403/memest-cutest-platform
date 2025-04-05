@@ -29,7 +29,7 @@ export default function Home() {
   const [sceneRef, setSceneRef] = useState(null);
 
   // Component level variables for animation and scene
-  let walkingSpeed = 0.05;
+  let walkingSpeed = 0.04; // Reduced by 20% from original 0.05
   let isAgentWalking = false;
   let aiAgent;
   let mixer;
