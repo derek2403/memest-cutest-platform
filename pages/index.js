@@ -11,6 +11,7 @@ import { spawnMetamaskFox } from "../components/metawallet.js";
 import { spawnPolygonModel } from "../components/polygon.js";
 import { spawnPolygonPlanet } from "../components/polygon_planet.js";
 import { spawnOneinchPlanet } from "../components/oneinch_planet.js";
+import { spawnCeloPlanet } from "../components/celo_planet.js";
 import { spawnCeloModel } from "../components/celo.js";
 import { spawnGmailModel } from "../components/gmail.js";
 import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
@@ -49,6 +50,7 @@ export default function Home() {
       polygonPlanet: false,
       oneinchPlanet: false,
       celo: false,
+      celoPlanet: false,
       oneinch: false,
       spreadsheet: false,
       gmail: false,
@@ -60,6 +62,7 @@ export default function Home() {
         if (this.polygonPlanet) active.push('polygonPlanet');
         if (this.oneinchPlanet) active.push('oneinchPlanet');
         if (this.celo) active.push('celo');
+        if (this.celoPlanet) active.push('celoPlanet');
         if (this.oneinch) active.push('oneinch');
         if (this.spreadsheet) active.push('spreadsheet');
         if (this.gmail) active.push('gmail');
@@ -443,6 +446,7 @@ export default function Home() {
     // Automatically spawn the planets in space
     spawnPolygonPlanet(scene);
     spawnOneinchPlanet(scene);
+    spawnCeloPlanet(scene);
 
     // Camera setup
     camera = new THREE.PerspectiveCamera(
