@@ -46,6 +46,14 @@ export function initSidebar(callbacks = {}, scene) {
     metamaskText.textContent = 'Metamask';
     metamaskButton.appendChild(metamaskText);
     
+    // Create tick indicator for Metamask
+    const metamaskTick = document.createElement('span');
+    metamaskTick.className = 'plugin-tick';
+    metamaskTick.innerHTML = '✓';
+    metamaskTick.style.display = 'none'; // Hidden by default
+    metamaskTick.dataset.plugin = 'metamask'; // Add plugin name reference
+    metamaskButton.appendChild(metamaskTick);
+    
     // Make Metamask button draggable
     makeDraggable(metamaskButton, 'metamask-button', callbacks, scene);
     
@@ -59,11 +67,11 @@ export function initSidebar(callbacks = {}, scene) {
     
     // Create other service buttons
     const serviceButtons = [
-        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#35287a' },
-        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#0a6e4c' },
-        { id: 'oneinch-button', text: '1inch', icon: '/icon/1inch.png', color: '#1e4896' },
-        { id: 'spreadsheet-button', text: 'Spreadsheet', icon: '/icon/spreadsheet.png', color: '#0a6e4c' },
-        { id: 'gmail-button', text: 'Gmail', icon: '/icon/gmail.png', color: '#992525' }
+        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#35287a', plugin: 'polygon' },
+        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#0a6e4c', plugin: 'celo' },
+        { id: 'oneinch-button', text: '1inch', icon: '/icon/1inch.png', color: '#1e4896', plugin: 'oneinch' },
+        { id: 'spreadsheet-button', text: 'Spreadsheet', icon: '/icon/spreadsheet.png', color: '#0a6e4c', plugin: 'spreadsheet' },
+        { id: 'gmail-button', text: 'Gmail', icon: '/icon/gmail.png', color: '#992525', plugin: 'gmail' }
     ];
     
     serviceButtons.forEach(data => {
@@ -85,6 +93,14 @@ export function initSidebar(callbacks = {}, scene) {
         buttonText.textContent = data.text;
         buttonText.style.color = '#FFFFFF';
         button.appendChild(buttonText);
+        
+        // Create tick indicator
+        const tick = document.createElement('span');
+        tick.className = 'plugin-tick';
+        tick.innerHTML = '✓';
+        tick.style.display = 'none'; // Hidden by default
+        tick.dataset.plugin = data.plugin; // Store plugin name for reference
+        button.appendChild(tick);
         
         // Make the button draggable
         makeDraggable(button, data.id, callbacks, scene);
@@ -198,6 +214,14 @@ export function initSidebar(callbacks = {}, scene) {
             object-fit: contain;
         }
         
+        .plugin-tick {
+            margin-left: auto;
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 20px; 
+            padding-right: 5px;
+        }
+        
         .sidebar-button:hover {
             filter: brightness(1.1);
         }
@@ -244,6 +268,33 @@ export function initSidebar(callbacks = {}, scene) {
             sidebar.classList.add('hidden');
         }
     });
+
+    // Function to update ticks based on pluginsInRoom state
+    const updatePluginTicks = () => {
+        if (!window.pluginsInRoom) {
+            console.warn("window.pluginsInRoom is not initialized yet");
+            return;
+        }
+        
+        // Log current plugins state
+        console.log("Current plugins in room:", JSON.stringify(window.pluginsInRoom));
+        
+        // Update all plugins ticks using data-plugin attribute
+        document.querySelectorAll('.plugin-tick[data-plugin]').forEach(tick => {
+            const plugin = tick.dataset.plugin;
+            if (window.pluginsInRoom.hasOwnProperty(plugin)) {
+                const isVisible = window.pluginsInRoom[plugin];
+                tick.style.display = isVisible ? 'inline' : 'none';
+                console.log(`Plugin ${plugin} tick visibility: ${isVisible}`);
+            }
+        });
+    };
+    
+    // Set up an interval to check for plugin changes
+    const tickInterval = setInterval(updatePluginTicks, 1000);
+    
+    // Initial update
+    setTimeout(updatePluginTicks, 1000);
 
     return sidebar;
 }
