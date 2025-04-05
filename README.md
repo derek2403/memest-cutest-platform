@@ -1,7 +1,7 @@
 # Memest Cutest Project 
 _A gamified, cross app based Model Context Protocol platform_
 
-![Logo](https://github.com/derek2403/memest-cutest-platform/blob/main/public/logo.png?raw=true)
+![2289375F-C956-485C-AC6F-8FF9A0074BAE](https://github.com/user-attachments/assets/66de8c94-d973-4c4b-99bd-27f78bdb7286)
 
 We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
 
