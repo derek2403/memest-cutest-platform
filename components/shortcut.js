@@ -6,86 +6,96 @@ export default function Shortcut({ onClose, onDrop }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const popupRef = useRef(null);
+  const dropZoneRef = useRef(null);
 
   const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDraggingOver(true);
+    // Only allow drag over the drop zone box
+    if (e.currentTarget === dropZoneRef.current) {
+      e.preventDefault();
+      setIsDraggingOver(true);
+    }
   };
 
-  const handleDragLeave = () => {
-    setIsDraggingOver(false);
+  const handleDragLeave = (e) => {
+    // Only handle drag leave for the drop zone box
+    if (e.currentTarget === dropZoneRef.current) {
+      setIsDraggingOver(false);
+    }
   };
 
   const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
-    
-    // Get the dragged button ID
-    const buttonId = e.dataTransfer.getData('text/plain');
-    
-    // Call the onDrop callback with the button ID
-    if (onDrop) {
-      onDrop(buttonId);
-    }
-    
-    // Remove the draggable icon if it exists
-    const icon = document.getElementById('draggable-metamask-icon');
-    if (icon && icon.parentNode) {
-      icon.parentNode.removeChild(icon);
-    }
-    
-    // Handle different assistants based on the dragged icon
-    if (buttonId === 'metamask-button' || buttonId === 'metamask-icon') {
-      renderAssistant('metamask');
-      onClose();
-    } else if (buttonId === 'gmail-button' || buttonId === 'gmail-icon') {
-      renderAssistant('gmail');
-      onClose();
-    } else if (buttonId === '1inch-button' || buttonId === '1inch-icon') {
-      renderAssistant('1inch');
-      onClose();
-    } else if (buttonId === 'polygon-button' || buttonId === 'polygon-icon') {
-      renderAssistant('polygon');
-      onClose();
-    } else if (buttonId === 'celo-button' || buttonId === 'celo-icon') {
-      renderAssistant('celo');
-      onClose();
-    } else if (buttonId === 'spreadsheet-button' || buttonId === 'spreadsheet-icon') {
-      renderAssistant('spreadsheet');
-      onClose();
-    } else {
-      // Check if the dragged element was one of the icons in the shortcut component
-      const dataTransfer = e.dataTransfer;
-      if (dataTransfer.items && dataTransfer.items.length > 0) {
-        // Check if an image was dragged
-        for (let i = 0; i < dataTransfer.items.length; i++) {
-          if (dataTransfer.items[i].kind === 'file' && 
-              dataTransfer.items[i].type.indexOf('image') !== -1) {
-            const file = dataTransfer.items[i].getAsFile();
-            if (file.name.includes('metamask')) {
-              renderAssistant('metamask');
-              onClose();
-              break;
-            } else if (file.name.includes('gmail')) {
-              renderAssistant('gmail');
-              onClose();
-              break;
-            } else if (file.name.includes('1inch')) {
-              renderAssistant('1inch');
-              onClose();
-              break;
-            } else if (file.name.includes('polygon')) {
-              renderAssistant('polygon');
-              onClose();
-              break;
-            } else if (file.name.includes('celo')) {
-              renderAssistant('celo');
-              onClose();
-              break;
-            } else if (file.name.includes('spreadsheet')) {
-              renderAssistant('spreadsheet');
-              onClose();
-              break;
+    // Only process drops in the drop zone box
+    if (e.currentTarget === dropZoneRef.current) {
+      e.preventDefault();
+      setIsDraggingOver(false);
+      
+      // Get the dragged button ID
+      const buttonId = e.dataTransfer.getData('text/plain');
+      
+      // Call the onDrop callback with the button ID
+      if (onDrop) {
+        onDrop(buttonId);
+      }
+      
+      // Remove the draggable icon if it exists
+      const icon = document.getElementById('draggable-metamask-icon');
+      if (icon && icon.parentNode) {
+        icon.parentNode.removeChild(icon);
+      }
+      
+      // Handle different assistants based on the dragged icon
+      if (buttonId === 'metamask-button' || buttonId === 'metamask-icon') {
+        renderAssistant('metamask');
+        onClose();
+      } else if (buttonId === 'gmail-button' || buttonId === 'gmail-icon') {
+        renderAssistant('gmail');
+        onClose();
+      } else if (buttonId === '1inch-button' || buttonId === '1inch-icon') {
+        renderAssistant('1inch');
+        onClose();
+      } else if (buttonId === 'polygon-button' || buttonId === 'polygon-icon') {
+        renderAssistant('polygon');
+        onClose();
+      } else if (buttonId === 'celo-button' || buttonId === 'celo-icon') {
+        renderAssistant('celo');
+        onClose();
+      } else if (buttonId === 'spreadsheet-button' || buttonId === 'spreadsheet-icon') {
+        renderAssistant('spreadsheet');
+        onClose();
+      } else {
+        // Check if the dragged element was one of the icons in the shortcut component
+        const dataTransfer = e.dataTransfer;
+        if (dataTransfer.items && dataTransfer.items.length > 0) {
+          // Check if an image was dragged
+          for (let i = 0; i < dataTransfer.items.length; i++) {
+            if (dataTransfer.items[i].kind === 'file' && 
+                dataTransfer.items[i].type.indexOf('image') !== -1) {
+              const file = dataTransfer.items[i].getAsFile();
+              if (file.name.includes('metamask')) {
+                renderAssistant('metamask');
+                onClose();
+                break;
+              } else if (file.name.includes('gmail')) {
+                renderAssistant('gmail');
+                onClose();
+                break;
+              } else if (file.name.includes('1inch')) {
+                renderAssistant('1inch');
+                onClose();
+                break;
+              } else if (file.name.includes('polygon')) {
+                renderAssistant('polygon');
+                onClose();
+                break;
+              } else if (file.name.includes('celo')) {
+                renderAssistant('celo');
+                onClose();
+                break;
+              } else if (file.name.includes('spreadsheet')) {
+                renderAssistant('spreadsheet');
+                onClose();
+                break;
+              }
             }
           }
         }
@@ -138,10 +148,10 @@ export default function Shortcut({ onClose, onDrop }) {
   // Handle direct drop of the icon (without using drag events)
   useEffect(() => {
     const handleMouseUp = (e) => {
-      if (!popupRef.current) return;
+      if (!dropZoneRef.current) return;
       
-      // Check if the mouseup happened inside the popup
-      const rect = popupRef.current.getBoundingClientRect();
+      // Check if the mouseup happened inside the drop zone box
+      const rect = dropZoneRef.current.getBoundingClientRect();
       if (
         e.clientX >= rect.left && 
         e.clientX <= rect.right && 
@@ -238,9 +248,6 @@ export default function Shortcut({ onClose, onDrop }) {
     <div className={styles.overlay}>
       <div 
         className={`${styles.popup} ${isDraggingOver ? styles.dragOver : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
         ref={popupRef}
       >
         <div className={styles.header}>
@@ -321,6 +328,7 @@ export default function Shortcut({ onClose, onDrop }) {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            ref={dropZoneRef}
           >
             <div className={styles.mainInstructions}>
               {isDraggingOver ? (
