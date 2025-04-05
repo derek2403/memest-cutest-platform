@@ -123,19 +123,18 @@ export default function Home() {
     // Scene setup
     scene = new THREE.Scene();
     
-    // Add fog for depth perception
-    scene.fog = new THREE.FogExp2(0x0a1a3f, 0.005);
+    // Add subtle fog for depth perception
+    scene.fog = new THREE.FogExp2(0x000510, 0.0015);
     
-    // Create an environment with skybox
-    // We'll use a combination of a skybox and a stylized backdrop
+    // Create an environment with a stylized night sky backdrop
     const environmentGroup = new THREE.Group();
     scene.add(environmentGroup);
     
-    // Create a gradient sky background instead of a pure black background
+    // Create a dark gradient sky background
     const skyColors = {
-      topColor: new THREE.Color("#0a1a3f"),  // Deep blue for top
-      middleColor: new THREE.Color("#233f73"), // Medium blue for horizon
-      bottomColor: new THREE.Color("#3a5da5") // Lighter blue for base
+      topColor: new THREE.Color("#000000"),  // Pure black for top
+      middleColor: new THREE.Color("#050a20"), // Very dark blue for middle
+      bottomColor: new THREE.Color("#0a1030") // Dark blue with slight purple tone for bottom
     };
     
     // Create a gradient background sphere
@@ -164,9 +163,9 @@ export default function Home() {
           // Normalize position for gradient calculation (0 = bottom, 1 = top)
           float h = normalize(vWorldPosition).y * 0.5 + 0.5;
           
-          // Mix colors based on height
-          vec3 color = mix(bottomColor, middleColor, smoothstep(0.0, 0.5, h));
-          color = mix(color, topColor, smoothstep(0.4, 1.0, h));
+          // Mix colors based on height with gentle transitions
+          vec3 color = mix(bottomColor, middleColor, smoothstep(0.0, 0.4, h));
+          color = mix(color, topColor, smoothstep(0.4, 0.9, h));
           
           gl_FragColor = vec4(color, 1.0);
         }
@@ -177,85 +176,231 @@ export default function Home() {
     const sky = new THREE.Mesh(skyGeometry, skyMaterial);
     environmentGroup.add(sky);
     
-    // Add stars to the sky
-    const starsGeometry = new THREE.BufferGeometry();
-    const starsMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 1,
-      transparent: true,
-      opacity: 0.8,
-      sizeAttenuation: true
-    });
+    // Create stylized stars with varied sizes and brightness
+    const starCount = 3000;
+    const starColors = [0xffffff, 0xffffee, 0xeeeeff, 0xccddff];
+    const starSizes = [0.4, 0.6, 0.8, 1.2, 1.5];
     
-    // Generate 2000 random star positions
-    const starsVertices = [];
-    for (let i = 0; i < 2000; i++) {
-      const x = THREE.MathUtils.randFloatSpread(400);
-      const y = THREE.MathUtils.randFloatSpread(200);
-      const z = THREE.MathUtils.randFloatSpread(400);
-      // Keep stars above horizon mostly
-      if (y < 0) continue;
-      starsVertices.push(x, y, z);
-    }
-    
-    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
-    const stars = new THREE.Points(starsGeometry, starsMaterial);
-    environmentGroup.add(stars);
-    
-    // Add distant mountains/terrain for context
-    const terrainGroup = new THREE.Group();
-    environmentGroup.add(terrainGroup);
-    
-    // Function to create a stylized mountain with a specific color
-    function createStylizedMountain(color, width, height, depth, x, z) {
-      const mountainGeometry = new THREE.ConeGeometry(width, height, 4);
-      const mountainMaterial = new THREE.MeshStandardMaterial({ 
-        color: color,
-        flatShading: true,
-        roughness: 0.8
+    // Generate multiple star layers for depth
+    for (let layer = 0; layer < 3; layer++) {
+      const starsGeometry = new THREE.BufferGeometry();
+      const starsMaterial = new THREE.PointsMaterial({
+        color: starColors[layer % starColors.length],
+        size: starSizes[layer % starSizes.length],
+        transparent: true,
+        opacity: 0.8 - (layer * 0.15),
+        sizeAttenuation: true
       });
       
-      const mountain = new THREE.Mesh(mountainGeometry, mountainMaterial);
-      mountain.position.set(x, height/2 - 20, z);
-      // Randomly rotate for variation
-      mountain.rotation.y = Math.random() * Math.PI;
-      return mountain;
+      const starsVertices = [];
+      const layerStarCount = Math.floor(starCount / (layer + 1));
+      
+      for (let i = 0; i < layerStarCount; i++) {
+        const radius = 150 + layer * 20;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+        
+        // Make sure most stars stay above horizon
+        if (y < -50) continue;
+        
+        starsVertices.push(x, y, z);
+      }
+      
+      starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+      const stars = new THREE.Points(starsGeometry, starsMaterial);
+      environmentGroup.add(stars);
     }
     
-    // Add some distant mountains
-    const mountainColors = [
-      "#2a3b5a", // Dark blue
-      "#203354", // Medium blue
-      "#152a4c"  // Deeper blue
-    ];
+    // Create twinkling stars with animation
+    const twinkleStarCount = 100;
+    const twinkleStarsGeometry = new THREE.BufferGeometry();
+    const twinkleStarsMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 2.0,
+      transparent: true,
+      opacity: 0.9,
+      sizeAttenuation: true,
+      map: createStarTexture(),
+      blending: THREE.AdditiveBlending
+    });
     
-    // Create mountains at different distances
-    for (let i = 0; i < 20; i++) {
-      const distance = 70 + Math.random() * 100;
-      const angle = Math.random() * Math.PI * 2;
-      const x = Math.cos(angle) * distance;
-      const z = Math.sin(angle) * distance;
+    const twinkleVertices = [];
+    const twinkleOpacities = [];
+    
+    for (let i = 0; i < twinkleStarCount; i++) {
+      const radius = 130;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
       
-      const width = 10 + Math.random() * 20;
-      const height = 30 + Math.random() * 40;
-      const colorIndex = Math.floor(Math.random() * mountainColors.length);
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
       
-      const mountain = createStylizedMountain(
-        mountainColors[colorIndex],
-        width,
-        height,
-        width,
-        x,
-        z
-      );
+      // Make sure twinkling stars are visible
+      if (y < 0) continue;
       
-      terrainGroup.add(mountain);
+      twinkleVertices.push(x, y, z);
+      // Store initial twinkle state
+      twinkleOpacities.push(Math.random());
     }
     
-    // Create a ground plane that extends beyond the room
+    twinkleStarsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(twinkleVertices, 3));
+    const twinkleStars = new THREE.Points(twinkleStarsGeometry, twinkleStarsMaterial);
+    environmentGroup.add(twinkleStars);
+    
+    // Create a softer, more stylized star texture
+    function createStarTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, 32, 32);
+      
+      // Create a soft radial gradient
+      const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      gradient.addColorStop(0, 'rgba(255,255,255,1)');
+      gradient.addColorStop(0.5, 'rgba(240,240,255,0.5)');
+      gradient.addColorStop(1, 'rgba(220,220,255,0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 32, 32);
+      
+      // Create simple cross shape
+      ctx.strokeStyle = 'rgba(180,180,255,0.8)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      // Horizontal line
+      ctx.moveTo(8, 16);
+      ctx.lineTo(24, 16);
+      // Vertical line
+      ctx.moveTo(16, 8);
+      ctx.lineTo(16, 24);
+      ctx.stroke();
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
+    }
+    
+    // Create shooting stars system
+    const shootingStarsGroup = new THREE.Group();
+    environmentGroup.add(shootingStarsGroup);
+    
+    // We'll store active shooting stars here
+    const activeShootingStars = [];
+    
+    // Function to create a shooting star
+    function createShootingStar() {
+      // Create a line geometry for the trail
+      const trailPoints = [];
+      const trailLength = 10 + Math.random() * 15; // Random trail length
+      
+      for (let i = 0; i < trailLength; i++) {
+        trailPoints.push(new THREE.Vector3(i * -0.8, 0, 0)); // Create a trail along x-axis
+      }
+      
+      const trailGeometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
+      
+      // Create a gradient material for the trail
+      const trailMaterial = new THREE.LineDashedMaterial({
+        color: 0xffffff,
+        linewidth: 2,
+        scale: 1,
+        dashSize: 0.5,
+        gapSize: 0.1,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      const trail = new THREE.Line(trailGeometry, trailMaterial);
+      trail.computeLineDistances(); // Required for dashed lines
+      
+      // Add a bright point at the head of the shooting star
+      const headGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+      const headMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff,
+        transparent: true,
+        opacity: 1.0
+      });
+      const head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.set(0, 0, 0);
+      
+      // Create a group for the shooting star
+      const shootingStar = new THREE.Group();
+      shootingStar.add(trail);
+      shootingStar.add(head);
+      
+      // Position and rotation
+      // Start from a random position high in the sky
+      const startX = (Math.random() * 2 - 1) * 120;
+      const startY = 60 + Math.random() * 100;
+      const startZ = (Math.random() * 2 - 1) * 120;
+      
+      shootingStar.position.set(startX, startY, startZ);
+      
+      // Random direction, but generally moving downward and at an angle
+      const dirX = -0.5 + Math.random();
+      const dirY = -1 - Math.random() * 0.5;
+      const dirZ = -0.5 + Math.random();
+      
+      const direction = new THREE.Vector3(dirX, dirY, dirZ).normalize();
+      
+      // Calculate rotation to face direction of movement
+      shootingStar.lookAt(shootingStar.position.clone().add(direction));
+      
+      // Add to scene
+      shootingStarsGroup.add(shootingStar);
+      
+      // Store properties for animation
+      return {
+        object: shootingStar,
+        direction: direction,
+        speed: 1 + Math.random() * 1.5, // Random speed
+        lifetime: 0,
+        maxLifetime: 3 + Math.random() * 2, // Random lifetime in seconds
+        head: head,
+        trail: trail
+      };
+    }
+    
+    // Function to update shooting stars in the animation loop
+    function updateShootingStars(delta) {
+      // Randomly create new shooting stars
+      if (Math.random() < 0.02) { // Adjust frequency as needed
+        activeShootingStars.push(createShootingStar());
+      }
+      
+      // Update existing shooting stars
+      for (let i = activeShootingStars.length - 1; i >= 0; i--) {
+        const star = activeShootingStars[i];
+        star.lifetime += delta;
+        
+        // Move the shooting star
+        star.object.position.add(star.direction.clone().multiplyScalar(star.speed * 15 * delta));
+        
+        // Fade out as lifetime increases
+        const fadeRatio = Math.min(1, star.lifetime / star.maxLifetime);
+        star.head.material.opacity = 1 - fadeRatio;
+        star.trail.material.opacity = (1 - fadeRatio) * 0.8;
+        
+        // Remove if lifetime exceeded or out of view
+        if (star.lifetime > star.maxLifetime || star.object.position.y < -50) {
+          shootingStarsGroup.remove(star.object);
+          activeShootingStars.splice(i, 1);
+        }
+      }
+    }
+    
+    // Create a stylized ground plane that extends beyond the room
     const extendedGroundGeometry = new THREE.PlaneGeometry(500, 500);
     const extendedGroundMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#1a2940"), // Dark blue ground
+      color: new THREE.Color("#050916"), // Very dark blue/black ground
       side: THREE.DoubleSide,
       roughness: 0.9
     });
@@ -263,9 +408,10 @@ export default function Home() {
     const extendedGround = new THREE.Mesh(extendedGroundGeometry, extendedGroundMaterial);
     extendedGround.rotation.x = -Math.PI / 2;
     extendedGround.position.y = -0.01; // Slightly below room floor to prevent z-fighting
-    environmentGroup.add(extendedGround);
+    // Removing the extended ground to make the room float in space
+    // environmentGroup.add(extendedGround);
     
-    // Keep the existing video as a dynamic element in the sky
+    // Use the video for star effects with reduced opacity
     const videoElement = document.createElement('video');
     videoElement.src = '/assets/fullstars.mp4';
     videoElement.loop = true;
@@ -273,19 +419,15 @@ export default function Home() {
     videoElement.playsInline = true;
     videoElement.autoplay = true;
     videoElement.crossOrigin = 'anonymous';
-
-    // Preserve original video quality
     videoElement.setAttribute('playsinline', '');
     videoElement.setAttribute('webkit-playsinline', '');
     videoElement.setAttribute('preload', 'auto');
 
-    // Create video texture with highest quality settings
     const videoTexture = new THREE.VideoTexture(videoElement);
     videoTexture.minFilter = THREE.NearestFilter;
     videoTexture.magFilter = THREE.NearestFilter;
     videoTexture.format = THREE.RGBAFormat;
     
-    // Use correct color space for Three.js version
     if (THREE.SRGBColorSpace !== undefined) {
       videoTexture.colorSpace = THREE.SRGBColorSpace;
     } else if (THREE.sRGBEncoding !== undefined) {
@@ -295,19 +437,17 @@ export default function Home() {
     videoTexture.generateMipmaps = false;
     videoTexture.needsUpdate = true;
 
-    // Create a sphere with the video texture on the inside
     const videoSphereGeometry = new THREE.SphereGeometry(180, 32, 32);
     const videoSphereMaterial = new THREE.MeshBasicMaterial({
       map: videoTexture,
       side: THREE.BackSide,
       transparent: true,
-      opacity: 0.6 // Make it semi-transparent to blend with our gradient sky
+      opacity: 0.3 // Reduced opacity to blend with our starry sky
     });
     
     const videoSphere = new THREE.Mesh(videoSphereGeometry, videoSphereMaterial);
     environmentGroup.add(videoSphere);
 
-    // Start playing the video with multiple attempts to ensure it plays
     const ensureVideoPlays = () => {
       videoElement.play().catch(e => {
         console.warn('Video autoplay failed, retrying:', e);
@@ -362,29 +502,29 @@ export default function Home() {
     const roomHeight = 3.5;
     const roomDepth = 7;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404e7c, 0.5); // Bluish ambient light
+    // Lighting - adjusted for night scene
+    const ambientLight = new THREE.AmbientLight(0x111122, 0.5); // Subtle blue ambient light
     scene.add(ambientLight);
 
     // Add a warmer light inside the room
-    const roomLight = new THREE.AmbientLight(0xffffcc, 0.7); // Warm light for the room
+    const roomLight = new THREE.AmbientLight(0xffffcc, 0.9); // Warm light for the room
     roomLight.position.set(0, 2, 0);
     scene.add(roomLight);
 
-    // Main directional light (sun/moon light)
-    const directionalLight = new THREE.DirectionalLight(0xe8f7ff, 1.0); // Cooler light
+    // Main directional light (moonlight)
+    const directionalLight = new THREE.DirectionalLight(0xaae0ff, 0.8); // Cooler blue light
     directionalLight.position.set(50, 100, 30);
     directionalLight.castShadow = false;
     scene.add(directionalLight);
 
     // Add a second directional light from another angle
-    const directionalLight2 = new THREE.DirectionalLight(0xffebcd, 0.6); // Warmer secondary light
+    const directionalLight2 = new THREE.DirectionalLight(0xffebcd, 0.4); // Warm secondary light
     directionalLight2.position.set(-5, 8, -5);
     directionalLight2.castShadow = false;
     scene.add(directionalLight2);
 
-    // Add a small point light near the window to simulate outside light coming in
-    const windowLight = new THREE.PointLight(0xadd8e6, 0.8); // Light blue window light
+    // Add a small point light near the window to simulate moonlight coming in
+    const windowLight = new THREE.PointLight(0xb0c4de, 0.9); // Light blue window light
     windowLight.position.set(-roomWidth/2 + 0.5, 2.2, -2); // Position near window
     windowLight.distance = 10;
     windowLight.decay = 2;
@@ -1690,6 +1830,9 @@ export default function Home() {
 
       const delta = deltaTime / 1000; // Convert to seconds
       lastFrameTime = currentTime - (deltaTime % frameInterval);
+      
+      // Update shooting stars
+      updateShootingStars(delta);
       
       // Update AI Agent position if it's moving
       updateAgentPosition(delta);
