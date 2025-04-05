@@ -66,13 +66,13 @@ const EXAMPLE_WORKFLOWS = [
   }
 ];
 
-export default function WorkflowPopup({ initialInput = '', onClose, showSavedSection = false }) {
+export default function WorkflowPopup({ initialInput = '', onClose, showSavedSection = false, readOnly = false }) {
   const [workflowInput, setWorkflowInput] = useState(initialInput);
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
-  const [showWorkflowsOnly, setShowWorkflowsOnly] = useState(showSavedSection);
+  const [showWorkflowsOnly, setShowWorkflowsOnly] = useState(readOnly); // Show creation form only when not in readOnly mode
   const savedSectionRef = React.useRef(null);
   
   // Load saved workflows from localStorage when the component mounts
@@ -249,11 +249,13 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     }
   };
   
-  // Toggle between workflows-only view and creation view
+  // Toggle between workflows-only view and creation view (only if not in readOnly mode)
   const toggleWorkflowsView = () => {
-    setShowWorkflowsOnly(!showWorkflowsOnly);
+    if (!readOnly) {
+      setShowWorkflowsOnly(!showWorkflowsOnly);
+    }
   };
-
+  
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -262,7 +264,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
             <img src="/icon/metamask.png" alt="Workflow" className={styles.logo} />
             <div className={styles.logoGlow}></div>
           </div>
-          <h2>{showWorkflowsOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>
+          <h2>{readOnly ? "Saved Workflows" : (showWorkflowsOnly ? "Saved Workflows" : "Workflow Assistant")}</h2>
           <button className={styles.closeButton} onClick={onClose}>×</button>
         </div>
         
@@ -379,8 +381,8 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                 </div>
               ) : (
                 <div className={styles.noWorkflowsMessage}>
-                  <p>No saved workflows yet. Create a new workflow to get started!</p>
-                  {showWorkflowsOnly && (
+                  <p>{readOnly ? "No saved workflows yet." : "No saved workflows yet. Create a new workflow to get started!"}</p>
+                  {!readOnly && showWorkflowsOnly && (
                     <button 
                       className={styles.createWorkflowButton}
                       onClick={toggleWorkflowsView}
@@ -391,7 +393,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                 </div>
               )}
               
-              {savedWorkflows.length > 0 && (
+              {!readOnly && savedWorkflows.length > 0 && (
                 <div className={styles.viewToggleContainer}>
                   <button 
                     className={styles.viewToggleButton}

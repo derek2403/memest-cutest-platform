@@ -2130,6 +2130,7 @@ export default function Home() {
         <WorkflowPopup 
           onClose={() => setShowWorkflowPopup(false)} 
           showSavedSection={true}
+          readOnly={true}
         />
       )}
     </>

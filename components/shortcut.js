@@ -219,7 +219,8 @@ export default function Shortcut({ onClose, onDrop }) {
             if (container && container.parentNode) {
               container.parentNode.removeChild(container);
             }
-          }} 
+          }}
+          readOnly={false}
         />
       );
     }).catch(err => {
@@ -318,7 +319,8 @@ export default function Shortcut({ onClose, onDrop }) {
                         if (container && container.parentNode) {
                           container.parentNode.removeChild(container);
                         }
-                      }} 
+                      }}
+                      readOnly={false}
                     />
                   );
                 }).catch(err => {
