@@ -176,9 +176,19 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const polygonEventHashesRef = useRef(new Set());
   const celoEventHashesRef = useRef(new Set());
   
+  // Add this state for 1inch logs at the top where other states are defined
+  const [inchLogs, setInchLogs] = useState([]);
+  const [bridgeRunning, setBridgeRunning] = useState(false);
+  const logsEndRef = useRef(null);
+  
   // Helper to check if inputs are complete based on the workflow type
   const checkInputsComplete = (workflowText, email, recipient, amount) => {
     const lowerText = workflowText.toLowerCase();
+    
+    // For USDC Bridge, no inputs required
+    if (lowerText.includes("usdc") && lowerText.includes("bridge")) {
+      return true;
+    }
     
     // Basic validation - always require email
     if (!email) return false;
@@ -188,9 +198,8 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
       return email.length > 0;
     }
     
-    // For USDC bridge or MetaMask transactions, require all fields
-    if (lowerText.includes("usdc") || 
-        lowerText.includes("metamask") || 
+    // For MetaMask transactions, require all fields
+    if (lowerText.includes("metamask") || 
         lowerText.includes("transfer")) {
       return email && recipient && amount;
     }
@@ -371,10 +380,23 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     }
   };
   
-  // Render input fields based on workflow type
+  // Modify renderInputFields function to skip form fields for USDC Bridge workflow
   const renderInputFields = () => {
     const lowerText = workflowInput.toLowerCase();
     const isEventMonitoring = lowerText.includes('listen') || lowerText.includes('event');
+    const isUSDCBridge = lowerText.includes('usdc') && lowerText.includes('bridge');
+    
+    // For USDC Bridge, don't show any input fields
+    if (isUSDCBridge) {
+      return (
+        <div className={styles.inputFields}>
+          <h4 className={styles.inputTitle}>Workflow Details</h4>
+          <div className={styles.monitorInfo}>
+            <p>USDC Bridge will be executed automatically. No additional information needed.</p>
+          </div>
+        </div>
+      );
+    }
     
     return (
       <div className={styles.inputFields}>
@@ -555,19 +577,84 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
       return;
     }
     
-    // Get the email and workflow details
-    const emailToUse = mostRecentWorkflow.email;
+    // Get the workflow details
     const workflowDescription = mostRecentWorkflow.description.toLowerCase();
     
     // Determine if this is an event monitoring workflow
     const isEventMonitoring = workflowDescription.includes('listen') || workflowDescription.includes('event');
+    const isUSDCBridge = workflowDescription.includes('usdc') && workflowDescription.includes('bridge');
     const isPolygonMonitoring = workflowDescription.includes('polygon');
     const isCeloMonitoring = workflowDescription.includes('celo');
     
     setExecutingWorkflow(true);
     
     try {
+      // Handle USDC Bridge workflow
+      if (isUSDCBridge) {
+        console.log("Starting USDC Bridge with 1inch");
+        setInchLogs([]);
+        setBridgeRunning(true);
+        
+        setExecutionStatus({
+          success: true,
+          message: "Starting USDC Bridge via 1inch. This process may take several minutes.",
+          logs: true
+        });
+        
+        // Use full URL with https if available
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
+        const evtSource = new EventSource(`http://localhost:3001/run-1inch`);
+        
+        evtSource.onmessage = (event) => {
+          const logData = event.data;
+          console.log("Received log:", logData);
+          setInchLogs(prev => [...prev, logData]);
+        };
+        
+        evtSource.onerror = (err) => {
+          console.error("SSE Error:", err);
+          evtSource.close();
+          setBridgeRunning(false);
+          
+          setExecutionStatus({
+            success: false,
+            message: "Error connecting to log stream. The bridge may still be running in the background.",
+            logs: true
+          });
+        };
+        
+        // When the stream closes, assume the process is complete
+        evtSource.addEventListener('close', () => {
+          console.log("1inch process completed");
+          setBridgeRunning(false);
+          
+          setExecutionStatus({
+            success: true,
+            message: "USDC Bridge operation completed. Check logs for details.",
+            logs: true
+          });
+          
+          evtSource.close();
+        });
+        
+        setExecutingWorkflow(false);
+        return;
+      }
+      
       if (isEventMonitoring) {
+        // Get the email for event monitoring
+        const emailToUse = mostRecentWorkflow.email;
+        
+        if (!emailToUse) {
+          console.error('Missing email for event monitoring');
+          setExecutionStatus({
+            success: false,
+            message: 'Missing email address for notifications.'
+          });
+          setExecutingWorkflow(false);
+          return;
+        }
+        
         // For event monitoring workflows, we'll directly start monitoring here
         // Set which chains to monitor based on the workflow description
         
@@ -604,6 +691,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
       }
       
       // For transaction workflows (non-event monitoring)
+      const emailToUse = mostRecentWorkflow.email;
       const recipientToUse = mostRecentWorkflow.recipient;
       const amountToUse = mostRecentWorkflow.amount;
       
@@ -653,12 +741,44 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
           pending: true,
           message: 'Transaction pending email approval. Google Sheet will be updated after approval. Please check your email.',
         });
+        
+        // Instead of waiting for user to click buttons, set up automatic handling after approval
+        // We'll poll the transaction status and then generate reports when complete
+        startTransactionPolling(data.transactionId);
       } else {
         // If transaction was processed immediately (unlikely but possible)
         setExecutionStatus({
           success: true,
           message: 'Transaction submitted successfully. Google Sheet will be updated shortly.',
           txHash: data.hash,
+        });
+        
+        // Auto-generate reports immediately
+        // Replace direct API calls with script execution
+        fetch('/api/run-script', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            script: 'generate_reports.sh'
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log("Report generation script executed:", data);
+          setExecutionStatus({
+            success: true,
+            message: 'Transaction reports and graphs generated automatically',
+          });
+        })
+        .catch(error => {
+          console.error("Error running report generation script:", error);
+          // Fall back to direct API calls if script execution fails
+          handleGenerateReport();
+          setTimeout(() => {
+            handleGenerateGraphs();
+          }, 2000);
         });
       }
       
@@ -674,7 +794,9 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
         message: error.message || 'Failed to execute workflow'
       });
     } finally {
-      setExecutingWorkflow(false);
+      if (!isUSDCBridge) {
+        setExecutingWorkflow(false);
+      }
     }
   };
   
@@ -964,6 +1086,150 @@ Timestamp: ${new Date().toLocaleString()}
     }
   };
   
+  // Add this useEffect for auto-scrolling logs
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [inchLogs]);
+  
+  // Function to generate transaction report
+  const handleGenerateReport = async () => {
+    try {
+      setExecutingWorkflow(true);
+      setExecutionStatus({
+        success: true,
+        message: "Generating transaction report...",
+        logs: false
+      });
+
+      const response = await fetch('http://localhost:3001/transactions/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          address: "0x147151a144fEb00E1e173469B5f90C3B78ae210c",
+          chainId: "84532",
+          month: "4",
+          year: "2025"
+        })
+      });
+
+      const data = await response.json();
+      
+      setExecutionStatus({
+        success: data.success,
+        message: data.message || 'Transaction report generated',
+        reportUrl: data.reportUrl,
+        count: data.count || 0
+      });
+
+      console.log("Transaction report response:", data);
+    } catch (error) {
+      console.error("Error generating transaction report:", error);
+      setExecutionStatus({
+        success: false,
+        message: error.message || 'Failed to generate transaction report'
+      });
+    } finally {
+      setExecutingWorkflow(false);
+    }
+  };
+
+  // Function to generate transaction graphs
+  const handleGenerateGraphs = async () => {
+    try {
+      setExecutingWorkflow(true);
+      setExecutionStatus({
+        success: true,
+        message: "Generating transaction graphs and sending email...",
+        logs: false
+      });
+
+      const response = await fetch('http://localhost:3001/api/transactions/graphs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          address: "0x147151a144fEb00E1e173469B5f90C3B78ae210c",
+          chainId: "84532",
+          month: "4",
+          year: "2025",
+          email: "derekliew0@gmail.com"
+        })
+      });
+
+      const data = await response.json();
+      
+      setExecutionStatus({
+        success: data.success,
+        message: data.message || 'Transaction graphs generated and email sent',
+        graphs: true,
+        email: data.email
+      });
+
+      console.log("Transaction graphs response:", data);
+    } catch (error) {
+      console.error("Error generating transaction graphs:", error);
+      setExecutionStatus({
+        success: false,
+        message: error.message || 'Failed to generate transaction graphs'
+      });
+    } finally {
+      setExecutingWorkflow(false);
+    }
+  };
+
+  // Function to poll transaction status and trigger reports when complete
+  const startTransactionPolling = (transactionId) => {
+    // This will attempt to poll the transaction status
+    console.log("Setting up transaction polling for ID:", transactionId);
+    
+    const checkInterval = setInterval(async () => {
+      try {
+        // Poll transaction status endpoint (you may need to create this endpoint)
+        const response = await fetch(`https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/transaction/status/${transactionId}`, {
+          method: 'GET'
+        });
+        
+        if (!response.ok) {
+          console.log("Transaction not completed yet, continuing to poll...");
+          return;
+        }
+        
+        const data = await response.json();
+        
+        // If transaction is complete
+        if (data.status === 'completed' || data.status === 'confirmed') {
+          clearInterval(checkInterval);
+          console.log("Transaction completed, generating reports...");
+          
+          // Update status
+          setExecutionStatus({
+            success: true,
+            message: 'Transaction completed. Generating reports...',
+            txHash: data.hash,
+          });
+          
+          // Auto-generate reports
+          handleGenerateReport();
+          setTimeout(() => {
+            handleGenerateGraphs();
+          }, 2000); // Small delay between the two operations
+        }
+      } catch (error) {
+        console.error("Error polling transaction status:", error);
+      }
+    }, 5000); // Check every 5 seconds
+    
+    // Clear interval after 2 minutes (24 checks) to prevent infinite polling
+    setTimeout(() => {
+      clearInterval(checkInterval);
+    }, 2 * 60 * 1000);
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -1108,6 +1374,25 @@ Timestamp: ${new Date().toLocaleString()}
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+              
+              {/* Render the log display component in the monitoring stats section */}
+              {executionStatus && executionStatus.logs && (
+                <div className={styles.logDisplay}>
+                  <div className={styles.logHeader}>
+                    <h4>1inch Bridge Logs</h4>
+                    {bridgeRunning && <div className={styles.liveIndicator}><span></span> LIVE</div>}
+                  </div>
+                  <div className={styles.logContent}>
+                    {inchLogs.length === 0 && <div className={styles.logEmpty}>Waiting for logs...</div>}
+                    {inchLogs.map((log, idx) => (
+                      <div key={idx} className={styles.logLine}>
+                        {log}
+                      </div>
+                    ))}
+                    <div ref={logsEndRef} />
+                  </div>
                 </div>
               )}
             </div>

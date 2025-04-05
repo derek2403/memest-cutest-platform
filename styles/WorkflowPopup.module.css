@@ -914,4 +914,120 @@
   color: #718096;
   text-align: center;
   margin-top: 8px;
+}
+
+/* Add styles for log display */
+.logDisplay {
+  width: 100%;
+  margin-top: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #0e1117;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #1d2130;
+  border-bottom: 1px solid #2d3748;
+}
+
+.logHeader h4 {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 14px;
+}
+
+.logContent {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.logLine {
+  margin-bottom: 4px;
+  color: #a0aec0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.logLine:nth-child(odd) {
+  background-color: rgba(45, 55, 72, 0.3);
+}
+
+.logEmpty {
+  text-align: center;
+  padding: 20px;
+  color: #718096;
+  font-style: italic;
+}
+
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #38a169;
+  font-weight: bold;
+}
+
+.liveIndicator span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #38a169;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.additionalActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.actionButton {
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.actionButton:hover {
+  background-color: #2d3748;
+}
+
+.actionButton:disabled {
+  background-color: #718096;
+  cursor: not-allowed;
+  opacity: 0.7;
 } 
