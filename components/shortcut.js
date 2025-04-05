@@ -143,6 +143,26 @@ export default function Shortcut({ onClose, onDrop }) {
         // Set the data based on the icon's alt text
         const iconType = icon.alt.toLowerCase();
         e.dataTransfer.setData('text/plain', `${iconType}-icon`);
+        
+        // Set a drag image to ensure the icon is visible during drag
+        const dragImage = icon.cloneNode(true);
+        dragImage.style.width = '50px';
+        dragImage.style.height = '50px';
+        dragImage.style.opacity = '0.8';
+        dragImage.style.position = 'absolute';
+        dragImage.style.top = '-1000px';
+        document.body.appendChild(dragImage);
+        
+        // Use the cloned image as the drag image
+        e.dataTransfer.setDragImage(dragImage, 25, 25);
+        
+        // Clean up the drag image after dragend
+        setTimeout(() => {
+          if (dragImage.parentNode) {
+            dragImage.parentNode.removeChild(dragImage);
+          }
+        }, 0);
+        
         // Indicate that dragging has started
         setIsDragging(true);
       });
