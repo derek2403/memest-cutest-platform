@@ -52,29 +52,32 @@ const FlowChart = ({ workflow }) => {
 
 // Helper function to get workflows based on available plugins
 const getAvailableWorkflows = () => {
-  // Default workflows for when no plugins are in the room or window.pluginsInRoom is not available
+  // Default workflows - always available regardless of plugins
   const DEFAULT_WORKFLOWS = [
     {
-      title: 'Add plugins to get started',
-      text: 'Drag plugins from the sidebar into your room to create workflows'
+      title: 'Metamask Transaction Alerts',
+      text: 'Monitor my MetaMask wallet transactions and send alerts to my Gmail when values exceed $500'
+    },
+    {
+      title: 'Polygon Portfolio Tracker',
+      text: 'Track all my Polygon transactions and record them in a Spreadsheet with daily summaries'
+    },
+    {
+      title: 'Celo & 1inch Monitor',
+      text: 'Monitor Celo transactions and suggest optimal swap opportunities on 1inch exchange'
     }
   ];
 
-  // If window.pluginsInRoom is not available, return default workflows
-  if (!window.pluginsInRoom) {
+  // If window.pluginsInRoom is not available or no active plugins, just return defaults
+  if (!window.pluginsInRoom || window.pluginsInRoom.getActivePlugins().length === 0) {
     return DEFAULT_WORKFLOWS;
   }
 
   // Get active plugins
   const activePlugins = window.pluginsInRoom.getActivePlugins();
   
-  // If no active plugins, return default workflows
-  if (activePlugins.length === 0) {
-    return DEFAULT_WORKFLOWS;
-  }
-
-  // Build workflows based on available plugins
-  const workflows = [];
+  // Start with the default workflows, will add more based on plugins
+  const workflows = [...DEFAULT_WORKFLOWS];
 
   // Add MetaMask workflows if available
   if (activePlugins.includes('metamask')) {
@@ -113,14 +116,6 @@ const getAvailableWorkflows = () => {
     workflows.push({
       title: 'Automated Reports',
       text: 'Every Monday at 9 AM, collect data from Spreadsheet and send a report to Gmail'
-    });
-  }
-
-  // If we still have no workflows, add a generic one
-  if (workflows.length === 0) {
-    workflows.push({
-      title: 'Custom Workflow',
-      text: `Create a workflow using ${activePlugins.join(' and ')}`
     });
   }
 
@@ -303,33 +298,26 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                     </div>
                   </div>
                   
-                  {window.pluginsInRoom && window.pluginsInRoom.getActivePlugins().length === 0 ? (
-                    <div className={styles.noPluginsWarning}>
-                      <div className={styles.warningIcon}>⚠️</div>
-                      <h3>No Plugins Available</h3>
-                      <p>You need to add plugins to your room first before creating workflows.</p>
-                      <p>Drag plugins from the sidebar into your room, then return here.</p>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleParseWorkflow} className={styles.workflowForm}>
-                      <textarea
-                        value={workflowInput}
-                        onChange={(e) => setWorkflowInput(e.target.value)}
-                        placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Polygon on 1inch"
-                        className={styles.workflowInput}
-                        disabled={workflowLoading}
-                      />
-                      <button
-                        type="submit"
-                        className={styles.parseButton}
-                        disabled={workflowLoading || !workflowInput.trim()}
-                      >
-                        {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
-                      </button>
-                    </form>
-                  )}
+                  {/* Always show the form regardless of plugin status */}
+                  <form onSubmit={handleParseWorkflow} className={styles.workflowForm}>
+                    <textarea
+                      value={workflowInput}
+                      onChange={(e) => setWorkflowInput(e.target.value)}
+                      placeholder="Describe your workflow (e.g., Monitor MetaMask transactions and send summaries to Gmail)"
+                      className={styles.workflowInput}
+                      disabled={workflowLoading}
+                    />
+                    <button
+                      type="submit"
+                      className={styles.parseButton}
+                      disabled={workflowLoading || !workflowInput.trim()}
+                    >
+                      {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
+                    </button>
+                  </form>
         
-                  {workflowParsed.length > 0 && (
+                  {/* Result Section - Always show if workflow has been parsed, regardless of plugin status */}
+                  {workflowParsed && workflowParsed.length > 0 && (
                     <div className={styles.resultSection}>
                       {/* Visual Flow Chart */}
                       <div className={styles.flowchartSection}>
