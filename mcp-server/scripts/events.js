@@ -71,6 +71,7 @@ async function formatEventLogs(logs, contract) {
   
   return Promise.all(logs.map(async (log) => {
     try {
+      // Use parseLog for ethers v6
       const parsedLog = contract.interface.parseLog(log);
       const block = await provider.getBlock(log.blockNumber);
       
@@ -141,10 +142,19 @@ export async function getContractEvents(options) {
       toBlock: toBlock
     };
     
-    // If event name is specified, create a specific filter
-    if (eventName && contract.interface.getEvent(eventName)) {
-      const eventFragment = contract.interface.getEvent(eventName);
-      filter.topics = [contract.interface.getEventTopic(eventFragment)];
+    // If event name is specified, create a specific filter for the event
+    if (eventName) {
+      try {
+        // Fix for ethers v6: Get the event fragment first
+        const eventFragment = contract.interface.getEvent(eventName);
+        
+        // Then get the topic using getTopicFilter() instead of getEventTopic()
+        // In ethers v6, we can use fragment.topicHash or create a filter
+        filter.topics = [ethers.id(eventFragment.format('sighash'))];
+      } catch (error) {
+        console.warn(`Error setting up event filter for ${eventName}:`, error.message);
+        // Continue with just the address filter if we can't create a specific event filter
+      }
     }
     
     // Get logs from provider
@@ -208,7 +218,17 @@ export function monitorContractEvents(options) {
     // Create filter for the specific event or all events
     let filter;
     if (eventName) {
-      filter = contract.filters[eventName]();
+      try {
+        // In ethers v6, we need to use a different approach for event filters
+        const eventFragment = contract.interface.getEvent(eventName);
+        filter = {
+          address: contractAddress,
+          topics: [ethers.id(eventFragment.format('sighash'))]
+        };
+      } catch (error) {
+        console.warn(`Warning: Could not create filter for event ${eventName}:`, error.message);
+        filter = { address: contractAddress };
+      }
     } else {
       filter = { address: contractAddress };
     }

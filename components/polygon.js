@@ -10,6 +10,10 @@ export function spawnPolygonModel(scene) {
   // If model already exists, just toggle visibility instead of reloading
   if (polygonModelLoaded && polygonModel) {
     polygonModel.visible = !polygonModel.visible;
+    // Update the global plugins tracking state
+    if (window.pluginsInRoom) {
+      window.pluginsInRoom.polygon = polygonModel.visible;
+    }
     console.log(`Polygon model visibility set to: ${polygonModel.visible}`);
     return;
   }
@@ -58,6 +62,11 @@ export function spawnPolygonModel(scene) {
       // Update tracking variables
       polygonModelLoaded = true;
       polygonModel = model;
+      
+      // Update the global plugins tracking state
+      if (window.pluginsInRoom) {
+        window.pluginsInRoom.polygon = true;
+      }
       
       console.log("Polygon model added to scene at:", model.position);
     },

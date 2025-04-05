@@ -24,49 +24,59 @@ export function loadAIAgent(scene, callbacks = {}) {
       
       // Apply textures with proper colors
       const bodyTexture = textureLoader.load('/models/ai-agent/shaded.png');
+      // Set color space to preserve original colors (THREE.SRGBColorSpace is newer standard)
+      bodyTexture.colorSpace = THREE.SRGBColorSpace;
+      // Enhance texture quality
+      bodyTexture.anisotropy = 16;
+      bodyTexture.generateMipmaps = true;
+      bodyTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      bodyTexture.magFilter = THREE.LinearFilter;
       
       // Create materials for different parts
       const bodyMaterial = new THREE.MeshStandardMaterial({
         map: bodyTexture,
         skinning: true,
-        color: new THREE.Color('#FF9D00'), // Bright orange for body
-        roughness: 0.9, // Much higher roughness to reduce shine
-        metalness: 0.0 // No metalness for a matte look
+        roughness: 0.7, // Increased roughness from 0.3 to 0.7 to reduce shininess
+        metalness: 0.0, // Keep metalness at 0
+        emissive: new THREE.Color(0x000000), // Remove emissive to not alter colors
+        // Remove emissiveMap to preserve original colors
+        // Remove emissiveIntensity
+        // Remove clearcoat
+        // Remove clearcoatRoughness
+        // Remove transmission
+        reflectivity: 0.0 // Remove reflectivity to maintain original colors
       });
       
-      const greenPartsMaterial = new THREE.MeshStandardMaterial({
-        map: bodyTexture,
-        skinning: true,
-        color: new THREE.Color('#1D8A77'), // Teal/green for limbs
-        roughness: 0.9, // Much higher roughness to reduce shine
-        metalness: 0.0 // No metalness for a matte look
-      });
-      
-      const eyesMaterial = new THREE.MeshStandardMaterial({
-        skinning: true,
-        color: new THREE.Color('#00FFEE'), // Cyan for eyes
-        emissive: new THREE.Color('#00FFEE'),
-        emissiveIntensity: 0.6, // Reduced intensity for less glow
-        roughness: 0.5, // More roughness but still some glow
-        metalness: 0.0 // No metalness
-      });
-      
-      // Apply materials based on mesh names or positions
+      // Apply material to all mesh parts to preserve texture colors
       fbx.traverse((child) => {
         if (child.isMesh) {
-          // Try to identify parts by name
-          const name = child.name.toLowerCase();
+          // Apply the same material to all parts to preserve texture
+          child.material = bodyMaterial.clone(); // Clone to avoid shared material issues
           
-          if (name.includes('eye') || name.includes('screen') || name.includes('face')) {
-            child.material = eyesMaterial;
-          } else if (name.includes('arm') || name.includes('leg') || name.includes('limb')) {
-            child.material = greenPartsMaterial;
-          } else {
-            child.material = bodyMaterial;
+          // Only change material for eyes which need to glow
+          if (child.name.toLowerCase().includes('eye') || 
+              child.name.toLowerCase().includes('screen') || 
+              child.name.toLowerCase().includes('face')) {
+            child.material = new THREE.MeshStandardMaterial({
+              skinning: true,
+              color: new THREE.Color('#00FFFF'), // Bright cyan for eyes
+              emissive: new THREE.Color('#00FFFF'),
+              emissiveIntensity: 0.8, // Reduced from 1.0 to 0.8 for less intensity
+              roughness: 0.6, // Increased from 0.4 to 0.6 for less shine
+              metalness: 0.1 // Reduced from 0.2 to 0.1 for less reflection
+            });
           }
           
-          child.castShadow = false;
-          child.receiveShadow = false;
+          // Ensure no color transformations
+          if (child.material.map) {
+            // Use correct colorSpace setting
+            child.material.map.colorSpace = THREE.SRGBColorSpace;
+            child.material.map.anisotropy = 16;
+            child.material.needsUpdate = true;
+          }
+          
+          child.castShadow = true; // Enable shadows for better visual integration
+          child.receiveShadow = true;
         }
       });
       

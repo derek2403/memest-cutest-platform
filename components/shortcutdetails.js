@@ -19,13 +19,51 @@ export default function ShortcutDetails({ onClose, assistantType = 'metamask' })
       ]
     },
     'done': {
-      message: 'Thank you for using MetaMask Assistant. Is there anything else I can help you with?',
+      message: `Thank you for using ${getAssistantTitle()}. Is there anything else I can help you with?`,
       options: [
         { id: 'continue', text: 'Yes, I have more questions' },
         { id: 'exit', text: 'No, I\'m done' }
       ]
     }
   };
+
+  // Determine the assistant title based on the type
+  function getAssistantTitle() {
+    switch(assistantType) {
+      case 'gmail':
+        return 'Gmail Assistant';
+      case '1inch':
+        return '1inch Assistant';
+      case 'polygon':
+        return 'Polygon Assistant';
+      case 'celo':
+        return 'Celo Assistant';
+      case 'spreadsheet':
+        return 'Spreadsheet Assistant';
+      case 'metamask':
+      default:
+        return 'MetaMask Assistant';
+    }
+  }
+
+  // Get the correct icon path based on assistant type
+  function getAssistantIcon() {
+    switch(assistantType) {
+      case 'gmail':
+        return '/icon/gmail.png';
+      case '1inch':
+        return '/icon/1inch.png';
+      case 'polygon':
+        return '/icon/polygon.png';
+      case 'celo':
+        return '/icon/celo.png';
+      case 'spreadsheet':
+        return '/icon/spreadsheet.png';
+      case 'metamask':
+      default:
+        return '/icon/metamask.png';
+    }
+  }
 
   // Initialize conversation
   useEffect(() => {
@@ -87,32 +125,6 @@ export default function ShortcutDetails({ onClose, assistantType = 'metamask' })
     }, 600);
   };
 
-  // Determine the assistant title based on the type
-  const getAssistantTitle = () => {
-    switch(assistantType) {
-      case 'gmail':
-        return 'Gmail Assistant';
-      case '1inch':
-        return '1inch Assistant';
-      case 'metamask':
-      default:
-        return 'MetaMask Assistant';
-    }
-  };
-
-  // Get the correct icon path based on assistant type
-  const getAssistantIcon = () => {
-    switch(assistantType) {
-      case 'gmail':
-        return '/icon/gmail.png';
-      case '1inch':
-        return '/icon/1inch.png';
-      case 'metamask':
-      default:
-        return '/icon/metamask.png';
-    }
-  };
-
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -122,7 +134,7 @@ export default function ShortcutDetails({ onClose, assistantType = 'metamask' })
             <div className={styles.logoGlow}></div>
           </div>
           <h2>{getAssistantTitle()}</h2>
-          <button className={styles.closeButton} onClick={onClose}>×</button>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close">×</button>
         </div>
 
         <div className={styles.chatContainer} ref={chatContainerRef}>
@@ -158,4 +170,4 @@ export default function ShortcutDetails({ onClose, assistantType = 'metamask' })
       </div>
     </div>
   );
-} 
+}

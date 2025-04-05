@@ -26,7 +26,7 @@ const EXAMPLE_WORKFLOWS = [
 ];
 
 // Flow Chart Component to visualize the workflow
-const FlowChart = ({ workflow }) => {
+const FlowChart = ({ workflow, onRunFlow }) => {
   if (!workflow || workflow.length === 0) return null;
   
   // Filter to get only nodes and arrows
@@ -70,8 +70,41 @@ const FlowChart = ({ workflow }) => {
           })}
         </div>
       </div>
+      
+      {/* Run Flow button */}
+      {onRunFlow && (
+        <div className="mt-4">
+          <button
+            onClick={onRunFlow}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            Run Workflow
+          </button>
+        </div>
+      )}
     </div>
   );
+};
+
+// Helper function to format ETH amount
+const formatEther = (amount) => {
+  try {
+    // Try to use ethers if available
+    if (typeof ethers !== 'undefined' && ethers.utils) {
+      return ethers.utils.formatEther(amount);
+    } 
+    // Fallback to manual calculation
+    return (BigInt(amount) / BigInt(10**18)).toString();
+  } catch (error) {
+    // If all else fails, just return the original amount
+    console.error('Error formatting ETH amount:', error);
+    return amount;
+  }
+};
+
+// Helper function to validate Ethereum address format
+const isValidEthAddress = (address) => {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
 };
 
 export default function Test() {
@@ -82,6 +115,11 @@ export default function Test() {
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
+  const [workflowEmail, setWorkflowEmail] = useState('');
+  const [recipientAddress, setRecipientAddress] = useState('');
+  const [transactionAmount, setTransactionAmount] = useState('');
+  const [workflowStatus, setWorkflowStatus] = useState(null);
+  const [runningWorkflow, setRunningWorkflow] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Load saved workflows from localStorage when the component mounts
@@ -100,6 +138,131 @@ export default function Test() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Handle executing the workflow
+  const handleRunWorkflow = async (savedWorkflow = null) => {
+    // Use the provided saved workflow if available, otherwise use the current workflow
+    const workflowToRun = savedWorkflow || {
+      description: workflowInput || 'For each transaction in MetaMask notify in Gmail and record in Google Sheets',
+      workflow: workflowParsed,
+      email: workflowEmail
+    };
+    
+    // Determine which email to use
+    const emailToUse = savedWorkflow && savedWorkflow.email ? savedWorkflow.email : workflowEmail;
+    
+    // Get recipient address and amount - for saved workflows, we still need to get from DOM
+    let recipientAddressToUse = recipientAddress;
+    let amountToUse = transactionAmount;
+    
+    if (savedWorkflow) {
+      // Get inputs from the saved workflow form
+      recipientAddressToUse = document.getElementById(`recipient-address-${savedWorkflow.id}`)?.value;
+      amountToUse = document.getElementById(`amount-${savedWorkflow.id}`)?.value;
+    }
+    
+    // Validate required fields
+    if (!emailToUse) {
+      setWorkflowStatus({
+        success: false,
+        message: 'Please enter an email address to receive notifications'
+      });
+      return;
+    }
+    
+    if (!recipientAddressToUse) {
+      setWorkflowStatus({
+        success: false,
+        message: 'Please enter a recipient address'
+      });
+      return;
+    }
+    
+    // Validate Ethereum address format
+    if (!isValidEthAddress(recipientAddressToUse)) {
+      setWorkflowStatus({
+        success: false,
+        message: 'Please enter a valid Ethereum address (0x followed by 40 hexadecimal characters)'
+      });
+      return;
+    }
+    
+    if (!amountToUse) {
+      setWorkflowStatus({
+        success: false,
+        message: 'Please enter a transaction amount'
+      });
+      return;
+    }
+    
+    if (parseFloat(amountToUse) <= 0) {
+      setWorkflowStatus({
+        success: false,
+        message: 'Please enter a transaction amount greater than 0'
+      });
+      return;
+    }
+    
+    setRunningWorkflow(true);
+    setWorkflowStatus(null);
+
+    try {
+      // CHANGED: Call the transaction endpoint directly instead of the workflow endpoint
+      // This matches what mcptest.js is doing
+      const response = await fetch('http://localhost:3001/transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: recipientAddressToUse,
+          amount: amountToUse,
+          chainId: 11155111, // Using Sepolia testnet instead of Ethereum mainnet
+          email: emailToUse
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute transaction');
+      }
+
+      const data = await response.json();
+      
+      // Handle transaction status similar to mcptest.js
+      if (!data.success) {
+        setWorkflowStatus({
+          success: false,
+          message: data.message || 'Transaction failed'
+        });
+        return;
+      }
+
+      // If transaction approval email was sent
+      if (data.message && data.message.includes('pending approval')) {
+        setWorkflowStatus({
+          success: true,
+          pending: true,
+          message: 'Transaction pending email approval. Please check your email and click "Approve" to execute the transaction.'
+        });
+        return;
+      }
+      
+      // If transaction was processed immediately
+      setWorkflowStatus({
+        success: true,
+        message: 'Transaction submitted',
+        txData: data
+      });
+    } catch (error) {
+      console.error('Error executing workflow:', error);
+      setWorkflowStatus({
+        success: false,
+        message: error.message || 'Failed to execute workflow'
+      });
+    } finally {
+      setRunningWorkflow(false);
+    }
+  };
 
   // Handle chat message submission
   const handleSubmit = async (e) => {
@@ -146,6 +309,8 @@ export default function Test() {
   // Handle loading an example workflow
   const handleLoadExample = (example) => {
     setWorkflowInput(example.text);
+    setWorkflowParsed([]);
+    setWorkflowStatus(null);
   };
 
   // Handle workflow parsing
@@ -154,6 +319,7 @@ export default function Test() {
     if (!workflowInput.trim()) return;
 
     setWorkflowLoading(true);
+    setWorkflowStatus(null);
 
     try {
       // Use Claude AI to parse the workflow
@@ -190,6 +356,7 @@ export default function Test() {
         id: Date.now(), // Generate a unique ID based on timestamp
         description: workflowInput,
         workflow: workflowParsed,
+        email: workflowEmail || '', // Store the email if provided
         createdAt: new Date().toISOString()
       };
       
@@ -279,7 +446,184 @@ export default function Test() {
               
               {/* Visual Flow Chart */}
               <div className="mt-6 p-4 border border-gray-200 rounded-md bg-gray-50">
-                <FlowChart workflow={workflowParsed} />
+                <FlowChart workflow={workflowParsed} onRunFlow={handleRunWorkflow} />
+                
+                {/* Email Input for Workflow */}
+                <div className="mt-4 border-t border-gray-200 pt-4">
+                  <div className="mb-3">
+                    <label htmlFor="workflow-email" className="block text-sm font-medium text-gray-700">
+                      Email for Transaction Approval <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="workflow-email"
+                      type="email"
+                      value={workflowEmail}
+                      onChange={(e) => setWorkflowEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                      disabled={runningWorkflow}
+                      required
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      This email will receive notifications for MetaMask transactions
+                    </p>
+                  </div>
+                  
+                  {/* Transaction Inputs */}
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="recipient-address" className="block text-sm font-medium text-gray-700">
+                        Recipient Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="recipient-address"
+                        type="text"
+                        value={recipientAddress}
+                        onChange={(e) => setRecipientAddress(e.target.value)}
+                        placeholder="0x..."
+                        className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+                        Amount (ETH) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="amount"
+                        type="number"
+                        step="0.000000000000000001"
+                        value={transactionAmount}
+                        onChange={(e) => setTransactionAmount(e.target.value)}
+                        placeholder="0.0"
+                        className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Run Workflow Button */}
+                  <div className="mt-4">
+                    <button
+                      onClick={handleRunWorkflow}
+                      disabled={runningWorkflow || !workflowEmail || !recipientAddress || !transactionAmount}
+                      className="w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                    >
+                      {runningWorkflow ? 'Processing...' : 'Send Transaction'}
+                    </button>
+                    
+                    {/* Transaction Error Message */}
+                    {workflowStatus && !workflowStatus.success && (
+                      <div className="mt-2 p-2 bg-red-50 text-red-700 rounded-md text-sm">
+                        {workflowStatus.message}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Workflow Status */}
+                {workflowStatus && (
+                  <div className={`mt-4 p-4 rounded-md ${workflowStatus.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    <p className="font-medium">
+                      {workflowStatus.message || (workflowStatus.success ? 'Workflow executed successfully' : 'Failed to execute workflow')}
+                    </p>
+                    
+                    {/* Execution Result */}
+                    {workflowStatus.executionResult && (
+                      <div className="mt-3 border-t border-gray-200 pt-3">
+                        <h4 className="font-medium mb-2">Workflow Execution Results:</h4>
+                        <p>{workflowStatus.executionResult.message}</p>
+                        
+                        {workflowStatus.executionResult.emailSetup && (
+                          <div className="mt-2 bg-white bg-opacity-50 p-3 rounded">
+                            <h5 className="font-medium text-sm mb-1">Email Notification Setup:</h5>
+                            <p className="text-sm">
+                              {workflowStatus.executionResult.emailSetup.success 
+                                ? 'Email verification has been initiated. Please check your inbox.' 
+                                : 'Failed to set up email notifications.'}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {workflowStatus.executionResult.exampleTransaction && (
+                          <div className="mt-2 bg-white bg-opacity-50 p-3 rounded">
+                            <h5 className="font-medium text-sm mb-1">Example Transaction Handling:</h5>
+                            <p className="text-sm">When a transaction occurs, the following workflow will be triggered:</p>
+                            <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
+                              <p>From: {workflowStatus.executionResult.exampleTransaction.from}</p>
+                              <p>To: {workflowStatus.executionResult.exampleTransaction.to}</p>
+                              <p>Amount: {formatEther(workflowStatus.executionResult.exampleTransaction.amount)} ETH</p>
+                              <p>Chain ID: {workflowStatus.executionResult.exampleTransaction.chainId}</p>
+                            </div>
+                            <p className="mt-2 text-sm">An email notification will be sent to <span className="font-medium">{workflowStatus.email}</span> and the transaction will be recorded in Google Sheets.</p>
+                          </div>
+                        )}
+                        
+                        {workflowStatus.executionResult.spreadsheetSetup && (
+                          <div className="mt-2 bg-white bg-opacity-50 p-3 rounded">
+                            <h5 className="font-medium text-sm mb-1">Google Sheets Setup:</h5>
+                            <p className="text-sm">
+                              {workflowStatus.executionResult.spreadsheetSetup.success 
+                                ? 'Google Sheets has been prepared for transaction recording.' 
+                                : 'Failed to set up Google Sheets.'}
+                            </p>
+                            {workflowStatus.executionResult.spreadsheetSetup.reportUrl && (
+                              <p className="text-sm mt-1">
+                                <a 
+                                  href={workflowStatus.executionResult.spreadsheetSetup.reportUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  View Google Sheet
+                                </a>
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {workflowStatus.executionResult.error && (
+                          <div className="mt-2 bg-red-50 p-3 rounded">
+                            <h5 className="font-medium text-sm mb-1">Error:</h5>
+                            <p className="text-sm text-red-700">{workflowStatus.executionResult.error}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {workflowStatus.details && !workflowStatus.executionResult && (
+                      <div className="mt-2 text-sm">
+                        <pre className="whitespace-pre-wrap bg-white bg-opacity-50 p-3 rounded">
+                          {JSON.stringify(workflowStatus.details, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    
+                    {workflowStatus.functions && (
+                      <div className="mt-3 border-t border-gray-200 pt-3">
+                        <h4 className="font-medium mb-2">Workflow Analysis:</h4>
+                        <div className="bg-white bg-opacity-50 p-3 rounded text-sm">
+                          <p><strong>Name:</strong> {workflowStatus.functions.workflowName}</p>
+                          <p><strong>Description:</strong> {workflowStatus.functions.description}</p>
+                          
+                          {workflowStatus.functions.steps && workflowStatus.functions.steps.length > 0 && (
+                            <div className="mt-2">
+                              <p className="font-medium">Steps:</p>
+                              <ol className="list-decimal list-inside mt-1">
+                                {workflowStatus.functions.steps.map((step, index) => (
+                                  <li key={index} className="mt-1">
+                                    <span className="font-medium">{step.service}.{step.function}</span>
+                                    <p className="text-xs ml-4 text-gray-600">{step.description}</p>
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 {/* Save Workflow Button */}
                 <div className="mt-4 flex justify-end">
@@ -299,25 +643,244 @@ export default function Test() {
             <div className="mt-8 border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold mb-4">Saved Workflows</h3>
               <div className="space-y-4">
-                {savedWorkflows.map((saved) => (
-                  <div key={saved.id} className="border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-md">{saved.description}</h4>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Saved on {new Date(saved.createdAt).toLocaleString()}
-                        </p>
+                {savedWorkflows.map((saved) => {
+                  // Determine if this workflow has a saved email
+                  const hasSavedEmail = saved.email && saved.email.trim() !== '';
+                  
+                  return (
+                    <div key={saved.id} className="border border-gray-200 rounded-md p-4 bg-gray-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-md">{saved.description}</h4>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Saved on {new Date(saved.createdAt).toLocaleString()}
+                          </p>
+                          {hasSavedEmail && (
+                            <p className="text-xs text-blue-500 mt-1">
+                              Email: {saved.email}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => {
+                              // Use the saved email if available
+                              if (hasSavedEmail) {
+                                setWorkflowEmail(saved.email);
+                              }
+                              setWorkflowStatus(null);
+                              handleRunWorkflow(saved);
+                            }}
+                            className="px-2 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 text-sm"
+                            disabled={runningWorkflow}
+                          >
+                            {runningWorkflow ? 'Running...' : 'Run'}
+                          </button>
+                          <button 
+                            onClick={() => deleteWorkflow(saved.id)}
+                            className="px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                      <button 
-                        onClick={() => deleteWorkflow(saved.id)}
-                        className="px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm"
-                      >
-                        Delete
-                      </button>
+                      <FlowChart workflow={saved.workflow} />
+                      
+                      {/* Email Input for Saved Workflow */}
+                      <div className="mt-4 border-t border-gray-200 pt-4">
+                        <div className="mb-3">
+                          <label htmlFor={`workflow-email-${saved.id}`} className="block text-sm font-medium text-gray-700">
+                            Email for Transaction Approval <span className="text-red-500">*</span>
+                          </label>
+                          <div className="mt-1 flex space-x-2">
+                            <input
+                              id={`workflow-email-${saved.id}`}
+                              type="email"
+                              value={hasSavedEmail ? saved.email : workflowEmail}
+                              onChange={(e) => {
+                                // If this workflow has a saved email, update it
+                                if (hasSavedEmail) {
+                                  const updatedWorkflows = savedWorkflows.map(workflow => {
+                                    if (workflow.id === saved.id) {
+                                      return {
+                                        ...workflow,
+                                        email: e.target.value
+                                      };
+                                    }
+                                    return workflow;
+                                  });
+                                  setSavedWorkflows(updatedWorkflows);
+                                  localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
+                                } else {
+                                  setWorkflowEmail(e.target.value);
+                                }
+                              }}
+                              placeholder="Enter your email address"
+                              className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                              disabled={runningWorkflow}
+                              required
+                            />
+                            <button
+                              onClick={() => {
+                                setWorkflowStatus(null);
+                                // Use the saved email if available
+                                if (hasSavedEmail) {
+                                  setWorkflowEmail(saved.email);
+                                }
+                                handleRunWorkflow(saved);
+                              }}
+                              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                              disabled={
+                                runningWorkflow || 
+                                (!workflowEmail && !hasSavedEmail) || 
+                                !document.getElementById(`recipient-address-${saved.id}`)?.value || 
+                                !document.getElementById(`amount-${saved.id}`)?.value
+                              }
+                            >
+                              {runningWorkflow ? 'Running...' : 'Run Workflow'}
+                            </button>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-500">
+                            This email will receive notifications for MetaMask transactions
+                          </p>
+                          
+                          {/* Transaction Inputs for Saved Workflow */}
+                          <div className="mt-4 grid grid-cols-2 gap-4">
+                            <div>
+                              <label htmlFor={`recipient-address-${saved.id}`} className="block text-sm font-medium text-gray-700">
+                                Recipient Address <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                id={`recipient-address-${saved.id}`}
+                                type="text"
+                                placeholder="0x..."
+                                className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor={`amount-${saved.id}`} className="block text-sm font-medium text-gray-700">
+                                Amount (ETH) <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                id={`amount-${saved.id}`}
+                                type="number"
+                                step="0.000000000000000001"
+                                placeholder="0.0"
+                                className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Display workflow status when it's this specific workflow running */}
+                      {workflowStatus && (
+                        <div className={`mt-4 p-4 rounded-md ${workflowStatus.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                          <p className="font-medium">
+                            {workflowStatus.message || (workflowStatus.success ? 'Workflow executed successfully' : 'Failed to execute workflow')}
+                          </p>
+                          
+                          {/* Execution Result */}
+                          {workflowStatus.executionResult && (
+                            <div className="mt-3 border-t border-gray-200 pt-3">
+                              <h4 className="font-medium mb-2">Workflow Execution Results:</h4>
+                              <p>{workflowStatus.executionResult.message}</p>
+                              
+                              {workflowStatus.executionResult.emailSetup && (
+                                <div className="mt-2 bg-white bg-opacity-50 p-3 rounded">
+                                  <h5 className="font-medium text-sm mb-1">Email Notification Setup:</h5>
+                                  <p className="text-sm">
+                                    {workflowStatus.executionResult.emailSetup.success 
+                                      ? 'Email verification has been initiated. Please check your inbox.' 
+                                      : 'Failed to set up email notifications.'}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {workflowStatus.executionResult.exampleTransaction && (
+                                <div className="mt-2 bg-white bg-opacity-50 p-3 rounded">
+                                  <h5 className="font-medium text-sm mb-1">Example Transaction Handling:</h5>
+                                  <p className="text-sm">When a transaction occurs, the following workflow will be triggered:</p>
+                                  <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
+                                    <p>From: {workflowStatus.executionResult.exampleTransaction.from}</p>
+                                    <p>To: {workflowStatus.executionResult.exampleTransaction.to}</p>
+                                    <p>Amount: {formatEther(workflowStatus.executionResult.exampleTransaction.amount)} ETH</p>
+                                    <p>Chain ID: {workflowStatus.executionResult.exampleTransaction.chainId}</p>
+                                  </div>
+                                  <p className="mt-2 text-sm">An email notification will be sent to <span className="font-medium">{workflowStatus.email}</span> and the transaction will be recorded in Google Sheets.</p>
+                                </div>
+                              )}
+                              
+                              {workflowStatus.executionResult.spreadsheetSetup && (
+                                <div className="mt-2 bg-white bg-opacity-50 p-3 rounded">
+                                  <h5 className="font-medium text-sm mb-1">Google Sheets Setup:</h5>
+                                  <p className="text-sm">
+                                    {workflowStatus.executionResult.spreadsheetSetup.success 
+                                      ? 'Google Sheets has been prepared for transaction recording.' 
+                                      : 'Failed to set up Google Sheets.'}
+                                  </p>
+                                  {workflowStatus.executionResult.spreadsheetSetup.reportUrl && (
+                                    <p className="text-sm mt-1">
+                                      <a 
+                                        href={workflowStatus.executionResult.spreadsheetSetup.reportUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        View Google Sheet
+                                      </a>
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {workflowStatus.executionResult.error && (
+                                <div className="mt-2 bg-red-50 p-3 rounded">
+                                  <h5 className="font-medium text-sm mb-1">Error:</h5>
+                                  <p className="text-sm text-red-700">{workflowStatus.executionResult.error}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {workflowStatus.details && !workflowStatus.executionResult && (
+                            <div className="mt-2 text-sm">
+                              <pre className="whitespace-pre-wrap bg-white bg-opacity-50 p-3 rounded">
+                                {JSON.stringify(workflowStatus.details, null, 2)}
+                              </pre>
+                            </div>
+                          )}
+                          
+                          {workflowStatus.functions && (
+                            <div className="mt-3 border-t border-gray-200 pt-3">
+                              <h4 className="font-medium mb-2">Workflow Analysis:</h4>
+                              <div className="bg-white bg-opacity-50 p-3 rounded text-sm">
+                                <p><strong>Name:</strong> {workflowStatus.functions.workflowName}</p>
+                                <p><strong>Description:</strong> {workflowStatus.functions.description}</p>
+                                
+                                {workflowStatus.functions.steps && workflowStatus.functions.steps.length > 0 && (
+                                  <div className="mt-2">
+                                    <p className="font-medium">Steps:</p>
+                                    <ol className="list-decimal list-inside mt-1">
+                                      {workflowStatus.functions.steps.map((step, index) => (
+                                        <li key={index} className="mt-1">
+                                          <span className="font-medium">{step.service}.{step.function}</span>
+                                          <p className="text-xs ml-4 text-gray-600">{step.description}</p>
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <FlowChart workflow={saved.workflow} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

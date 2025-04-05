@@ -5,6 +5,7 @@ import cors from 'cors';
 import { gmailService } from './workflows.js';
 import { metamaskService } from './workflows.js';
 import { spreadsheetService, workflows, handleWorkflowRequest } from './workflows.js';
+import { getCounterEvents, getCounterValue } from './scripts/events.js';
 
 // Load environment variables
 dotenv.config();
@@ -147,6 +148,54 @@ app.post('/api/transactions/graphs', async (req, res) => {
 
 // New endpoint for processing workflow requests from WorkflowPopup
 app.post('/api/workflow', handleWorkflowRequest);
+
+// Get events specifically for Counter contracts
+app.get('/api/events/counter', async (req, res) => {
+  try {
+    const { contractAddress } = req.query;
+    
+    if (!contractAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Contract address is required'
+      });
+    }
+    
+    const result = await getCounterEvents(contractAddress);
+    return res.json(result);
+  } catch (error) {
+    console.error('Error getting counter events:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error getting counter events',
+      error: error.message
+    });
+  }
+});
+
+// Get current value from a Counter contract
+app.get('/api/counter/value', async (req, res) => {
+  try {
+    const { contractAddress } = req.query;
+    
+    if (!contractAddress) {
+      return res.status(400).json({
+        success: false,
+        message: 'Contract address is required'
+      });
+    }
+    
+    const result = await getCounterValue(contractAddress);
+    return res.json(result);
+  } catch (error) {
+    console.error('Error getting counter value:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error getting counter value',
+      error: error.message
+    });
+  }
+});
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
