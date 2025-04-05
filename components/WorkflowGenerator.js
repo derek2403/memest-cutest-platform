@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 // Example workflow scenarios
 const EXAMPLE_WORKFLOWS = [
@@ -21,6 +22,25 @@ const EXAMPLE_WORKFLOWS = [
   {
     title: "Token Receiving Flow",
     text: "For each receiving token on MetaMask swap all to Solana on 1inch"
+  },
+  // New example workflows for smart contract event monitoring
+  {
+    title: "Monitor Celo Contract Events",
+    text: "Listen to smart contract on Celo chain then for each event emitted notify me on email",
+    type: "contract_monitor",
+    chain: "celo"
+  },
+  {
+    title: "Monitor Polygon Contract Events",
+    text: "Listen to smart contract on Polygon chain then for each event emitted notify me on email",
+    type: "contract_monitor",
+    chain: "polygon"
+  },
+  {
+    title: "Monitor All Chain Events",
+    text: "Listen to smart contracts on both Celo and Polygon chains then for each event emitted notify me on email",
+    type: "contract_monitor",
+    chain: "all"
   }
 ];
 
@@ -90,24 +110,95 @@ const isValidEthAddress = (address) => {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 };
 
+// Helper function to check if a workflow is a contract monitoring workflow
+const isContractMonitorWorkflow = (text) => {
+  const lowerText = text.toLowerCase();
+  return (
+    (lowerText.includes("listen") || lowerText.includes("monitor")) &&
+    lowerText.includes("contract") &&
+    (lowerText.includes("celo") || lowerText.includes("polygon")) &&
+    lowerText.includes("event") &&
+    lowerText.includes("notify") &&
+    lowerText.includes("email")
+  );
+};
+
+// Helper function to determine which chain to monitor based on workflow text
+const getChainToMonitor = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  if (lowerText.includes("celo") && !lowerText.includes("polygon")) {
+    return "celo";
+  } else if (lowerText.includes("polygon") && !lowerText.includes("celo")) {
+    return "polygon";
+  } else {
+    // Default to monitoring both chains
+    return "all";
+  }
+};
+
 const WorkflowGenerator = ({ onSaveWorkflow, onRunWorkflow, runningWorkflow, workflowStatus }) => {
+  const router = useRouter();
   const [workflowInput, setWorkflowInput] = useState('');
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowEmail, setWorkflowEmail] = useState('');
   const [recipientAddress, setRecipientAddress] = useState('');
   const [transactionAmount, setTransactionAmount] = useState('');
+  const [isContractMonitoring, setIsContractMonitoring] = useState(false);
+  const [chainToMonitor, setChainToMonitor] = useState('all');
 
   // Handle loading an example workflow
   const handleLoadExample = (example) => {
     setWorkflowInput(example.text);
     setWorkflowParsed([]);
+    
+    // If this is a contract monitoring workflow, set the flags
+    if (example.type === "contract_monitor") {
+      setIsContractMonitoring(true);
+      setChainToMonitor(example.chain);
+    } else {
+      setIsContractMonitoring(false);
+      setChainToMonitor('all');
+    }
   };
 
   // Handle workflow parsing
   const handleParseWorkflow = async (e) => {
     e.preventDefault();
     if (!workflowInput.trim()) return;
+
+    // Check if this is a contract monitoring workflow
+    const isMonitoringWorkflow = isContractMonitorWorkflow(workflowInput);
+    setIsContractMonitoring(isMonitoringWorkflow);
+    
+    if (isMonitoringWorkflow) {
+      // Determine which chain to monitor
+      const chainToMonitorValue = getChainToMonitor(workflowInput);
+      setChainToMonitor(chainToMonitorValue);
+      
+      // Create a simple parsed workflow for monitoring
+      const monitoringWorkflow = [
+        {
+          type: "node",
+          number: 1,
+          content: `Smart Contract on ${chainToMonitorValue === "all" ? "Multiple Chains" : chainToMonitorValue === "celo" ? "Celo Chain" : "Polygon Chain"}`
+        },
+        {
+          type: "arrow",
+          number: 1,
+          content: "Event Emitted"
+        },
+        {
+          type: "node",
+          number: 2,
+          content: "Email Notification"
+        }
+      ];
+      
+      setWorkflowParsed(monitoringWorkflow);
+      return;
+    }
 
     setWorkflowLoading(true);
 
@@ -137,6 +228,24 @@ const WorkflowGenerator = ({ onSaveWorkflow, onRunWorkflow, runningWorkflow, wor
     }
   };
 
+  // Function to start contract monitoring
+  const startContractMonitoring = () => {
+    if (!workflowEmail) {
+      alert("Please enter an email address to receive notifications");
+      return;
+    }
+    
+    // Navigate to the counter-events page with the appropriate parameters
+    const queryParams = new URLSearchParams({
+      email: workflowEmail,
+      monitorCelo: chainToMonitor === "celo" || chainToMonitor === "all" ? "true" : "false",
+      monitorPolygon: chainToMonitor === "polygon" || chainToMonitor === "all" ? "true" : "false",
+      autostart: "true"
+    }).toString();
+    
+    router.push(`/counter-events?${queryParams}`);
+  };
+
   // Save the current parsed workflow
   const saveWorkflow = () => {
     if (!workflowParsed || workflowParsed.length === 0) return;
@@ -147,7 +256,9 @@ const WorkflowGenerator = ({ onSaveWorkflow, onRunWorkflow, runningWorkflow, wor
         description: workflowInput,
         workflow: workflowParsed,
         email: workflowEmail || '', // Store the email if provided
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        isContractMonitoring: isContractMonitoring,
+        chainToMonitor: chainToMonitor
       };
       
       onSaveWorkflow(newSavedWorkflow);
@@ -160,6 +271,13 @@ const WorkflowGenerator = ({ onSaveWorkflow, onRunWorkflow, runningWorkflow, wor
 
   // Handle running the workflow
   const handleRunWorkflow = () => {
+    // If this is a contract monitoring workflow, start monitoring
+    if (isContractMonitoring) {
+      startContractMonitoring();
+      return;
+    }
+    
+    // Otherwise, proceed with regular transaction workflow
     // Validate required fields
     if (!workflowEmail) {
       alert('Please enter an email address to receive notifications');
@@ -220,7 +338,11 @@ const WorkflowGenerator = ({ onSaveWorkflow, onRunWorkflow, runningWorkflow, wor
       <form onSubmit={handleParseWorkflow} className="flex flex-col gap-3">
         <textarea
           value={workflowInput}
-          onChange={(e) => setWorkflowInput(e.target.value)}
+          onChange={(e) => {
+            setWorkflowInput(e.target.value);
+            // Reset monitoring flags when input changes
+            setIsContractMonitoring(false);
+          }}
           placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Solana on 1inch"
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
           disabled={workflowLoading}
@@ -258,7 +380,7 @@ const WorkflowGenerator = ({ onSaveWorkflow, onRunWorkflow, runningWorkflow, wor
             <div className="mt-4 border-t border-gray-200 pt-4">
               <div className="mb-3">
                 <label htmlFor="workflow-email" className="block text-sm font-medium text-gray-700">
-                  Email for Transaction Approval <span className="text-red-500">*</span>
+                  Email for {isContractMonitoring ? "Event Notifications" : "Transaction Approval"} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="workflow-email"
@@ -271,52 +393,85 @@ const WorkflowGenerator = ({ onSaveWorkflow, onRunWorkflow, runningWorkflow, wor
                   required
                 />
                 <p className="mt-1 text-sm text-gray-500">
-                  This email will receive notifications for MetaMask transactions
+                  {isContractMonitoring
+                    ? `This email will receive notifications for smart contract events on ${
+                        chainToMonitor === "all" ? "both Celo and Polygon chains" : 
+                        chainToMonitor === "celo" ? "Celo chain" : "Polygon chain"
+                      }`
+                    : "This email will receive notifications for MetaMask transactions"}
                 </p>
               </div>
               
-              {/* Transaction Inputs */}
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="recipient-address" className="block text-sm font-medium text-gray-700">
-                    Recipient Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="recipient-address"
-                    type="text"
-                    value={recipientAddress}
-                    onChange={(e) => setRecipientAddress(e.target.value)}
-                    placeholder="0x..."
-                    className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                    Amount (ETH) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    id="amount"
-                    type="number"
-                    step="0.000000000000000001"
-                    value={transactionAmount}
-                    onChange={(e) => setTransactionAmount(e.target.value)}
-                    placeholder="0.0"
-                    className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
+              {/* Only show transaction inputs for non-monitoring workflows */}
+              {!isContractMonitoring && (
+                <>
+                  {/* Transaction Inputs */}
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="recipient-address" className="block text-sm font-medium text-gray-700">
+                        Recipient Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="recipient-address"
+                        type="text"
+                        value={recipientAddress}
+                        onChange={(e) => setRecipientAddress(e.target.value)}
+                        placeholder="0x..."
+                        className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+                        Amount (ETH) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="amount"
+                        type="number"
+                        step="0.000000000000000001"
+                        value={transactionAmount}
+                        onChange={(e) => setTransactionAmount(e.target.value)}
+                        placeholder="0.0"
+                        className="mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
               
               {/* Run Workflow Button */}
               <div className="mt-4">
                 <button
                   onClick={handleRunWorkflow}
-                  disabled={runningWorkflow || !workflowEmail || !recipientAddress || !transactionAmount}
+                  disabled={
+                    runningWorkflow || 
+                    !workflowEmail || 
+                    (!isContractMonitoring && (!recipientAddress || !transactionAmount))
+                  }
                   className="w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
                 >
-                  {runningWorkflow ? 'Processing...' : 'Send Transaction'}
+                  {runningWorkflow 
+                    ? 'Processing...' 
+                    : isContractMonitoring 
+                      ? `Start Monitoring ${chainToMonitor === "all" ? "All Chains" : chainToMonitor === "celo" ? "Celo Chain" : "Polygon Chain"}`
+                      : 'Send Transaction'
+                  }
                 </button>
+                
+                {/* Show additional info for contract monitoring workflows */}
+                {isContractMonitoring && (
+                  <div className="mt-2 p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
+                    <p className="font-medium">Contract Addresses Being Monitored:</p>
+                    {(chainToMonitor === "polygon" || chainToMonitor === "all") && (
+                      <p className="mt-1">- Polygon Amoy: 0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1</p>
+                    )}
+                    {(chainToMonitor === "celo" || chainToMonitor === "all") && (
+                      <p className="mt-1">- Celo Alfajores: 0x74544b05aE0F30028bBf35CACE0114Faf0E794cc</p>
+                    )}
+                    <p className="mt-2">Click the button above to start monitoring events and receiving email notifications.</p>
+                  </div>
+                )}
                 
                 {/* Transaction Error Message */}
                 {workflowStatus && !workflowStatus.success && (
