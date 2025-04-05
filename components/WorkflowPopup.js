@@ -71,6 +71,19 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
+  const [savedWorkflows, setSavedWorkflows] = useState([]);
+  
+  // Load saved workflows from localStorage when the component mounts
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('savedWorkflows');
+      if (saved) {
+        setSavedWorkflows(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error loading saved workflows:', error);
+    }
+  }, []);
   
   // Parse the workflow when component mounts if initialInput is provided
   useEffect(() => {
@@ -189,6 +202,53 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
     }
   };
 
+  // Save the current parsed workflow to localStorage
+  const saveWorkflow = () => {
+    if (!workflowParsed || workflowParsed.length === 0) return;
+    
+    try {
+      const newSavedWorkflow = {
+        id: Date.now(), // Generate a unique ID based on timestamp
+        description: workflowInput,
+        workflow: workflowParsed,
+        createdAt: new Date().toISOString()
+      };
+      
+      const updatedWorkflows = [...savedWorkflows, newSavedWorkflow];
+      setSavedWorkflows(updatedWorkflows);
+      localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
+      
+      // Show approval screen after saving
+      setWorkflowApproved(true);
+    } catch (error) {
+      console.error('Error saving workflow:', error);
+      alert('Failed to save workflow');
+    }
+  };
+
+  // Delete a saved workflow
+  const deleteWorkflow = (id) => {
+    try {
+      const updatedWorkflows = savedWorkflows.filter(workflow => workflow.id !== id);
+      setSavedWorkflows(updatedWorkflows);
+      localStorage.setItem('savedWorkflows', JSON.stringify(updatedWorkflows));
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+      alert('Failed to delete workflow');
+    }
+  };
+  
+  // Load a saved workflow for editing
+  const loadWorkflow = (saved) => {
+    setWorkflowInput(saved.description);
+    setWorkflowParsed(saved.workflow);
+    
+    // Scroll to the top of the content area
+    if (document.querySelector(`.${styles.content}`)) {
+      document.querySelector(`.${styles.content}`).scrollTop = 0;
+    }
+  };
+
   return (
     <div className={styles.overlay}>
       <div className={styles.container}>
@@ -267,12 +327,46 @@ export default function WorkflowPopup({ initialInput = '', onClose }) {
                     </button>
                     <button 
                       className={styles.approveButton}
-                      onClick={() => {
-                        setWorkflowApproved(true);
-                      }}
+                      onClick={saveWorkflow}
                     >
                       Approve Workflow
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Saved Workflows Section */}
+              {savedWorkflows.length > 0 && (
+                <div className={styles.savedWorkflowsSection}>
+                  <h3 className={styles.savedWorkflowsTitle}>Saved Workflows</h3>
+                  <div className={styles.savedWorkflowsList}>
+                    {savedWorkflows.map((saved) => (
+                      <div key={saved.id} className={styles.savedWorkflow}>
+                        <div className={styles.savedWorkflowHeader}>
+                          <div className={styles.savedWorkflowInfo}>
+                            <h4 className={styles.savedWorkflowDescription}>{saved.description}</h4>
+                            <p className={styles.savedWorkflowDate}>
+                              Saved on {new Date(saved.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className={styles.savedWorkflowActions}>
+                            <button 
+                              className={styles.loadButton}
+                              onClick={() => loadWorkflow(saved)}
+                            >
+                              Load
+                            </button>
+                            <button 
+                              className={styles.deleteButton}
+                              onClick={() => deleteWorkflow(saved.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        <FlowChart workflow={saved.workflow} />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

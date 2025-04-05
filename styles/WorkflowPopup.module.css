@@ -418,6 +418,101 @@
 }
 
 .doneButton:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transform: scale(0.98);
+  box-shadow: 0 2px 15px rgba(108, 99, 255, 0.2);
+}
+
+/* Saved Workflows Section */
+.savedWorkflowsSection {
+  margin-top: 25px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.savedWorkflowsTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 15px 0;
+}
+
+.savedWorkflowsList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.savedWorkflow {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+.savedWorkflowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.savedWorkflowInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.savedWorkflowDescription {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px 0;
+}
+
+.savedWorkflowDate {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 0;
+}
+
+.savedWorkflowActions {
+  display: flex;
+  gap: 8px;
+}
+
+.loadButton {
+  padding: 5px 10px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.loadButton:hover {
+  background-color: #bbdefb;
+  color: #0d47a1;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  padding: 5px 10px;
+  background-color: #fff0f0;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background-color: #ffebee;
+  color: #c62828;
+  transform: translateY(-1px);
 } 
