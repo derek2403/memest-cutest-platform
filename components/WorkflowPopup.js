@@ -54,15 +54,19 @@ const FlowChart = ({ workflow }) => {
 const EXAMPLE_WORKFLOWS = [
   {
     title: 'MetaMask Transaction Tracker',
-    text: 'For each transaction in MetaMask notify in Gmail then record in Google Sheets'
+    text: 'For each transaction in MetaMask notify in Gmail then record in Spreadsheet'
   },
   {
     title: 'Token Swap Tracker',
-    text: 'For each transaction in MetaMask swap all tokens to Solana on 1inch'
+    text: 'For each transaction in MetaMask swap all tokens to Polygon on 1inch'
   },
   {
     title: 'Automated Reports',
-    text: 'Every Monday at 9 AM, collect data from Google Sheets and send a report to Gmail'
+    text: 'Every Monday at 9 AM, collect data from Spreadsheet and send a report to Gmail'
+  },
+  {
+    title: 'Cross-Chain Bridge',
+    text: 'For each Celo transaction, bridge tokens to Polygon using 1inch'
   }
 ];
 
@@ -230,7 +234,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                     <textarea
                       value={workflowInput}
                       onChange={(e) => setWorkflowInput(e.target.value)}
-                      placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Solana on 1inch"
+                      placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Polygon on 1inch"
                       className={styles.workflowInput}
                       disabled={workflowLoading}
                     />
