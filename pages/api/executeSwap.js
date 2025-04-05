@@ -16,36 +16,45 @@ async function sleep(ms) {
 
 // Check balance function
 async function checkBalance(web3, tokenAddress, walletAddress, requiredAmount) {
-  // For ETH/Native token
-  if (
-    tokenAddress.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-  ) {
-    const balance = await web3.eth.getBalance(walletAddress);
-    console.log(
-      `Native token balance: ${web3.utils.fromWei(balance, "ether")} ETH`
-    );
-    console.log(
-      `Required amount: ${web3.utils.fromWei(requiredAmount, "ether")} ETH`
-    );
+  try {
+    // For ETH/Native token
+    if (
+      tokenAddress.toLowerCase() ===
+      "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    ) {
+      const balance = await web3.eth.getBalance(walletAddress);
+      console.log(
+        `Native token balance: ${web3.utils.fromWei(balance, "ether")} ETH`
+      );
+      console.log(
+        `Required amount: ${web3.utils.fromWei(requiredAmount, "ether")} ETH`
+      );
+      return BigInt(balance) >= BigInt(requiredAmount);
+    }
+
+    // For ERC20 tokens
+    const minABI = [
+      {
+        constant: true,
+        inputs: [{ name: "_owner", type: "address" }],
+        name: "balanceOf",
+        outputs: [{ name: "balance", type: "uint256" }],
+        type: "function",
+      },
+    ];
+
+    const contract = new web3.eth.Contract(minABI, tokenAddress);
+    const balance = await contract.methods.balanceOf(walletAddress).call();
+    console.log(`Token balance: ${balance}`);
+    console.log(`Required amount: ${requiredAmount}`);
     return BigInt(balance) >= BigInt(requiredAmount);
+  } catch (error) {
+    console.error(
+      `Error checking balance for token ${tokenAddress}:`,
+      error.message
+    );
+    throw new Error(`Failed to check token balance: ${error.message}`);
   }
-
-  // For ERC20 tokens
-  const minABI = [
-    {
-      constant: true,
-      inputs: [{ name: "_owner", type: "address" }],
-      name: "balanceOf",
-      outputs: [{ name: "balance", type: "uint256" }],
-      type: "function",
-    },
-  ];
-
-  const contract = new web3.eth.Contract(minABI, tokenAddress);
-  const balance = await contract.methods.balanceOf(walletAddress).call();
-  console.log(`Token balance: ${balance}`);
-  console.log(`Required amount: ${requiredAmount}`);
-  return BigInt(balance) >= BigInt(requiredAmount);
 }
 
 // Check allowance function
@@ -127,33 +136,43 @@ export default async function handler(req, res) {
   try {
     // Get environment variables
     const privateKey = process.env.PRIVATE_KEY;
-    const rpc = process.env.ALCHEMY_URL;
+    const arbitrumRpc = process.env.ARBITRUM_URL;
+    const ethereumRpc = process.env.ETHEREUM_URL;
     const authKey = process.env.AUTH_KEY;
     const source = "sdk-tutorial";
 
     // Get parameters from request
     const { walletAddress } = req.body;
 
-    // Initialize web3 and SDK
-    const web3 = new Web3(rpc);
+    // Initialize web3 instances for different chains
+    const arbitrumWeb3 = new Web3(arbitrumRpc);
+    const ethereumWeb3 = new Web3(ethereumRpc);
+
+    // Use the appropriate web3 instance based on the source chain
+    const sourceWeb3 = arbitrumWeb3;
+
+    // Initialize SDK
     const sdk = new SDK({
       url: "https://api.1inch.dev/fusion-plus",
       authKey,
-      blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3),
+      blockchainProvider: new PrivateKeyProviderConnector(
+        privateKey,
+        sourceWeb3
+      ),
     });
 
     // Set up swap parameters
-    const amount = "5000000000000000"; // 0.005 ETH instead of 0.01 ETH
-    const srcToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
-    const dstToken = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+    const amount = "1000000000000000"; // 0.005 ETH
+    const srcToken = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"; // WETH on Arbitrum
+    const dstToken = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"; // WETH on Ethereum
     const INCH_ROUTER = "0x1111111254eeb25477b68fb85ed929f73a960582";
 
     // Perform pre-flight checks
     console.log("Performing pre-flight checks...");
 
-    // Check balance
+    // Check balance using the source chain web3 instance
     const hasBalance = await checkBalance(
-      web3,
+      sourceWeb3,
       srcToken,
       walletAddress,
       amount
@@ -170,7 +189,7 @@ export default async function handler(req, res) {
 
     // Check allowance
     const hasAllowance = await checkAllowance(
-      web3,
+      sourceWeb3,
       srcToken,
       walletAddress,
       INCH_ROUTER,
@@ -226,6 +245,7 @@ export default async function handler(req, res) {
 
     // Generate secrets for the swap
     const preset = PresetEnum.fast;
+
     const secrets = Array.from({
       length: quote.presets[preset].secretsCount,
     }).map(() => "0x" + randomBytes(32).toString("hex"));
