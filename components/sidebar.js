@@ -22,6 +22,8 @@ export function initSidebar(callbacks = {}) {
     const metamaskButton = document.createElement('button');
     metamaskButton.id = 'metamask-button';
     metamaskButton.className = 'sidebar-button wallet-button';
+    metamaskButton.style.border = 'none';
+    metamaskButton.style.backgroundColor = '#333a52';
     
     // Create icon for Metamask
     const metamaskIcon = document.createElement('img');
@@ -45,11 +47,11 @@ export function initSidebar(callbacks = {}) {
     
     // Create other service buttons
     const serviceButtons = [
-        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#A78BFA' },
-        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#35D07F' },
-        { id: 'oneinch-button', text: '1inch', icon: '/icon/1inch.png', color: '#60A5FA' },
-        { id: 'spreadsheet-button', text: 'Spreadsheet', icon: '/icon/spreadsheet.png', color: '#4ADE80' },
-        { id: 'gmail-button', text: 'Gmail', icon: '/icon/gmail.png', color: '#F87171' }
+        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#35287a' },
+        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#0a6e4c' },
+        { id: 'oneinch-button', text: '1inch', icon: '/icon/1inch.png', color: '#1e4896' },
+        { id: 'spreadsheet-button', text: 'Spreadsheet', icon: '/icon/spreadsheet.png', color: '#0a6e4c' },
+        { id: 'gmail-button', text: 'Gmail', icon: '/icon/gmail.png', color: '#992525' }
     ];
     
     serviceButtons.forEach(data => {
@@ -57,6 +59,7 @@ export function initSidebar(callbacks = {}) {
         button.id = data.id;
         button.className = 'sidebar-button service-button';
         button.style.backgroundColor = data.color;
+        button.style.border = 'none';
         
         // Create icon
         const icon = document.createElement('img');
@@ -99,80 +102,68 @@ export function initSidebar(callbacks = {}) {
             position: fixed;
             top: 20px;
             right: 20px;
-
             width: 220px;
-            background-color: rgba(30, 40, 50, 0.85);
+            background-color: #1a1f2e;
             border-radius: 12px;
             padding: 15px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            box-shadow: none;
             z-index: 1000;
             font-family: 'Poppins', sans-serif;
-            backdrop-filter: blur(5px);
-            border: 2px solid rgba(100, 180, 255, 0.3);
-            clip-path: polygon(
-                0% 5%, 5% 0%, 95% 0%, 100% 5%,
-                100% 95%, 95% 100%, 5% 100%, 0% 95%
-            );
+            border: none;
         }
         
         .sidebar-heading {
-            color: #FFFFFF;
             margin: 0;
             text-align: center;
             letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .main-heading {
-            font-size: 22px;
+            font-size: 20px;
             margin-bottom: 15px;
             padding-bottom: 8px;
-            border-bottom: 2px solid rgba(100, 180, 255, 0.5);
-            font-weight: 700;
-            color: #7DF9FF;
+            border-bottom: 1px dotted rgba(255, 255, 255, 0.4);
+            font-weight: 600;
+            color: #ff6d42;
             font-family: 'Poppins', sans-serif;
         }
         
         .sub-heading {
             font-size: 16px;
             margin-top: 15px;
-            margin-bottom: 8px;
-            color: #A0E6FF;
-            font-weight: 600;
+            margin-bottom: 12px;
+            color: #8b949e;
+            font-weight: 500;
             font-family: 'Poppins', sans-serif;
-
         }
         
         .sidebar-button {
             display: flex;
             align-items: center;
             width: 100%;
-
             padding: 10px 12px;
-            margin-bottom: 8px;
-            border: none;
-            border-radius: 6px;
+            margin-bottom: 10px;
+            border: none !important;
+            border-radius: 30px;
             cursor: pointer;
-            font-family: 'Quicksand', sans-serif;
-            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
             font-size: 14px;
             transition: all 0.2s ease;
             text-align: left;
-            clip-path: polygon(
-                0% 10%, 5% 0%, 95% 0%, 100% 10%,
-                100% 90%, 95% 100%, 5% 100%, 0% 90%
-            );
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+            box-shadow: none !important;
+            outline: none !important;
         }
         
         .wallet-button {
-            background-color: #FDBA74; /* Lighter orange for Metamask */
-            color: #333333;
+            background-color: #23283e;
+            color: #FFFFFF;
+            box-shadow: none;
         }
         
         .service-button {
             color: #FFFFFF;
-
+            box-shadow: none;
         }
         
         .button-icon {
@@ -182,17 +173,12 @@ export function initSidebar(callbacks = {}) {
             object-fit: contain;
         }
         
-
         .sidebar-button:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
             filter: brightness(1.1);
         }
         
         .sidebar-button:active {
-
             transform: translateY(1px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
         @keyframes fadeIn {

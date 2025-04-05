@@ -29,7 +29,7 @@ export default function Home() {
   const [sceneRef, setSceneRef] = useState(null);
 
   // Component level variables for animation and scene
-  let walkingSpeed = 0.05;
+  let walkingSpeed = 0.04; // Reduced by 20% from original 0.05
   let isAgentWalking = false;
   let aiAgent;
   let mixer;
@@ -123,7 +123,295 @@ export default function Home() {
     // Scene setup
     scene = new THREE.Scene();
     
-    // Load video background with original quality preserved
+    // Add subtle fog for depth perception
+    scene.fog = new THREE.FogExp2(0x000510, 0.0015);
+    
+    // Create an environment with a stylized night sky backdrop
+    const environmentGroup = new THREE.Group();
+    scene.add(environmentGroup);
+    
+    // Create a dark gradient sky background
+    const skyColors = {
+      topColor: new THREE.Color("#000000"),  // Pure black for top
+      middleColor: new THREE.Color("#050a20"), // Very dark blue for middle
+      bottomColor: new THREE.Color("#0a1030") // Dark blue with slight purple tone for bottom
+    };
+    
+    // Create a gradient background sphere
+    const skyGeometry = new THREE.SphereGeometry(200, 32, 32);
+    // Use a custom shader for the gradient sky
+    const skyMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        topColor: { value: skyColors.topColor },
+        middleColor: { value: skyColors.middleColor },
+        bottomColor: { value: skyColors.bottomColor }
+      },
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPosition.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 middleColor;
+        uniform vec3 bottomColor;
+        varying vec3 vWorldPosition;
+        void main() {
+          // Normalize position for gradient calculation (0 = bottom, 1 = top)
+          float h = normalize(vWorldPosition).y * 0.5 + 0.5;
+          
+          // Mix colors based on height with gentle transitions
+          vec3 color = mix(bottomColor, middleColor, smoothstep(0.0, 0.4, h));
+          color = mix(color, topColor, smoothstep(0.4, 0.9, h));
+          
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+      side: THREE.BackSide
+    });
+    
+    const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    environmentGroup.add(sky);
+    
+    // Create stylized stars with varied sizes and brightness
+    const starCount = 3000;
+    const starColors = [0xffffff, 0xffffee, 0xeeeeff, 0xccddff];
+    const starSizes = [0.4, 0.6, 0.8, 1.2, 1.5];
+    
+    // Generate multiple star layers for depth
+    for (let layer = 0; layer < 3; layer++) {
+      const starsGeometry = new THREE.BufferGeometry();
+      const starsMaterial = new THREE.PointsMaterial({
+        color: starColors[layer % starColors.length],
+        size: starSizes[layer % starSizes.length],
+        transparent: true,
+        opacity: 0.8 - (layer * 0.15),
+        sizeAttenuation: true
+      });
+      
+      const starsVertices = [];
+      const layerStarCount = Math.floor(starCount / (layer + 1));
+      
+      for (let i = 0; i < layerStarCount; i++) {
+        const radius = 150 + layer * 20;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+        
+        // Make sure most stars stay above horizon
+        if (y < -50) continue;
+        
+        starsVertices.push(x, y, z);
+      }
+      
+      starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+      const stars = new THREE.Points(starsGeometry, starsMaterial);
+      environmentGroup.add(stars);
+    }
+    
+    // Create twinkling stars with animation
+    const twinkleStarCount = 100;
+    const twinkleStarsGeometry = new THREE.BufferGeometry();
+    const twinkleStarsMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 2.0,
+      transparent: true,
+      opacity: 0.9,
+      sizeAttenuation: true,
+      map: createStarTexture(),
+      blending: THREE.AdditiveBlending
+    });
+    
+    const twinkleVertices = [];
+    const twinkleOpacities = [];
+    
+    for (let i = 0; i < twinkleStarCount; i++) {
+      const radius = 130;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+      
+      // Make sure twinkling stars are visible
+      if (y < 0) continue;
+      
+      twinkleVertices.push(x, y, z);
+      // Store initial twinkle state
+      twinkleOpacities.push(Math.random());
+    }
+    
+    twinkleStarsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(twinkleVertices, 3));
+    const twinkleStars = new THREE.Points(twinkleStarsGeometry, twinkleStarsMaterial);
+    environmentGroup.add(twinkleStars);
+    
+    // Create a softer, more stylized star texture
+    function createStarTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, 32, 32);
+      
+      // Create a soft radial gradient
+      const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      gradient.addColorStop(0, 'rgba(255,255,255,1)');
+      gradient.addColorStop(0.5, 'rgba(240,240,255,0.5)');
+      gradient.addColorStop(1, 'rgba(220,220,255,0)');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 32, 32);
+      
+      // Create simple cross shape
+      ctx.strokeStyle = 'rgba(180,180,255,0.8)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      // Horizontal line
+      ctx.moveTo(8, 16);
+      ctx.lineTo(24, 16);
+      // Vertical line
+      ctx.moveTo(16, 8);
+      ctx.lineTo(16, 24);
+      ctx.stroke();
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
+    }
+    
+    // Create shooting stars system
+    const shootingStarsGroup = new THREE.Group();
+    environmentGroup.add(shootingStarsGroup);
+    
+    // We'll store active shooting stars here
+    const activeShootingStars = [];
+    
+    // Function to create a shooting star
+    function createShootingStar() {
+      // Create a line geometry for the trail
+      const trailPoints = [];
+      const trailLength = 10 + Math.random() * 15; // Random trail length
+      
+      for (let i = 0; i < trailLength; i++) {
+        trailPoints.push(new THREE.Vector3(i * -0.8, 0, 0)); // Create a trail along x-axis
+      }
+      
+      const trailGeometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
+      
+      // Create a gradient material for the trail
+      const trailMaterial = new THREE.LineDashedMaterial({
+        color: 0xffffff,
+        linewidth: 2,
+        scale: 1,
+        dashSize: 0.5,
+        gapSize: 0.1,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      const trail = new THREE.Line(trailGeometry, trailMaterial);
+      trail.computeLineDistances(); // Required for dashed lines
+      
+      // Add a bright point at the head of the shooting star
+      const headGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+      const headMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffffff,
+        transparent: true,
+        opacity: 1.0
+      });
+      const head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.set(0, 0, 0);
+      
+      // Create a group for the shooting star
+      const shootingStar = new THREE.Group();
+      shootingStar.add(trail);
+      shootingStar.add(head);
+      
+      // Position and rotation
+      // Start from a random position high in the sky
+      const startX = (Math.random() * 2 - 1) * 120;
+      const startY = 60 + Math.random() * 100;
+      const startZ = (Math.random() * 2 - 1) * 120;
+      
+      shootingStar.position.set(startX, startY, startZ);
+      
+      // Random direction, but generally moving downward and at an angle
+      const dirX = -0.5 + Math.random();
+      const dirY = -1 - Math.random() * 0.5;
+      const dirZ = -0.5 + Math.random();
+      
+      const direction = new THREE.Vector3(dirX, dirY, dirZ).normalize();
+      
+      // Calculate rotation to face direction of movement
+      shootingStar.lookAt(shootingStar.position.clone().add(direction));
+      
+      // Add to scene
+      shootingStarsGroup.add(shootingStar);
+      
+      // Store properties for animation
+      return {
+        object: shootingStar,
+        direction: direction,
+        speed: 1 + Math.random() * 1.5, // Random speed
+        lifetime: 0,
+        maxLifetime: 3 + Math.random() * 2, // Random lifetime in seconds
+        head: head,
+        trail: trail
+      };
+    }
+    
+    // Function to update shooting stars in the animation loop
+    function updateShootingStars(delta) {
+      // Randomly create new shooting stars
+      if (Math.random() < 0.02) { // Adjust frequency as needed
+        activeShootingStars.push(createShootingStar());
+      }
+      
+      // Update existing shooting stars
+      for (let i = activeShootingStars.length - 1; i >= 0; i--) {
+        const star = activeShootingStars[i];
+        star.lifetime += delta;
+        
+        // Move the shooting star
+        star.object.position.add(star.direction.clone().multiplyScalar(star.speed * 15 * delta));
+        
+        // Fade out as lifetime increases
+        const fadeRatio = Math.min(1, star.lifetime / star.maxLifetime);
+        star.head.material.opacity = 1 - fadeRatio;
+        star.trail.material.opacity = (1 - fadeRatio) * 0.8;
+        
+        // Remove if lifetime exceeded or out of view
+        if (star.lifetime > star.maxLifetime || star.object.position.y < -50) {
+          shootingStarsGroup.remove(star.object);
+          activeShootingStars.splice(i, 1);
+        }
+      }
+    }
+    
+    // Create a stylized ground plane that extends beyond the room
+    const extendedGroundGeometry = new THREE.PlaneGeometry(500, 500);
+    const extendedGroundMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color("#050916"), // Very dark blue/black ground
+      side: THREE.DoubleSide,
+      roughness: 0.9
+    });
+    
+    const extendedGround = new THREE.Mesh(extendedGroundGeometry, extendedGroundMaterial);
+    extendedGround.rotation.x = -Math.PI / 2;
+    extendedGround.position.y = -0.01; // Slightly below room floor to prevent z-fighting
+    // Removing the extended ground to make the room float in space
+    // environmentGroup.add(extendedGround);
+    
+    // Use the video for star effects with reduced opacity
     const videoElement = document.createElement('video');
     videoElement.src = '/assets/fullstars.mp4';
     videoElement.loop = true;
@@ -131,35 +419,35 @@ export default function Home() {
     videoElement.playsInline = true;
     videoElement.autoplay = true;
     videoElement.crossOrigin = 'anonymous';
-
-    // Preserve original video quality
     videoElement.setAttribute('playsinline', '');
     videoElement.setAttribute('webkit-playsinline', '');
     videoElement.setAttribute('preload', 'auto');
 
-    // Create video texture with highest quality settings
     const videoTexture = new THREE.VideoTexture(videoElement);
-    videoTexture.minFilter = THREE.NearestFilter; // Use nearest filter for original pixels
-    videoTexture.magFilter = THREE.NearestFilter; // Use nearest filter for original pixels
-    videoTexture.format = THREE.RGBAFormat; // Use RGBA for full color information
+    videoTexture.minFilter = THREE.NearestFilter;
+    videoTexture.magFilter = THREE.NearestFilter;
+    videoTexture.format = THREE.RGBAFormat;
     
-    // Use correct color space for Three.js version
     if (THREE.SRGBColorSpace !== undefined) {
       videoTexture.colorSpace = THREE.SRGBColorSpace;
     } else if (THREE.sRGBEncoding !== undefined) {
       videoTexture.encoding = THREE.sRGBEncoding;
     }
     
-    // Disable mipmaps to preserve original quality
     videoTexture.generateMipmaps = false;
-    
-    // Ensure the video texture uses the full resolution
     videoTexture.needsUpdate = true;
 
-    // Set the video texture as the scene background
-    scene.background = videoTexture;
+    const videoSphereGeometry = new THREE.SphereGeometry(180, 32, 32);
+    const videoSphereMaterial = new THREE.MeshBasicMaterial({
+      map: videoTexture,
+      side: THREE.BackSide,
+      transparent: true,
+      opacity: 0.3 // Reduced opacity to blend with our starry sky
+    });
+    
+    const videoSphere = new THREE.Mesh(videoSphereGeometry, videoSphereMaterial);
+    environmentGroup.add(videoSphere);
 
-    // Start playing the video with multiple attempts to ensure it plays
     const ensureVideoPlays = () => {
       videoElement.play().catch(e => {
         console.warn('Video autoplay failed, retrying:', e);
@@ -178,16 +466,135 @@ export default function Home() {
     );
     camera.position.set(5, 5, 5);
     camera.lookAt(0, 0, 0);
+    
+    // Allow the camera to see more of the environment
+    camera.far = 500;
+    camera.updateProjectionMatrix();
 
-    // Renderer setup with optimizations
-    renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: "high-performance",
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = false;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
-    mountRef.current.appendChild(renderer.domElement);
+    // Check WebGL support before creating renderer
+    let isWebGLAvailable = false;
+    let isWebGL2Available = false;
+    let useLowPerformanceMode = false;
+    
+    try {
+      const canvas = document.createElement('canvas');
+      isWebGLAvailable = !!(
+        window.WebGLRenderingContext && 
+        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
+      );
+      isWebGL2Available = !!(
+        window.WebGL2RenderingContext && 
+        canvas.getContext('webgl2')
+      );
+      
+      // Override to always use maximum quality regardless of device
+      useLowPerformanceMode = false;
+      
+    } catch (e) {
+      console.error("WebGL detection failed:", e);
+    }
+
+    if (!isWebGLAvailable) {
+      // Create fallback content when WebGL is not supported
+      const fallbackDiv = document.createElement('div');
+      fallbackDiv.style.width = '100%';
+      fallbackDiv.style.height = '100vh';
+      fallbackDiv.style.display = 'flex';
+      fallbackDiv.style.flexDirection = 'column';
+      fallbackDiv.style.justifyContent = 'center';
+      fallbackDiv.style.alignItems = 'center';
+      fallbackDiv.style.backgroundColor = '#050a20';
+      fallbackDiv.style.color = 'white';
+      fallbackDiv.style.fontFamily = 'Arial, sans-serif';
+      fallbackDiv.style.padding = '20px';
+      fallbackDiv.style.textAlign = 'center';
+      
+      const header = document.createElement('h1');
+      header.textContent = 'WebGL Not Available';
+      
+      const message = document.createElement('p');
+      message.textContent = 'Your browser or device does not support WebGL, which is required to view this 3D content. Please try a different browser or device.';
+      
+      fallbackDiv.appendChild(header);
+      fallbackDiv.appendChild(message);
+      
+      // Clear any existing content and add the fallback
+      if (mountRef.current) {
+        mountRef.current.innerHTML = '';
+        mountRef.current.appendChild(fallbackDiv);
+      }
+      
+      // Return early to prevent further initialization
+      return;
+    }
+
+    // Renderer setup with optimizations (only reaches here if WebGL is available)
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true, // Always enable antialiasing for maximum quality
+        powerPreference: "high-performance",
+        alpha: true,
+        precision: "highp", // Always use high precision
+        failIfMajorPerformanceCaveat: false,
+        depth: true,
+        stencil: true, // Enable stencil buffer for advanced effects
+        preserveDrawingBuffer: false
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true; // Enable shadow mapping
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Use soft shadows for better quality
+      
+      // Always use the device's actual pixel ratio for maximum clarity
+      renderer.setPixelRatio(window.devicePixelRatio);
+      
+      // Adjust renderer context settings for better compatibility
+      const gl = renderer.getContext();
+      if (gl) {
+        gl.getExtension('OES_standard_derivatives');
+        gl.getExtension('OES_element_index_uint');
+        gl.getExtension('WEBGL_depth_texture');
+        // Try to get additional extensions for better quality
+        gl.getExtension('EXT_shader_texture_lod');
+        gl.getExtension('OES_texture_float');
+        gl.getExtension('OES_texture_half_float');
+      }
+      
+      mountRef.current.appendChild(renderer.domElement);
+      
+      console.log(`Using WebGL${isWebGL2Available ? '2' : '1'} with maximum quality settings`);
+      
+    } catch (e) {
+      console.error("WebGL renderer creation failed:", e);
+      // Handle renderer creation failure
+      const errorDiv = document.createElement('div');
+      errorDiv.style.width = '100%';
+      errorDiv.style.height = '100vh';
+      errorDiv.style.display = 'flex';
+      errorDiv.style.flexDirection = 'column';
+      errorDiv.style.justifyContent = 'center';
+      errorDiv.style.alignItems = 'center';
+      errorDiv.style.backgroundColor = '#050a20';
+      errorDiv.style.color = 'white';
+      errorDiv.style.fontFamily = 'Arial, sans-serif';
+      errorDiv.style.padding = '20px';
+      errorDiv.style.textAlign = 'center';
+      
+      const header = document.createElement('h1');
+      header.textContent = 'WebGL Error';
+      
+      const message = document.createElement('p');
+      message.textContent = 'There was an error creating the WebGL context. This might be due to hardware limitations or browser settings. Try updating your graphics drivers or enabling hardware acceleration in your browser settings.';
+      
+      errorDiv.appendChild(header);
+      errorDiv.appendChild(message);
+      
+      if (mountRef.current) {
+        mountRef.current.innerHTML = '';
+        mountRef.current.appendChild(errorDiv);
+      }
+      
+      return;
+    }
 
     // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -205,38 +612,125 @@ export default function Home() {
     controls.target.set(0, 1, 0); // Set target to center of room, at reasonable height
     controls.update();
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight.position.set(5, 10, 5);
-    directionalLight.castShadow = false;
-    scene.add(directionalLight);
-
-    // Add a second directional light from another angle
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight2.position.set(-5, 8, -5);
-    directionalLight2.castShadow = false;
-    scene.add(directionalLight2);
-
-    // Room dimensions
+    // Room dimensions (defined here so we can use them for lighting)
     const roomWidth = 7;
     const roomHeight = 3.5;
     const roomDepth = 7;
 
+    // Lighting - adjusted for night scene
+    const ambientLight = new THREE.AmbientLight(0x111122, 0.5); // Subtle blue ambient light
+    scene.add(ambientLight);
+
+    // Add a warmer light inside the room
+    const roomLight = new THREE.AmbientLight(0xffffcc, 0.9); // Warm light for the room
+    roomLight.position.set(0, 2, 0);
+    scene.add(roomLight);
+
+    // Main directional light (moonlight)
+    const directionalLight = new THREE.DirectionalLight(0xaae0ff, 0.8); // Cooler blue light
+    directionalLight.position.set(50, 100, 30);
+    directionalLight.castShadow = false;
+    scene.add(directionalLight);
+
+    // Add a second directional light from another angle
+    const directionalLight2 = new THREE.DirectionalLight(0xffebcd, 0.4); // Warm secondary light
+    directionalLight2.position.set(-5, 8, -5);
+    directionalLight2.castShadow = false;
+    scene.add(directionalLight2);
+
+    // Add a small point light near the window to simulate moonlight coming in
+    const windowLight = new THREE.PointLight(0xb0c4de, 0.9); // Light blue window light
+    windowLight.position.set(-roomWidth/2 + 0.5, 2.2, -2); // Position near window
+    windowLight.distance = 10;
+    windowLight.decay = 2;
+    scene.add(windowLight);
+
     // Floor (specific color)
     const floorGeometry = new THREE.PlaneGeometry(roomWidth, roomDepth);
+    
+    // Create a texture for wooden floor
+    const floorTexture = createWoodenFloorTexture();
+    floorTexture.wrapS = THREE.RepeatWrapping;
+    floorTexture.wrapT = THREE.RepeatWrapping;
+    floorTexture.repeat.set(3, 3); // Repeat the texture pattern
+    
     const floorMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color("#d8d9d8"), // Changed to a lighter gray color
+      color: new THREE.Color("#D2B48C"), // Change to lighter Tan color
       side: THREE.DoubleSide,
+      roughness: 0.7, // Slightly less rough for lighter wood
+      metalness: 0.1, // Less metalness for lighter wood
+      map: floorTexture
     });
+    
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0;
     floor.receiveShadow = false;
     floor.name = "floor"; // Name the floor for raycasting
     scene.add(floor);
+    
+    // Helper function to create a procedural wooden floor texture
+    function createWoodenFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      
+      // Base color (light wood)
+      ctx.fillStyle = '#E8D8C0'; // Lighter tan
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Create wood grain pattern
+      ctx.strokeStyle = '#C19A6B'; // Lighter brown for grain outlines
+      ctx.lineWidth = 1.5;
+      
+      // Horizontal planks
+      const plankHeight = canvas.height / 8;
+      for (let y = 0; y < canvas.height; y += plankHeight) {
+        ctx.fillStyle = '#DEBB9D'; // Light maple color
+        ctx.fillRect(0, y, canvas.width, plankHeight - 1);
+        
+        // Draw plank divider
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+        
+        // Draw wood grain
+        const grainLines = 20 + Math.floor(Math.random() * 10);
+        ctx.strokeStyle = 'rgba(160, 120, 80, 0.2)'; // Lighter, more transparent grain
+        ctx.lineWidth = 1;
+        
+        for (let i = 0; i < grainLines; i++) {
+          const xStart = Math.random() * canvas.width;
+          const curveAmount = Math.random() * 20 - 10;
+          
+          ctx.beginPath();
+          ctx.moveTo(xStart, y);
+          ctx.bezierCurveTo(
+            xStart + curveAmount, y + plankHeight / 3,
+            xStart - curveAmount, y + plankHeight * 2/3,
+            xStart, y + plankHeight
+          );
+          ctx.stroke();
+        }
+      }
+      
+      // Vertical planks
+      const plankWidth = canvas.width / 6;
+      for (let x = 0; x < canvas.width; x += plankWidth) {
+        // Draw plank divider
+        ctx.strokeStyle = '#C19A6B'; // Lighter brown for dividers
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      return texture;
+    }
     
     // Set floor boundaries based on room dimensions
     floorBoundaries = {
@@ -267,7 +761,7 @@ export default function Home() {
     const windowWidth = 1.2;
     const windowHeight = 1.2;
     const windowX = -roomWidth/2 + 0.01; // Slightly in front of the wall
-    const windowY = 2.2; // Heigh position
+    const windowY = 2.2; // Height position
     const windowZ = -2; // Same Z position as the bed and window frame
 
     // Create a white glass for the window
@@ -294,6 +788,8 @@ export default function Home() {
     windowGlass.rotation.y = Math.PI / 2; // Same rotation as the wall
     windowGlass.receiveShadow = false;
     scene.add(windowGlass);
+    
+    // Light rays and dust particles removed from the room for a cleaner interior look
 
     // Back wall (slightly darker color)
     const backWallGeometry = new THREE.PlaneGeometry(roomWidth, roomHeight);
@@ -1511,19 +2007,21 @@ export default function Home() {
 
     // Animation loop with performance optimizations
     let lastFrameTime = 0;
-    const targetFPS = 30; // Lower FPS for better performance
+    const targetFPS = 60; // Higher FPS for smoother animation
     const frameInterval = 1000 / targetFPS;
 
     function animate(currentTime) {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Throttle renders to target FPS
       const deltaTime = currentTime - lastFrameTime;
       if (deltaTime < frameInterval) return;
 
       const delta = deltaTime / 1000; // Convert to seconds
       lastFrameTime = currentTime - (deltaTime % frameInterval);
-
+      
+      // Update shooting stars
+      updateShootingStars(delta);
+      
       // Update AI Agent position if it's moving
       updateAgentPosition(delta);
 
