@@ -69,8 +69,8 @@ export function initSidebar(callbacks = {}, scene) {
     
     // Create other service buttons
     const serviceButtons = [
-        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#35287a', plugin: 'polygon' },
-        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#0a6e4c', plugin: 'celo' },
+        { id: 'polygon-button', text: 'Polygon', icon: '/icon/polygon.png', color: '#2e2370', plugin: 'polygon' },
+        { id: 'celo-button', text: 'Celo', icon: '/icon/celo.png', color: '#2bae71', plugin: 'celo' },
         { id: 'oneinch-button', text: '1inch', icon: '/icon/1inch.png', color: '#1e4896', plugin: 'oneinch' },
         { id: 'spreadsheet-button', text: 'Spreadsheet', icon: '/icon/spreadsheet.png', color: '#0a6e4c', plugin: 'spreadsheet' },
         { id: 'gmail-button', text: 'Gmail', icon: '/icon/gmail.png', color: '#992525', plugin: 'gmail' }
@@ -94,7 +94,7 @@ export function initSidebar(callbacks = {}, scene) {
         const buttonText = document.createElement('span');
         buttonText.textContent = data.text;
         buttonText.className = 'button-text';
-        buttonText.style.color = '#FFFFFF';
+        buttonText.style.color = '#FFFFFF';  // All buttons have white text for consistency
         button.appendChild(buttonText);
         
         // Create tick indicator
