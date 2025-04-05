@@ -36,13 +36,13 @@ export function spawnCeloModel(scene) {
       
       // Set the position to be on top of the low table
       model.position.set(
-        -0.5,  // Same x position as the low table
-        0.6,   // Slightly above the table surface
-        1.5    // Same z position as the low table
+        -0.5519415662663658,
+        0.58590545802205797, // Raised higher above the floor
+        1.29011611383365059,
       );
       
-      // Rotate the model to face outward
-      model.rotation.y = Math.PI / 2; // Match the table's rotation
+      // Rotate the model 270 degrees around Y axis
+      model.rotation.y = Math.PI / 2; // 270 degrees (same as 3π/2 clockwise)
       
       // Make sure model casts and receives shadows
       model.traverse((node) => {

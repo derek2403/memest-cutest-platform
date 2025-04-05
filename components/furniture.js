@@ -79,13 +79,48 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
           });
           
           // Position the low table in front of the couch - adjusted for 6x6 room
-          lowTable.position.set(-0.5, 0.1, 1.5); // Centered in front of couch
+          lowTable.position.set(-0.5, 0.05, 1.5); // Centered in front of couch, lowered slightly
           
           // Rotate the table
           lowTable.rotation.y = Math.PI / 2; // 45 degrees rotation
           
           scene.add(lowTable);
           console.log("Low table loaded successfully");
+          
+          // Now load the cactus to place on the table
+          /*
+          const cactusLoader = new GLTFLoader();
+          cactusLoader.load(
+            "/gltf/cactus_small_A.gltf",
+            (gltf) => {
+              const cactus = gltf.scene;
+              
+              // Disable shadows for the model
+              cactus.traverse((node) => {
+                if (node.isMesh) {
+                  node.castShadow = false;
+                  node.receiveShadow = false;
+                }
+              });
+              
+              // Position the cactus on the low table - adjusted for 6x6 room
+              cactus.position.set(-0.5, 0.6, 1.5); // Centered on table
+              
+              scene.add(cactus);
+              console.log("Small cactus loaded successfully");
+            },
+            (progress) => {
+              console.log(
+                "Loading cactus progress:",
+                (progress.loaded / progress.total) * 100,
+                "%"
+              );
+            },
+            (error) => {
+              console.error("Error loading cactus model:", error);
+            }
+          );
+          */
           
           // Load the book set to place on the table
           const bookSetLoader = new GLTFLoader();
@@ -107,7 +142,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
               });
               
               // Position the book set on the low table - adjusted for 6x6 room
-              bookSet.position.set(-0.5, 0.9, 2.3); // Adjusted position on table
+              bookSet.position.set(-0.5, 0.78, 2.3); // Adjusted position on table, lowered Y position from 0.9 to 0.5
               
               // Increase the rotation of the books for more visual interest
               bookSet.rotation.y = Math.PI / 3; // 60 degrees rotation
@@ -175,7 +210,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the rug - adjusted for 6x6 room
-      rug.position.set(-0.5, 0, 1.5); // Centered in the living area
+      rug.position.set(-0.5, -0.05, 1.5); // Centered in the living area, lowered slightly
       
       // Rotate the rug
       rug.rotation.y = 1.6;
@@ -307,189 +342,6 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
     }
   );
 
-  // Load the picture frame model for the wall above the couch
-  const couchWallPictureLoader = new GLTFLoader();
-  couchWallPictureLoader.load(
-    "/gltf/pictureframe_large_B.gltf",
-    (gltf) => {
-      const couchWallPicture = gltf.scene;
-      
-      // Disable shadows for the model
-      couchWallPicture.traverse((node) => {
-        if (node.isMesh) {
-          node.castShadow = false;
-          node.receiveShadow = false;
-        }
-      });
-      
-      // Position the picture frame on the wall above the couch - adjusted for 6x6 room
-      couchWallPicture.position.set(-3.4, 2.2, 1.5); // Adjusted to be above the couch
-      
-      // Rotate the picture frame to face into the room
-      couchWallPicture.rotation.y = Math.PI / 2;
-      
-      scene.add(couchWallPicture);
-      console.log("Couch wall picture frame loaded successfully");
-    },
-    (progress) => {
-      console.log(
-        "Loading couch wall picture frame progress:",
-        (progress.loaded / progress.total) * 100,
-        "%"
-      );
-    },
-    (error) => {
-      console.error("Error loading couch wall picture frame:", error);
-    }
-  );
-//AC
-  // Load the air conditioner model
-  const airConditionerLoader = new FBXLoader();
-  airConditionerLoader.load(
-    "/fbx/Air Conditioner.fbx",
-    (fbx) => {
-      // Disable shadows for the model and add material
-      fbx.traverse((node) => {
-        if (node.isMesh) {
-          node.castShadow = false;
-          node.receiveShadow = false;
-
-          // Add a light gray material to the air conditioner
-          node.material = new THREE.MeshStandardMaterial({
-            color: 0xf0f0f0, // Light gray color
-            roughness: 0.5,
-            metalness: 0.7, // Make it slightly metallic
-          });
-        }
-      });
-      
-      // Position the air conditioner high on the wall - adjusted for larger room
-      fbx.position.set(0, roomHeight - 0.9, -roomDepth/2 + 0.3); // Top of back wall
-      
-      // Scale the model if needed (adjust these values based on the model size)
-      fbx.scale.set(0.015, 0.015, 0.015);
-      
-      scene.add(fbx);
-      console.log("Air conditioner loaded successfully");
-    },
-    (progress) => {
-      console.log(
-        "Loading air conditioner progress:",
-        (progress.loaded / progress.total) * 100,
-        "%"
-      );
-    },
-    (error) => {
-      console.error("Error loading air conditioner model:", error);
-    }
-  );
-
-  // Load the window frame model
-  const windowFrameLoader = new FBXLoader();
-  windowFrameLoader.load(
-    "/fbx/Window Frame 1.fbx",
-    (fbx) => {
-      // Disable shadows for the model and add material
-      fbx.traverse((node) => {
-        if (node.isMesh) {
-          node.castShadow = false;
-          node.receiveShadow = false;
-
-          // Add a material to the window frame
-          node.material = new THREE.MeshStandardMaterial({
-            color: 0xd2c8b5, // Light wood/beige color
-            roughness: 0.7,
-            metalness: 0.1, // Mostly non-metallic
-          });
-        }
-      });
-      
-      // Position the window frame on the left wall above the bed - adjusted for larger room
-      fbx.position.set(-roomWidth/2 + 0.15, 0.7, -2); // Left wall above the bed
-      
-      // Scale the model if needed
-      fbx.scale.set(0.01, 0.01, 0.01);
-
-      // Rotate to face into the room (from left wall)
-      fbx.rotation.y = Math.PI / 2; // 90 degrees rotation
-
-      scene.add(fbx);
-      console.log("Window frame loaded successfully");
-
-      // Load the second window frame (AC) model
-      const windowFrameAcLoader = new FBXLoader();
-      windowFrameAcLoader.load(
-        "/fbx/Window Frame Ac 1.fbx",
-        (acFbx) => {
-          // Disable shadows for the model and add material
-          acFbx.traverse((node) => {
-            if (node.isMesh) {
-              node.castShadow = false;
-              node.receiveShadow = false;
-
-              // Check if this is the middle part to make transparent
-              if (
-                node.name.includes("middle") ||
-                node.name.includes("glass") ||
-                node.name.includes("pane")
-              ) {
-                // Make the middle part transparent
-                node.material = new THREE.MeshPhysicalMaterial({
-                  color: 0xffffff,
-                  roughness: 0.1,
-                  metalness: 0.0,
-                  transparent: true,
-                  opacity: 0.3,
-                  transmission: 0.9, // Glass-like transparency
-                  clearcoat: 1.0,
-                });
-              } else {
-                // For the frame parts
-                node.material = new THREE.MeshStandardMaterial({
-                  color: 0xd2c8b5, // Match the first window frame
-                  roughness: 0.7,
-                  metalness: 0.1,
-                });
-              }
-            }
-          });
-          
-          // Position the AC window frame at the same position as the first window - adjusted for larger room
-          acFbx.position.set(-roomWidth/2 + 0.05, 0.7, -2); // Same as first window
-          
-          // Scale the model if needed
-          acFbx.scale.set(0.01, 0.01, 0.01);
-
-          // Rotate to face into the room (from left wall)
-          acFbx.rotation.y = Math.PI / 2; // 90 degrees rotation
-
-          scene.add(acFbx);
-          console.log("Window frame AC loaded successfully");
-        },
-        (progress) => {
-          console.log(
-            "Loading window frame AC progress:",
-            (progress.loaded / progress.total) * 100,
-            "%"
-          );
-        },
-        (error) => {
-          console.error("Error loading window frame AC model:", error);
-        }
-      );
-    },
-    (progress) => {
-      console.log(
-        "Loading window frame progress:",
-        (progress.loaded / progress.total) * 100,
-        "%"
-      );
-    },
-    (error) => {
-      console.error("Error loading window frame model:", error);
-    }
-  );
-
   // Load the medium table model for the right wall
   const mediumTableLoader = new GLTFLoader();
   mediumTableLoader.load(
@@ -610,33 +462,6 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
     },
     (error) => {
       console.error("Error loading drawers model:", error);
-    }
-  );
-
-  // Add unicorn image to the left wall
-  const textureLoader = new THREE.TextureLoader();
-  textureLoader.load(
-    "/assets/unicorn.png",
-    (texture) => {
-      const geometry = new THREE.PlaneGeometry(1.9, 1); // Adjust size as needed
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        side: THREE.DoubleSide
-      });
-      const unicornPlane = new THREE.Mesh(geometry, material);
-      
-      // Position on left wall
-      unicornPlane.position.set(-roomWidth/2 + 0.27, 2.2, 1.5);
-      
-      // Rotate to face into the room
-      unicornPlane.rotation.y = Math.PI / 2;
-      
-      scene.add(unicornPlane);
-      console.log("Unicorn image added to left wall");
-    },
-    undefined,
-    (error) => {
-      console.error("Error loading unicorn image:", error);
     }
   );
 } 
