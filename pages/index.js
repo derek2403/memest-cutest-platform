@@ -320,112 +320,13 @@ export default function Home() {
       return texture;
     }
     
-    // Create shooting stars system
-    const shootingStarsGroup = new THREE.Group();
-    environmentGroup.add(shootingStarsGroup);
-    
-    // We'll store active shooting stars here
-    const activeShootingStars = [];
-    
-    // Function to create a shooting star
-    function createShootingStar() {
-      // Create a line geometry for the trail
-      const trailPoints = [];
-      const trailLength = 10 + Math.random() * 15; // Random trail length
-      
-      for (let i = 0; i < trailLength; i++) {
-        trailPoints.push(new THREE.Vector3(i * -0.8, 0, 0)); // Create a trail along x-axis
-      }
-      
-      const trailGeometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
-      
-      // Create a gradient material for the trail
-      const trailMaterial = new THREE.LineDashedMaterial({
-        color: 0xffffff,
-        linewidth: 2,
-        scale: 1,
-        dashSize: 0.5,
-        gapSize: 0.1,
-        transparent: true,
-        opacity: 0.8
-      });
-      
-      const trail = new THREE.Line(trailGeometry, trailMaterial);
-      trail.computeLineDistances(); // Required for dashed lines
-      
-      // Add a bright point at the head of the shooting star
-      const headGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-      const headMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xffffff,
-        transparent: true,
-        opacity: 1.0
-      });
-      const head = new THREE.Mesh(headGeometry, headMaterial);
-      head.position.set(0, 0, 0);
-      
-      // Create a group for the shooting star
-      const shootingStar = new THREE.Group();
-      shootingStar.add(trail);
-      shootingStar.add(head);
-      
-      // Position and rotation
-      // Start from a random position high in the sky
-      const startX = (Math.random() * 2 - 1) * 120;
-      const startY = 60 + Math.random() * 100;
-      const startZ = (Math.random() * 2 - 1) * 120;
-      
-      shootingStar.position.set(startX, startY, startZ);
-      
-      // Random direction, but generally moving downward and at an angle
-      const dirX = -0.5 + Math.random();
-      const dirY = -1 - Math.random() * 0.5;
-      const dirZ = -0.5 + Math.random();
-      
-      const direction = new THREE.Vector3(dirX, dirY, dirZ).normalize();
-      
-      // Calculate rotation to face direction of movement
-      shootingStar.lookAt(shootingStar.position.clone().add(direction));
-      
-      // Add to scene
-      shootingStarsGroup.add(shootingStar);
-      
-      // Store properties for animation
-      return {
-        object: shootingStar,
-        direction: direction,
-        speed: 1 + Math.random() * 1.5, // Random speed
-        lifetime: 0,
-        maxLifetime: 3 + Math.random() * 2, // Random lifetime in seconds
-        head: head,
-        trail: trail
-      };
-    }
-    
-    // Function to update shooting stars in the animation loop
-    function updateShootingStars(delta) {
-      // Randomly create new shooting stars
-      if (Math.random() < 0.02) { // Adjust frequency as needed
-        activeShootingStars.push(createShootingStar());
-      }
-      
-      // Update existing shooting stars
-      for (let i = activeShootingStars.length - 1; i >= 0; i--) {
-        const star = activeShootingStars[i];
-        star.lifetime += delta;
-        
-        // Move the shooting star
-        star.object.position.add(star.direction.clone().multiplyScalar(star.speed * 15 * delta));
-        
-        // Fade out as lifetime increases
-        const fadeRatio = Math.min(1, star.lifetime / star.maxLifetime);
-        star.head.material.opacity = 1 - fadeRatio;
-        star.trail.material.opacity = (1 - fadeRatio) * 0.8;
-        
-        // Remove if lifetime exceeded or out of view
-        if (star.lifetime > star.maxLifetime || star.object.position.y < -50) {
-          shootingStarsGroup.remove(star.object);
-          activeShootingStars.splice(i, 1);
-        }
+    // Function to update stars in the animation loop
+    function updateStars(delta) {
+      // Update twinkling stars
+      if (twinkleStars && twinkleStars.material) {
+        // Create overall twinkling effect by varying material opacity
+        twinkleStars.material.opacity = 0.7 + Math.sin(Date.now() * 0.001) * 0.3;
+        twinkleStars.rotation.y += 0.0001; // Very slow rotation for added effect
       }
     }
     
@@ -1983,8 +1884,8 @@ export default function Home() {
       const delta = deltaTime / 1000; // Convert to seconds
       lastFrameTime = currentTime - (deltaTime % frameInterval);
       
-      // Update shooting stars
-      updateShootingStars(delta);
+      // Update stars
+      updateStars(delta);
       
       // Update AI Agent position if it's moving
       updateAgentPosition(delta);
