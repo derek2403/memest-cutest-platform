@@ -116,8 +116,8 @@ Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, a
 
 ## Important Code Directories📂 
 Here's a brief overview of important directories in our repository:
-### 3D Models & Assets
 
+### 3D Models & Assets
 - **/gltf** – GLTF format 3D models  
   - Furniture models (tables, chairs, shelves)  
   - Decorative items (rugs, plants, picture frames)  
@@ -127,10 +127,7 @@ Here's a brief overview of important directories in our repository:
 - **/public/assets** – Static assets for UI elements  
 - **/public/icon** – Icon resources for UI components  
 
----
-
 ### Pages & Layout
-
 - **/pages** – Core application pages  
   - **index.js** – Main 3D environment with Three.js scene setup  
   - **events.js** – Blockchain event monitoring interface  
