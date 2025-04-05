@@ -197,7 +197,79 @@ app.get('/api/counter/value', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Add a new endpoint to get the attestation report
+app.get('/attestation', async (req, res) => {
+  try {
+    // Get custom data from query parameter or use a default
+    const userData = req.query.data || `mcp-server:${new Date().toISOString()}`;
+    
+    // Use dynamic import for child_process to work with ES modules
+    const { spawn } = await import('child_process');
+    const python = spawn('python3', ['attestation.py', userData]);
+    
+    let result = '';
+    let stderr = '';
+    
+    // Collect data from the Python script
+    python.stdout.on('data', (data) => {
+      result += data.toString();
+    });
+    
+    // Handle errors
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+      console.error(`attestation.py error: ${data}`);
+    });
+    
+    // Send the response when the Python script exits
+    python.on('close', (code) => {
+      if (code !== 0) {
+        res.status(500).json({ 
+          success: false, 
+          error: 'Failed to generate attestation report',
+          code,
+          stderr
+        });
+        return;
+      }
+      
+      try {
+        const attestationData = JSON.parse(result);
+        res.json(attestationData);
+      } catch (parseError) {
+        res.status(500).json({ 
+          success: false, 
+          error: 'Failed to parse attestation result',
+          details: parseError.message,
+          result
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Attestation error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
 });
+
+const PORT = process.env.PORT || 3001;
+
+// Check if port is in use, and if so, increment until we find an available port
+const startServer = () => {
+  const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Visit the server at: ${process.env.APP_URL || `http://localhost:${PORT}`}`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${PORT} is already in use, trying ${PORT + 1}`);
+      process.env.PORT = (parseInt(PORT) + 1).toString();
+      startServer(); // Try the next port
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+};
+
+startServer();
