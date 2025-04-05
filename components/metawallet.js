@@ -521,6 +521,10 @@ export function spawnMetamaskFox(scene) {
   // If model already exists, just toggle visibility instead of reloading
   if (metamaskFoxLoaded && metamaskFoxModel) {
     metamaskFoxModel.visible = !metamaskFoxModel.visible;
+    // Update the global plugins tracking state
+    if (window.pluginsInRoom) {
+      window.pluginsInRoom.metamask = metamaskFoxModel.visible;
+    }
     console.log(`Metamask fox visibility set to: ${metamaskFoxModel.visible}`);
     return;
   }
@@ -581,6 +585,11 @@ export function spawnMetamaskFox(scene) {
       // Set tracking variables
       metamaskFoxLoaded = true;
       metamaskFoxModel = model;
+      
+      // Update the global plugins tracking state
+      if (window.pluginsInRoom) {
+        window.pluginsInRoom.metamask = true;
+      }
       
       // Set userData to make the model NON-clickable
       model.userData = { 

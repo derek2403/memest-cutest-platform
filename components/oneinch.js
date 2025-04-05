@@ -10,6 +10,10 @@ export function spawn1inchUnicorn(scene) {
   // If model already exists, just toggle visibility instead of reloading
   if (inchUnicornLoaded && inchUnicornModel) {
     inchUnicornModel.visible = !inchUnicornModel.visible;
+    // Update the global plugins tracking state
+    if (window.pluginsInRoom) {
+      window.pluginsInRoom.oneinch = inchUnicornModel.visible;
+    }
     console.log(`1inch unicorn visibility set to: ${inchUnicornModel.visible}`);
     return;
   }
@@ -47,6 +51,11 @@ export function spawn1inchUnicorn(scene) {
       // Update tracking variables
       inchUnicornLoaded = true;
       inchUnicornModel = model;
+      
+      // Update the global plugins tracking state
+      if (window.pluginsInRoom) {
+        window.pluginsInRoom.oneinch = true;
+      }
       
       console.log("1inch unicorn added to scene at:", model.position);
     },

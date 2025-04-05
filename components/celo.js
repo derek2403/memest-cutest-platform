@@ -10,6 +10,10 @@ export function spawnCeloModel(scene) {
   // If model already exists, just toggle visibility instead of reloading
   if (celoModelLoaded && celoModel) {
     celoModel.visible = !celoModel.visible;
+    // Update the global plugins tracking state
+    if (window.pluginsInRoom) {
+      window.pluginsInRoom.celo = celoModel.visible;
+    }
     console.log(`Celo model visibility set to: ${celoModel.visible}`);
     return;
   }
@@ -58,6 +62,11 @@ export function spawnCeloModel(scene) {
       // Update tracking variables
       celoModelLoaded = true;
       celoModel = model;
+      
+      // Update the global plugins tracking state
+      if (window.pluginsInRoom) {
+        window.pluginsInRoom.celo = true;
+      }
       
       console.log("Celo model added to scene at:", model.position);
     },

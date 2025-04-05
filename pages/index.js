@@ -28,6 +28,27 @@ const globalStyles = {
   }
 };
 
+// Global state to track which plugins are in the room
+window.pluginsInRoom = {
+  metamask: false,
+  polygon: false,
+  celo: false,
+  oneinch: false,
+  spreadsheet: false,
+  gmail: false,
+  // Function to get all active plugins (those that are in the room)
+  getActivePlugins: function() {
+    const active = [];
+    if (this.metamask) active.push('metamask');
+    if (this.polygon) active.push('polygon');
+    if (this.celo) active.push('celo');
+    if (this.oneinch) active.push('oneinch');
+    if (this.spreadsheet) active.push('spreadsheet');
+    if (this.gmail) active.push('gmail');
+    return active;
+  }
+};
+
 export default function Home() {
   const mountRef = useRef(null);
   const [sceneRef, setSceneRef] = useState(null);

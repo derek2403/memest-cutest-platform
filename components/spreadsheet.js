@@ -10,6 +10,10 @@ export function spawnSpreadsheetModel(scene) {
   // If model already exists, just toggle visibility instead of reloading
   if (spreadsheetModelLoaded && spreadsheetModel) {
     spreadsheetModel.visible = !spreadsheetModel.visible;
+    // Update the global plugins tracking state
+    if (window.pluginsInRoom) {
+      window.pluginsInRoom.spreadsheet = spreadsheetModel.visible;
+    }
     console.log(`Spreadsheet model visibility set to: ${spreadsheetModel.visible}`);
     return;
   }
@@ -58,6 +62,11 @@ export function spawnSpreadsheetModel(scene) {
       // Update tracking variables
       spreadsheetModelLoaded = true;
       spreadsheetModel = model;
+      
+      // Update the global plugins tracking state
+      if (window.pluginsInRoom) {
+        window.pluginsInRoom.spreadsheet = true;
+      }
       
       console.log("Spreadsheet model added to scene at:", model.position);
     },

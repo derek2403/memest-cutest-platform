@@ -50,25 +50,82 @@ const FlowChart = ({ workflow }) => {
   );
 };
 
-// Example workflows
-const EXAMPLE_WORKFLOWS = [
-  {
-    title: 'MetaMask Transaction Tracker',
-    text: 'For each transaction in MetaMask notify in Gmail then record in Spreadsheet'
-  },
-  {
-    title: 'Token Swap Tracker',
-    text: 'For each transaction in MetaMask swap all tokens to Polygon on 1inch'
-  },
-  {
-    title: 'Automated Reports',
-    text: 'Every Monday at 9 AM, collect data from Spreadsheet and send a report to Gmail'
-  },
-  {
-    title: 'Cross-Chain Bridge',
-    text: 'For each Celo transaction, bridge tokens to Polygon using 1inch'
+// Helper function to get workflows based on available plugins
+const getAvailableWorkflows = () => {
+  // Default workflows for when no plugins are in the room or window.pluginsInRoom is not available
+  const DEFAULT_WORKFLOWS = [
+    {
+      title: 'Add plugins to get started',
+      text: 'Drag plugins from the sidebar into your room to create workflows'
+    }
+  ];
+
+  // If window.pluginsInRoom is not available, return default workflows
+  if (!window.pluginsInRoom) {
+    return DEFAULT_WORKFLOWS;
   }
-];
+
+  // Get active plugins
+  const activePlugins = window.pluginsInRoom.getActivePlugins();
+  
+  // If no active plugins, return default workflows
+  if (activePlugins.length === 0) {
+    return DEFAULT_WORKFLOWS;
+  }
+
+  // Build workflows based on available plugins
+  const workflows = [];
+
+  // Add MetaMask workflows if available
+  if (activePlugins.includes('metamask')) {
+    if (activePlugins.includes('gmail')) {
+      workflows.push({
+        title: 'Transaction Notifications',
+        text: 'For each transaction in MetaMask notify in Gmail'
+      });
+    }
+    
+    if (activePlugins.includes('spreadsheet')) {
+      workflows.push({
+        title: 'Transaction Tracker',
+        text: 'For each transaction in MetaMask record in Spreadsheet'
+      });
+    }
+    
+    if (activePlugins.includes('polygon')) {
+      workflows.push({
+        title: 'Polygon Bridge',
+        text: 'For each transaction in MetaMask bridge to Polygon'
+      });
+    }
+  }
+
+  // Add cross-chain workflows if multiple chains available
+  if (activePlugins.includes('celo') && activePlugins.includes('polygon')) {
+    workflows.push({
+      title: 'Cross-Chain Bridge',
+      text: 'For each Celo transaction, bridge tokens to Polygon'
+    });
+  }
+
+  // Add spreadsheet workflows
+  if (activePlugins.includes('spreadsheet') && activePlugins.includes('gmail')) {
+    workflows.push({
+      title: 'Automated Reports',
+      text: 'Every Monday at 9 AM, collect data from Spreadsheet and send a report to Gmail'
+    });
+  }
+
+  // If we still have no workflows, add a generic one
+  if (workflows.length === 0) {
+    workflows.push({
+      title: 'Custom Workflow',
+      text: `Create a workflow using ${activePlugins.join(' and ')}`
+    });
+  }
+
+  return workflows;
+};
 
 export default function WorkflowPopup({ initialInput = '', onClose, showSavedSection = false, readOnly = false }) {
   const [workflowInput, setWorkflowInput] = useState(initialInput);
@@ -76,11 +133,13 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
+  const [availableWorkflows, setAvailableWorkflows] = useState([]);
   const savedSectionRef = React.useRef(null);
   
-  // Load saved workflows from localStorage when the component mounts
+  // Load saved workflows from localStorage and determine available workflows when the component mounts
   useEffect(() => {
     try {
+      // Load saved workflows
       const saved = localStorage.getItem('savedWorkflows');
       if (saved) {
         setSavedWorkflows(JSON.parse(saved));
@@ -94,11 +153,25 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
           }, 300); // Short delay to ensure component is fully rendered
         }
       }
+
+      // Initial load of available workflows
+      updateAvailableWorkflows();
+      
+      // Set interval to periodically check for plugin changes
+      const intervalId = setInterval(updateAvailableWorkflows, 1000);
+      
+      // Clean up interval on unmount
+      return () => clearInterval(intervalId);
     } catch (error) {
       console.error('Error loading saved workflows:', error);
     }
   }, [showSavedSection]);
   
+  // Function to update available workflows based on plugins in room
+  const updateAvailableWorkflows = () => {
+    setAvailableWorkflows(getAvailableWorkflows());
+  };
+
   // Parse the workflow when component mounts if initialInput is provided
   useEffect(() => {
     if (initialInput) {
@@ -218,7 +291,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                   <div className={styles.examplesSection}>
                     <p className={styles.examplesTitle}>Try one of these examples:</p>
                     <div className={styles.exampleButtons}>
-                      {EXAMPLE_WORKFLOWS.map((example, index) => (
+                      {availableWorkflows.map((example, index) => (
                         <button
                           key={index}
                           onClick={() => handleLoadExample(example)}
@@ -230,22 +303,31 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                     </div>
                   </div>
                   
-                  <form onSubmit={handleParseWorkflow} className={styles.workflowForm}>
-                    <textarea
-                      value={workflowInput}
-                      onChange={(e) => setWorkflowInput(e.target.value)}
-                      placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Polygon on 1inch"
-                      className={styles.workflowInput}
-                      disabled={workflowLoading}
-                    />
-                    <button
-                      type="submit"
-                      className={styles.parseButton}
-                      disabled={workflowLoading || !workflowInput.trim()}
-                    >
-                      {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
-                    </button>
-                  </form>
+                  {window.pluginsInRoom && window.pluginsInRoom.getActivePlugins().length === 0 ? (
+                    <div className={styles.noPluginsWarning}>
+                      <div className={styles.warningIcon}>⚠️</div>
+                      <h3>No Plugins Available</h3>
+                      <p>You need to add plugins to your room first before creating workflows.</p>
+                      <p>Drag plugins from the sidebar into your room, then return here.</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleParseWorkflow} className={styles.workflowForm}>
+                      <textarea
+                        value={workflowInput}
+                        onChange={(e) => setWorkflowInput(e.target.value)}
+                        placeholder="Enter a workflow description like: For each transaction in MetaMask notify in Gmail and swap all tokens to Polygon on 1inch"
+                        className={styles.workflowInput}
+                        disabled={workflowLoading}
+                      />
+                      <button
+                        type="submit"
+                        className={styles.parseButton}
+                        disabled={workflowLoading || !workflowInput.trim()}
+                      >
+                        {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
+                      </button>
+                    </form>
+                  )}
         
                   {workflowParsed.length > 0 && (
                     <div className={styles.resultSection}>

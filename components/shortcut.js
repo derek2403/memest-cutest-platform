@@ -6,8 +6,29 @@ export default function Shortcut({ onClose, onDrop }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  const [activePlugins, setActivePlugins] = useState([]);
   const popupRef = useRef(null);
   const dropZoneRef = useRef(null);
+
+  // Load active plugins when component mounts and periodically refresh
+  useEffect(() => {
+    // Initial load
+    updateActivePlugins();
+    
+    // Set up interval to check for changes (every 1 second)
+    const intervalId = setInterval(updateActivePlugins, 1000);
+    
+    // Function to update active plugins
+    function updateActivePlugins() {
+      if (window.pluginsInRoom) {
+        const active = window.pluginsInRoom.getActivePlugins();
+        setActivePlugins(active);
+      }
+    }
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleDragOver = (e) => {
     // Only allow drag over the drop zone box
@@ -131,6 +152,57 @@ export default function Shortcut({ onClose, onDrop }) {
         />
       );
     });
+  };
+
+  // Render only the icons for plugins that are in the room
+  const renderPluginIcons = () => {
+    // Define all plugin icons data
+    const allPlugins = [
+      { id: 'metamask', src: '/icon/metamask.png', alt: 'MetaMask' },
+      { id: 'gmail', src: '/icon/gmail.png', alt: 'Gmail' },
+      { id: 'oneinch', src: '/icon/1inch.png', alt: '1inch' },
+      { id: 'polygon', src: '/icon/polygon.png', alt: 'Polygon' },
+      { id: 'celo', src: '/icon/celo.png', alt: 'Celo' },
+      { id: 'spreadsheet', src: '/icon/spreadsheet.png', alt: 'Spreadsheet' }
+    ];
+
+    // Filter plugins that are in the room
+    const visiblePlugins = allPlugins.filter(plugin => 
+      activePlugins.includes(plugin.id)
+    );
+
+    // Group icons into rows (max 3 per row)
+    const rows = [];
+    for (let i = 0; i < visiblePlugins.length; i += 3) {
+      rows.push(visiblePlugins.slice(i, i + 3));
+    }
+
+    // If no plugins are in the room, display a message
+    if (rows.length === 0) {
+      return (
+        <div className={styles.noPluginsMessage}>
+          <p>No plugins are currently in the room.</p>
+          <p>Drag plugins from the sidebar into the room first.</p>
+        </div>
+      );
+    }
+
+    // Render rows of icons
+    return rows.map((row, rowIndex) => (
+      <div key={rowIndex} className={styles.iconRow}>
+        {row.map(plugin => (
+          <div key={plugin.id} className={styles.logoContainer}>
+            <img 
+              src={plugin.src} 
+              alt={plugin.alt} 
+              className={styles.shortcutIcon}
+              draggable="true"
+            />
+            <div className={styles.logoGlow}></div>
+          </div>
+        ))}
+      </div>
+    ));
   };
 
   // Make the icons in the shortcut component draggable
@@ -305,65 +377,7 @@ export default function Shortcut({ onClose, onDrop }) {
         </div>
         
         <div className={styles.content}>
-          <div className={styles.iconRow}>
-            <div className={styles.logoContainer}>
-              <img 
-                src="/icon/metamask.png" 
-                alt="MetaMask" 
-                className={styles.shortcutIcon}
-                draggable="true"
-              />
-              <div className={styles.logoGlow}></div>
-            </div>
-            <div className={styles.logoContainer}>
-              <img 
-                src="/icon/gmail.png" 
-                alt="Gmail" 
-                className={styles.shortcutIcon}
-                draggable="true"
-              />
-              <div className={styles.logoGlow}></div>
-            </div>
-            <div className={styles.logoContainer}>
-              <img 
-                src="/icon/1inch.png" 
-                alt="1inch" 
-                className={styles.shortcutIcon}
-                draggable="true"
-              />
-              <div className={styles.logoGlow}></div>
-            </div>
-          </div>
-          
-          <div className={styles.iconRow}>
-            <div className={styles.logoContainer}>
-              <img 
-                src="/icon/polygon.png" 
-                alt="Polygon" 
-                className={styles.shortcutIcon}
-                draggable="true"
-              />
-              <div className={styles.logoGlow}></div>
-            </div>
-            <div className={styles.logoContainer}>
-              <img 
-                src="/icon/celo.png" 
-                alt="Celo" 
-                className={styles.shortcutIcon}
-                draggable="true"
-              />
-              <div className={styles.logoGlow}></div>
-            </div>
-            <div className={styles.logoContainer}>
-              <img 
-                src="/icon/spreadsheet.png" 
-                alt="Spreadsheet" 
-                className={styles.shortcutIcon}
-                draggable="true"
-              />
-              <div className={styles.logoGlow}></div>
-            </div>
-          </div>
+          {renderPluginIcons()}
           
           {/* Specific drop zone box */}
           <div 
@@ -702,6 +716,22 @@ export default function Shortcut({ onClose, onDrop }) {
           .${styles.aiMethodButton}:hover {
             transform: translateY(-2px) !important;
             box-shadow: 0 6px 15px rgba(108, 99, 255, 0.4) !important;
+          }
+
+          .${styles.noPluginsMessage} {
+            padding: 20px !important;
+            text-align: center !important;
+            background-color: rgba(108, 99, 255, 0.1) !important;
+            border-radius: 10px !important;
+            margin: 15px 0 !important;
+            border: 1px dashed rgba(108, 99, 255, 0.4) !important;
+          }
+          
+          .${styles.noPluginsMessage} p {
+            margin: 5px 0 !important;
+            color: #a0a8cc !important;
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 14px !important;
           }
         `}</style>
       </div>
