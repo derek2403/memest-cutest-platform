@@ -110,6 +110,8 @@ Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, a
 - **Viem** – TypeScript interface for Ethereum
 - **Tanstack Query** – Data fetching and state management
 - **Anthropic AI SDK** – AI integration for platform features
+- **Celo Mainnet L2** - Layer 2 blockchain for scalable transactions
+- **1inch** - Aggregates DEXes for optimal token swap rates and liquidity
 
 
 ---
