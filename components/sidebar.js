@@ -425,7 +425,35 @@ function makeDraggable(element, buttonId, callbacks, scene) {
         document.removeEventListener('mouseup', handleMouseUp);
     };
     
-    // Add drag start event
+    // Add HTML5 drag and drop capabilities for compatibility with the Shortcut component
+    element.setAttribute('draggable', 'true');
+    
+    element.addEventListener('dragstart', (e) => {
+        console.log(`Drag started for ${buttonId}`);
+        // Set the data for the drag operation
+        e.dataTransfer.setData('text/plain', buttonId);
+        e.dataTransfer.effectAllowed = 'copy';
+        
+        // Create custom ghost image
+        const ghost = document.createElement('div');
+        ghost.textContent = element.querySelector('span').textContent;
+        ghost.style.padding = '8px 12px';
+        ghost.style.background = element.style.backgroundColor || '#333a52';
+        ghost.style.borderRadius = '20px';
+        ghost.style.color = '#fff';
+        ghost.style.position = 'absolute';
+        ghost.style.top = '-1000px';
+        document.body.appendChild(ghost);
+        
+        e.dataTransfer.setDragImage(ghost, 0, 0);
+        
+        // Remove ghost after a short delay
+        setTimeout(() => {
+            document.body.removeChild(ghost);
+        }, 0);
+    });
+    
+    // Add drag start event for custom dragging
     element.addEventListener('mousedown', (e) => {
         // Prevent default action to avoid text selection
         e.preventDefault();
