@@ -93,7 +93,7 @@ Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, a
 
 ## System Architecture High-Level Overview🏗️
 
-![Architecture](https://github.com/derek2403/TeeTee/blob/main/public/Architecture.png?raw=true) 
+![Architecture](https://github.com/derek2403/memest-cutest-platform/blob/main/public/Architecture.png?raw=true) 
 
 ### 1. **User Interface** (Frontend)
    - **Role**: The user interacts with the system through the **Frontend** interface. This is where users specify their desired workflows using natural language.
