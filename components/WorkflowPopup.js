@@ -190,7 +190,7 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.logoContainer}>
-            <img src="/icon/metamask.png" alt="Workflow" className={styles.logo} />
+            <img src="/icon/spreadsheet.png" alt="Workflow" className={styles.logo} />
             <div className={styles.logoGlow}></div>
           </div>
           <h2>{readOnly ? "Saved Workflows" : "Workflow Assistant"}</h2>

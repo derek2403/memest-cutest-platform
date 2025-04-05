@@ -745,6 +745,7 @@ export default function Home() {
     // Visualize the obstacle boundaries in debug mode
     if (DEBUG_MODE) {
       visualizeObstacles();
+      visualizeFloorBoundaries(floorBoundaries);
     }
     
     // Function to visualize obstacles for debugging
