@@ -297,6 +297,8 @@ export function initSidebar(callbacks = {}, scene) {
     // Add event listeners for showing/hiding the sidebar
     sidebarTrigger.addEventListener('mouseenter', () => {
         sidebar.classList.remove('hidden');
+        // Dispatch custom event for sidebar state
+        document.dispatchEvent(new CustomEvent('sidebarStateChange', { detail: { isOpen: true } }));
     });
     
     document.addEventListener('mousemove', (e) => {
@@ -304,9 +306,13 @@ export function initSidebar(callbacks = {}, scene) {
         const windowWidth = window.innerWidth;
         if (e.clientX > windowWidth - 100) {
             sidebar.classList.remove('hidden');
+            // Dispatch custom event for sidebar state
+            document.dispatchEvent(new CustomEvent('sidebarStateChange', { detail: { isOpen: true } }));
         } else if (e.clientX < windowWidth - 300) {
             // Hide sidebar when mouse moves away from the right side
             sidebar.classList.add('hidden');
+            // Dispatch custom event for sidebar state
+            document.dispatchEvent(new CustomEvent('sidebarStateChange', { detail: { isOpen: false } }));
         }
     });
     
@@ -314,6 +320,8 @@ export function initSidebar(callbacks = {}, scene) {
     document.addEventListener('click', (e) => {
         if (!sidebar.contains(e.target) && !sidebarTrigger.contains(e.target)) {
             sidebar.classList.add('hidden');
+            // Dispatch custom event for sidebar state
+            document.dispatchEvent(new CustomEvent('sidebarStateChange', { detail: { isOpen: false } }));
         }
     });
 

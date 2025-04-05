@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import Navigation from '../components/Navigation';
 
 // Example workflow scenarios
 const EXAMPLE_WORKFLOWS = [
@@ -207,9 +208,8 @@ export default function Test() {
     setWorkflowStatus(null);
 
     try {
-      // CHANGED: Call the transaction endpoint directly instead of the workflow endpoint
-      // This matches what mcptest.js is doing
-      const response = await fetch('http://localhost:3001/transaction', {
+      // Call the external transaction endpoint instead of the local server
+      const response = await fetch('https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/transaction', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -217,7 +217,7 @@ export default function Test() {
         body: JSON.stringify({
           to: recipientAddressToUse,
           amount: amountToUse,
-          chainId: 11155111, // Using Sepolia testnet instead of Ethereum mainnet
+          chainId: "84532", // Use Base Sepolia testnet
           email: emailToUse
         }),
       });
@@ -242,7 +242,7 @@ export default function Test() {
         setWorkflowStatus({
           success: true,
           pending: true,
-          message: 'Transaction pending email approval. Please check your email and click "Approve" to execute the transaction.'
+          message: 'Transaction pending email approval. Please check your email and click "Approve" to execute the transaction. The approval link will direct to: https://e3c329acf714051138becd9199470e6d1ae0cabd-3001.dstack-prod5.phala.network/transaction/verify'
         });
         return;
       }
@@ -389,6 +389,8 @@ export default function Test() {
         <title>Workflow Parser with Claude Chat</title>
         <meta name="description" content="Parse workflow diagrams and chat with Claude AI" />
       </Head>
+
+      <Navigation />
 
       <main className="flex flex-col flex-grow p-4 md:p-8 gap-6 max-w-6xl mx-auto w-full">
         {/* Workflow Parser Section */}

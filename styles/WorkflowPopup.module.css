@@ -351,6 +351,77 @@
   font-weight: bold;
 }
 
+.completionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.executeButton {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 30px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.executeButton:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.executionStatus {
+  margin: 15px auto;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  max-width: 90%;
+  text-align: center;
+}
+
+.successStatus {
+  background-color: rgba(52, 211, 153, 0.2);
+  color: #059669;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  font-weight: 600;
+}
+
+.statusMessage {
+  margin-bottom: 8px;
+}
+
+.sheetRecordInfo {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.sheetFieldList {
+  margin-top: 6px;
+  padding-left: 20px;
+  list-style-type: disc;
+  text-align: left;
+  font-weight: normal;
+}
+
+.sheetError {
+  margin-top: 8px;
+  color: #ef4444;
+  font-size: 0.85rem;
+}
+
+.errorStatus {
+  background-color: rgba(248, 113, 113, 0.2);
+  color: #b91c1c;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
 .doneButton {
   background-color: #6c63ff;
   color: white;
@@ -358,7 +429,6 @@
   border-radius: 8px;
   padding: 10px 30px;
   font-weight: 600;
-  margin-top: 20px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -530,4 +600,318 @@
   color: #e0e0ff;
   flex: 1;
   margin-left: 10px;
+}
+
+/* Add styles for the input fields section */
+.inputFields {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: #f9f9fc;
+  border-radius: 8px;
+  border: 1px solid #e0e0f2;
+}
+
+.inputTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #444;
+}
+
+.inputGroup {
+  margin-bottom: 16px;
+}
+
+.inputLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  color: #000000;
+}
+
+.inputField:focus {
+  border-color: #6366f1;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.inputField::placeholder {
+  color: #999;
+}
+
+.inputHelp {
+  font-size: 12px;
+  color: #777;
+  margin-top: 4px;
+}
+
+.required {
+  color: #e53e3e;
+}
+
+/* Style for saved workflow details */
+.savedWorkflowEmail {
+  font-size: 13px;
+  color: #c5d0e6;
+  margin-top: 4px;
+}
+
+.savedWorkflowDetails {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f7fafc;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+/* Disable button style */
+.approveButton:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.approveButton:disabled:hover {
+  background-color: #a0aec0;
+}
+
+/* Make sure the "Approve Workflow" button is properly styled when enabled */
+.approveButton:not(:disabled) {
+  background-color: #4f46e5;
+}
+
+.approveButton:not(:disabled):hover {
+  background-color: #4338ca;
+}
+
+.monitorInfo {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.monitorInfo p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #000000;
+}
+
+.executingStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #4338ca;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Monitoring Stats Styles */
+.monitoringStats {
+  margin-top: 20px;
+  width: 100%;
+  background-color: #f5f7fa;
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+}
+
+.monitoringHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.monitoringHeader h4 {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 1rem;
+  color: #2d3748;
+}
+
+.monitoringDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #48bb78;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+  }
+  
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(72, 187, 120, 0);
+  }
+  
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+  }
+}
+
+.stopMonitoringButton {
+  background-color: #fc8181;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.stopMonitoringButton:hover {
+  background-color: #f56565;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.statItem {
+  background-color: white;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #edf2f7;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-bottom: 5px;
+}
+
+.statValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Notifications Section */
+.notificationsSection {
+  margin-top: 15px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 15px;
+}
+
+.notificationsSection h4 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.notificationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notificationItem {
+  background-color: white;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #edf2f7;
+}
+
+.notificationHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.networkBadge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.polygonBadge {
+  background-color: #d6bcfa;
+  color: #6b46c1;
+}
+
+.celoBadge {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.notificationTime {
+  margin-left: 8px;
+  font-size: 0.7rem;
+  color: #718096;
+}
+
+.emailStatus {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #4a5568;
+}
+
+.eventsList {
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+
+.eventItem {
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  background-color: #f7fafc;
+  border-radius: 4px;
+}
+
+.moreEvents {
+  font-size: 0.7rem;
+  color: #718096;
+  text-align: center;
+  margin-top: 5px;
+}
+
+.moreNotifications {
+  font-size: 0.7rem;
+  color: #718096;
+  text-align: center;
+  margin-top: 8px;
 } 

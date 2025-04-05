@@ -17,9 +17,13 @@ import { spawnGmailModel } from "../components/gmail.js";
 import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
 import { spawnIslandModel } from "../components/island.js";
 import dynamic from 'next/dynamic';
+import ConnectWallet from '../components/ConnectWallet';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
 const WorkflowPopup = dynamic(() => import('../components/WorkflowPopup'), { ssr: false });
+// Add back the necessary imports (but not the dialog-related ones)
+import CaseSelector from '../components/CaseSelector';
+import AgentNavigator from '../components/AgentNavigator';
 
 // At the top of your file, before the component
 // Add this if you remove globals.css
@@ -40,9 +44,20 @@ export default function Home() {
   const [showShortcutPopup, setShowShortcutPopup] = useState(false);
   const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
   const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
-  
+
+  // Add the handler for case selection
+  const handleCaseSelection = (targetPosition) => {
+    if (targetPosition && window.aiAgent) {
+      // Use our navigator utility to move the agent
+      AgentNavigator.navigateToPosition(targetPosition);
+    }
+  };
+
   // Initialize pluginsInRoom on client-side only
   useEffect(() => {
+    // Exit early if the ref isn't set
+    if (!mountRef.current) return;
+
     // Initialize global plugins tracking
     window.pluginsInRoom = {
       metamask: false,
@@ -171,6 +186,12 @@ export default function Home() {
     // Create an environment with a stylized night sky backdrop
     const environmentGroup = new THREE.Group();
     scene.add(environmentGroup);
+    
+    // Make scene available globally for components
+    window.scene = scene;
+    
+    // Store scene reference in state
+    setSceneRef(scene);
     
     // Create a dark gradient sky background
     const skyColors = {
@@ -455,8 +476,13 @@ export default function Home() {
       0.1,
       1000
     );
+    
+    // Set camera position (keep the existing position setting if there is one)
     camera.position.set(5, 5, 5);
     camera.lookAt(0, 0, 0);
+    
+    // Make camera available to window for DialogIcon component
+    window.camera = camera;
     
     // Allow the camera to see more of the environment
     camera.far = 500;
@@ -969,7 +995,7 @@ export default function Home() {
               }
             }
             
-            // Update direction and rotation to face next waypoint
+            // Update direction and rotation
             const newDirection = new THREE.Vector3()
               .subVectors(agentTargetPosition, aiAgent.position)
               .normalize();
@@ -1004,6 +1030,10 @@ export default function Home() {
           isAgentWalking = false;
           playAnimation('idle'); // Switch to idle animation
           console.log("Reached destination, stopping");
+          
+          // Dispatch event to notify our CaseSelector that agent has arrived
+          window.dispatchEvent(new CustomEvent('agentArrivedAtDestination'));
+          
           finalDestination = null;
           return;
         }
@@ -1086,7 +1116,6 @@ export default function Home() {
 
         // Force a render to show the AI Agent
         renderer.render(scene, camera);
-
         console.log("AI Agent is at position:", aiAgent.position);
       }
     }
@@ -2000,6 +2029,9 @@ export default function Home() {
 
     // Register the right-click event handler
     renderer.domElement.addEventListener("contextmenu", onRightClick);
+    
+    // Make onRightClick available globally for our navigator utility
+    window.onRightClick = onRightClick;
 
     // Handle window resize
     const handleResize = () => {
@@ -2026,10 +2058,15 @@ export default function Home() {
       
       // Update stars
       updateStars(delta);
-      
+
       // Update AI Agent position if it's moving
       updateAgentPosition(delta);
-
+      
+      // Store AI agent reference globally for dialog system
+      if (aiAgent) {
+        window.aiAgent = aiAgent;
+      }
+      
       // Animate any custom models that need animation (like the rotating planet)
       if (window.customModelsToAnimate && window.customModelsToAnimate.length > 0) {
         window.customModelsToAnimate.forEach(model => {
@@ -2170,36 +2207,20 @@ export default function Home() {
 
   return (
     <>
-      <style jsx global>{`
-        html, body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-        }
-        * { box-sizing: border-box; }
-        
-        .connect-button-wrapper {
-          position: fixed;
-          top: 20px;
-          right: 250px; /* Increased from 160px to move it left */
-          z-index: 1000;
-          font-family: 'Baloo 2', cursive;
-          background-color: rgba(255, 255, 255, 0.9);
-          border-radius: 15px;
-          padding: 5px;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-          backdrop-filter: blur(5px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          animation: fadeIn 0.4s ease-out;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-      <div style={{ width: "100%", height: "100vh" }} ref={mountRef}></div>
+      <ConnectWallet />
+      <div 
+        ref={mountRef} 
+        className="w-full h-screen" 
+        style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          overflow: 'hidden',
+        }}
+      ></div>
+      
+      {/* Case Selector Component */}
+      <CaseSelector onSelectCase={handleCaseSelection} />
       
       {showShortcutPopup && (
         <Shortcut 
@@ -2216,11 +2237,12 @@ export default function Home() {
       
       {showWorkflowPopup && (
         <WorkflowPopup 
-          onClose={() => setShowWorkflowPopup(false)} 
-          showSavedSection={true}
+          onClose={() => setShowWorkflowPopup(false)}
           readOnly={true}
+          showSavedSection={true}
         />
       )}
     </>
   );
 }
+
