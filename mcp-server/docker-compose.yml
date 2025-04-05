@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: derek2403/mcp-server:latest
+    container_name: mcp-server
+    platform: linux/amd64
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      # Add other environment variables as needed
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data 
