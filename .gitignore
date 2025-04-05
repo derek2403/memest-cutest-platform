@@ -48,6 +48,7 @@ package-lock.json
 /mcp-server/1inch/node_modules
 /mcp-server/1inch/package-lock.json
 /mcp-server/1inch/.env
+/mcp-server/docker-compose.yml
 node_modules/
 .next/
 *.log
