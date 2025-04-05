@@ -127,7 +127,6 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
   const [workflowParsed, setWorkflowParsed] = useState([]);
   const [workflowLoading, setWorkflowLoading] = useState(false);
   const [workflowApproved, setWorkflowApproved] = useState(false);
-  const [serverResponse, setServerResponse] = useState(null);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
   const [availableWorkflows, setAvailableWorkflows] = useState([]);
   const savedSectionRef = React.useRef(null);
@@ -218,36 +217,6 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     }
   };
 
-  // Send workflow to server
-  const handleApproveWorkflow = async () => {
-    try {
-      setWorkflowLoading(true);
-      
-      // Send the workflow description to the server
-      const response = await fetch('http://localhost:3001/api/workflow', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ workflowInput }),
-      });
-      
-      const data = await response.json();
-      console.log('Server response:', data);
-      
-      // Store the server response
-      setServerResponse(data);
-      
-      // Update UI to show approval
-      setWorkflowApproved(true);
-      setWorkflowLoading(false);
-    } catch (error) {
-      console.error('Error sending workflow to server:', error);
-      alert('Failed to create workflow. Please try again.');
-      setWorkflowLoading(false);
-    }
-  };
-
   // Save the current parsed workflow to localStorage
   const saveWorkflow = () => {
     if (!workflowParsed || workflowParsed.length === 0) return;
@@ -304,16 +273,6 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
               </div>
               <h3>Workflow Approved!</h3>
               <p>Your AI workflow has been successfully created and is now active.</p>
-              {serverResponse && (
-                <div className={styles.serverResponseInfo}>
-                  <p className={styles.workflowName}>
-                    <strong>{serverResponse.functions?.workflowName || 'Custom Workflow'}</strong>
-                  </p>
-                  <p className={styles.workflowDesc}>
-                    {serverResponse.functions?.description || 'Your custom workflow is now active.'}
-                  </p>
-                </div>
-              )}
               <p className={styles.bookTip}>You can access all your saved workflows by clicking on the books on the coffee table.</p>
               <button className={styles.doneButton} onClick={onClose}>
                 Done
@@ -327,15 +286,42 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                   <div className={styles.examplesSection}>
                     <p className={styles.examplesTitle}>Try one of these examples:</p>
                     <div className={styles.exampleButtons}>
-                      {availableWorkflows.map((example, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleLoadExample(example)}
-                          className={styles.exampleButton}
-                        >
-                          {example.title}
-                        </button>
-                      ))}
+                      <button
+                        onClick={() => handleLoadExample({
+                          title: "MetaMask to Gmail",
+                          text: "For each fund transfer in MetaMask notify in Gmail and record in Google Sheet"
+                        })}
+                        className={styles.exampleButton}
+                      >
+                        MetaMask to Gmail
+                      </button>
+                      <button
+                        onClick={() => handleLoadExample({
+                          title: "USDC Bridge",
+                          text: "For all the USDC on Arbitritum bridge to USDC on Base with 1inch"
+                        })}
+                        className={styles.exampleButton}
+                      >
+                        USDC Bridge
+                      </button>
+                      <button
+                        onClick={() => handleLoadExample({
+                          title: "Polygon Events",
+                          text: "Listen to this smart contract on polygon chain then for each event emitted notify me on email"
+                        })}
+                        className={styles.exampleButton}
+                      >
+                        Polygon Events
+                      </button>
+                      <button
+                        onClick={() => handleLoadExample({
+                          title: "Celo Events",
+                          text: "Listen to this smart contract on celo chain then for each event emitted notify me on email"
+                        })}
+                        className={styles.exampleButton}
+                      >
+                        Celo Events
+                      </button>
                     </div>
                   </div>
                   
@@ -353,14 +339,6 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
                       className={styles.parseButton}
                       disabled={workflowLoading || !workflowInput.trim()}
                     >
-                      Try Again
-                    </button>
-                    <button 
-                      className={styles.approveButton}
-                      onClick={handleApproveWorkflow}
-                      disabled={workflowLoading}
-                    >
-                      {workflowLoading ? 'Creating...' : 'Approve Workflow'}
                       {workflowLoading ? 'Parsing...' : 'Parse Workflow'}
                     </button>
                   </form>
