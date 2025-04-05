@@ -32,7 +32,7 @@ export function spawnGmailModel(scene) {
       
       // Set the position to the provided coordinates, but raise the y value
       model.position.set(
-        2.078805815944017,
+        2.278805815944017,
         1, // Raised higher above the floor
         -2.0091312277057521
       );
