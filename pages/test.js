@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import Navigation from '../components/Navigation';
 
 // Example workflow scenarios
 const EXAMPLE_WORKFLOWS = [
@@ -388,6 +389,8 @@ export default function Test() {
         <title>Workflow Parser with Claude Chat</title>
         <meta name="description" content="Parse workflow diagrams and chat with Claude AI" />
       </Head>
+
+      <Navigation />
 
       <main className="flex flex-col flex-grow p-4 md:p-8 gap-6 max-w-6xl mx-auto w-full">
         {/* Workflow Parser Section */}
