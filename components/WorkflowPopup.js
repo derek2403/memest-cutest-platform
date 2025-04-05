@@ -115,99 +115,32 @@ export default function WorkflowPopup({ initialInput = '', onClose, showSavedSec
     setWorkflowLoading(true);
 
     try {
-      // Enhanced parsing logic to create workflow nodes and arrows
-      const workflow = [];
-      const input = workflowInput.trim();
-      
-      // Add Start node
-      workflow.push({
-        type: 'node',
-        number: 1,
-        content: 'Start'
+      // Use Claude AI to parse the workflow
+      const response = await fetch('/api/parse-workflow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workflowText: workflowInput,
+        }),
       });
-      
-      // First, identify potential triggers/actions by specific keywords
-      const parts = [];
-      
-      if (input.includes('For each transaction in')) {
-        // Add MetaMask as second node with connection label
-        workflow.push({
-          type: 'arrow',
-          number: 1,
-          content: 'For each transaction in'
-        });
-        
-        workflow.push({
-          type: 'node',
-          number: 2,
-          content: 'MetaMask'
-        });
-        
-        // Check for Gmail notification
-        if (input.includes('notify in Gmail')) {
-          workflow.push({
-            type: 'arrow',
-            number: 2,
-            content: 'Notify in'
-          });
-          
-          workflow.push({
-            type: 'node',
-            number: 3,
-            content: 'Gmail'
-          });
-        }
-        
-        // Check for Google Sheets recording
-        if (input.includes('record in Google Sheets')) {
-          workflow.push({
-            type: 'arrow',
-            number: 3,
-            content: 'Record in'
-          });
-          
-          workflow.push({
-            type: 'node',
-            number: 4,
-            content: 'Google Sheets'
-          });
-        }
-      } else {
-        // Fallback to simple parsing for other cases
-        const basicParts = input.split(/\s+and\s+|,\s+then\s+|,\s+|then\s+/gi).filter(part => part.trim());
-        
-        if (basicParts.length === 0) {
-          throw new Error("Could not parse workflow text. Please try a different format.");
-        }
-        
-        basicParts.forEach((part, index) => {
-          workflow.push({
-            type: 'arrow',
-            number: index + 1,
-            content: index === 0 ? 'Start with' : 'then'
-          });
-          
-          workflow.push({
-            type: 'node',
-            number: index + 2,
-            content: part.trim()
-          });
-        });
+
+      if (!response.ok) {
+        throw new Error('Failed to parse workflow');
       }
-      
-      // Wait a bit to simulate processing time
-      setTimeout(() => {
-        setWorkflowParsed(workflow);
-        setWorkflowLoading(false);
-      }, 800);
-      
+
+      const data = await response.json();
+      setWorkflowParsed(data.workflow);
     } catch (error) {
       console.error('Error parsing workflow:', error);
       
       // Show user-friendly error
-      alert(error.message || 'Failed to parse workflow. Please try again with a different format.');
+      alert('Failed to parse workflow. Please try again with a different format.');
       
       // Reset loading state
+      setWorkflowLoading(false);
+    } finally {
       setWorkflowLoading(false);
     }
   };
