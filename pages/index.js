@@ -9,6 +9,7 @@ import { loadAIAgent } from "../components/aiagent.js";
 import { spawn1inchUnicorn } from "../components/oneinch.js";
 import { spawnMetamaskFox } from "../components/metawallet.js";
 import { spawnPolygonModel } from "../components/polygon.js";
+import { spawnPolygonPlanet } from "../components/polygon_planet.js";
 import { spawnCeloModel } from "../components/celo.js";
 import { spawnGmailModel } from "../components/gmail.js";
 import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
@@ -210,7 +211,7 @@ export default function Home() {
     environmentGroup.add(sky);
     
     // Create stylized stars with varied sizes and brightness
-    const starCount = 3000;
+    const starCount = 2000; // Reduced from 5000 to 2000
     const starColors = [0xffffff, 0xffffee, 0xeeeeff, 0xccddff];
     const starSizes = [0.4, 0.6, 0.8, 1.2, 1.5];
     
@@ -222,7 +223,9 @@ export default function Home() {
         size: starSizes[layer % starSizes.length],
         transparent: true,
         opacity: 0.8 - (layer * 0.15),
-        sizeAttenuation: true
+        sizeAttenuation: true,
+        map: createCircleStarTexture(32), // Create circle texture for stars
+        blending: THREE.AdditiveBlending // Use additive blending for smoother appearance
       });
       
       const starsVertices = [];
@@ -237,8 +240,8 @@ export default function Home() {
         const y = radius * Math.sin(phi) * Math.sin(theta);
         const z = radius * Math.cos(phi);
         
-        // Make sure most stars stay above horizon
-        if (y < -50) continue;
+        // Remove the line below to allow stars to appear everywhere in space
+        // if (y < -50) continue;
         
         starsVertices.push(x, y, z);
       }
@@ -248,8 +251,40 @@ export default function Home() {
       environmentGroup.add(stars);
     }
     
+    // Add an additional layer of stars closer to the island
+    const closeStarsGeometry = new THREE.BufferGeometry();
+    const closeStarsMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.3,
+      transparent: true,
+      opacity: 0.7,
+      sizeAttenuation: true,
+      map: createCircleStarTexture(24), // Create circle texture for close stars
+      blending: THREE.AdditiveBlending // Use additive blending for smoother appearance
+    });
+    
+    const closeStarsVertices = [];
+    const closeStarCount = 300; // Reduced from 800 to 300
+    
+    for (let i = 0; i < closeStarCount; i++) {
+      // Generate stars in a smaller sphere around the island
+      const radius = 20 + Math.random() * 30;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+      
+      closeStarsVertices.push(x, y, z);
+    }
+    
+    closeStarsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(closeStarsVertices, 3));
+    const closeStars = new THREE.Points(closeStarsGeometry, closeStarsMaterial);
+    environmentGroup.add(closeStars);
+    
     // Create twinkling stars with animation
-    const twinkleStarCount = 100;
+    const twinkleStarCount = 100; // Reduced from 200 to 100
     const twinkleStarsGeometry = new THREE.BufferGeometry();
     const twinkleStarsMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
@@ -257,7 +292,7 @@ export default function Home() {
       transparent: true,
       opacity: 0.9,
       sizeAttenuation: true,
-      map: createStarTexture(),
+      map: createCircleStarTexture(32, true), // Create twinkling star texture with glow
       blending: THREE.AdditiveBlending
     });
     
@@ -273,9 +308,7 @@ export default function Home() {
       const y = radius * Math.sin(phi) * Math.sin(theta);
       const z = radius * Math.cos(phi);
       
-      // Make sure twinkling stars are visible
-      if (y < 0) continue;
-      
+      // Allow twinkling stars everywhere
       twinkleVertices.push(x, y, z);
       // Store initial twinkle state
       twinkleOpacities.push(Math.random());
@@ -285,40 +318,48 @@ export default function Home() {
     const twinkleStars = new THREE.Points(twinkleStarsGeometry, twinkleStarsMaterial);
     environmentGroup.add(twinkleStars);
     
-    // Create a softer, more stylized star texture
-    function createStarTexture() {
+    // Function to create a circular star texture
+    function createCircleStarTexture(size = 32, withGlow = false) {
       const canvas = document.createElement('canvas');
-      canvas.width = 32;
-      canvas.height = 32;
+      canvas.width = size;
+      canvas.height = size;
       const ctx = canvas.getContext('2d');
       
       // Clear canvas
       ctx.fillStyle = 'rgba(0,0,0,0)';
-      ctx.fillRect(0, 0, 32, 32);
+      ctx.fillRect(0, 0, size, size);
       
-      // Create a soft radial gradient
-      const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-      gradient.addColorStop(0, 'rgba(255,255,255,1)');
-      gradient.addColorStop(0.5, 'rgba(240,240,255,0.5)');
-      gradient.addColorStop(1, 'rgba(220,220,255,0)');
+      const center = size / 2;
+      const radius = size / 2 - 1;
+      
+      // Create a soft radial gradient for smooth circle
+      const gradient = ctx.createRadialGradient(center, center, 0, center, center, radius);
+      
+      if (withGlow) {
+        // Create a star with glow effect
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.4, 'rgba(240,240,255,0.8)');
+        gradient.addColorStop(0.7, 'rgba(220,220,255,0.3)');
+        gradient.addColorStop(1, 'rgba(220,220,255,0)');
+      } else {
+        // Create a smooth circle star
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.7, 'rgba(255,255,255,0.5)');
+        gradient.addColorStop(1, 'rgba(255,255,255,0)');
+      }
       
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 32, 32);
-      
-      // Create simple cross shape
-      ctx.strokeStyle = 'rgba(180,180,255,0.8)';
-      ctx.lineWidth = 1;
       ctx.beginPath();
-      // Horizontal line
-      ctx.moveTo(8, 16);
-      ctx.lineTo(24, 16);
-      // Vertical line
-      ctx.moveTo(16, 8);
-      ctx.lineTo(16, 24);
-      ctx.stroke();
+      ctx.arc(center, center, radius, 0, Math.PI * 2);
+      ctx.fill();
       
       const texture = new THREE.CanvasTexture(canvas);
       return texture;
+    }
+    
+    // Create a softer, more stylized star texture (original function - now replaced)
+    function createStarTexture() {
+      return createCircleStarTexture(32, true);
     }
     
     // Function to update stars in the animation loop
@@ -376,11 +417,13 @@ export default function Home() {
       map: videoTexture,
       side: THREE.BackSide,
       transparent: true,
-      opacity: 0.3 // Reduced opacity to blend with our starry sky
+      opacity: 0.0, // Set to 0 to completely remove the blur effect
+      blending: THREE.NoBlending // Disable blending to ensure it doesn't show at all
     });
     
     const videoSphere = new THREE.Mesh(videoSphereGeometry, videoSphereMaterial);
-    environmentGroup.add(videoSphere);
+    // Uncomment this line if you want to completely remove the video sphere
+    // environmentGroup.add(videoSphere);
 
     const ensureVideoPlays = () => {
       videoElement.play().catch(e => {
@@ -389,7 +432,11 @@ export default function Home() {
       });
     };
     
-    ensureVideoPlays();
+    // Don't bother playing the video if we're not using it
+    // ensureVideoPlays();
+
+    // Automatically spawn the polygon planet in space
+    spawnPolygonPlanet(scene);
 
     // Camera setup
     camera = new THREE.PerspectiveCamera(
@@ -1962,6 +2009,22 @@ export default function Home() {
       
       // Update AI Agent position if it's moving
       updateAgentPosition(delta);
+
+      // Animate any custom models that need animation (like the rotating planet)
+      if (window.customModelsToAnimate && window.customModelsToAnimate.length > 0) {
+        window.customModelsToAnimate.forEach(model => {
+          // Handle rotation
+          if (model && model.userData && model.userData.isRotating) {
+            // Apply rotation based on the model's rotation speed
+            model.rotation.y += model.userData.rotationSpeed || 0.005;
+          }
+          
+          // Handle pulsing glow effect
+          if (model && model.userData && model.userData.isPulsing && model.userData.updatePulse) {
+            model.userData.updatePulse(delta);
+          }
+        });
+      }
 
       controls.update();
       renderer.render(scene, camera);
