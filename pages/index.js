@@ -24,6 +24,8 @@ const WorkflowPopup = dynamic(() => import('../components/WorkflowPopup'), { ssr
 // After line 22 (imports), add these new imports
 import { DialogIcon, appendDialogStyles } from "../components/dialogSystem.js";
 import { FoxDialogButton } from "../components/foxDialog.js";
+import CaseSelector from '../components/CaseSelector';
+import AgentNavigator from '../components/AgentNavigator';
 
 // At the top of your file, before the component
 // Add this if you remove globals.css
@@ -46,6 +48,14 @@ export default function Home() {
   const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
   const [showDialogIcon, setShowDialogIcon] = useState(false); // Keep dialog icon state
   
+  // Add the handler for case selection
+  const handleCaseSelection = (targetPosition) => {
+    if (targetPosition && window.aiAgent) {
+      // Use our navigator utility to move the agent
+      AgentNavigator.navigateToPosition(targetPosition);
+    }
+  };
+
   // Initialize pluginsInRoom on client-side only
   useEffect(() => {
     // Exit early if the ref isn't set
@@ -991,7 +1001,7 @@ export default function Home() {
               }
             }
             
-            // Update direction and rotation to face next waypoint
+            // Update direction and rotation
             const newDirection = new THREE.Vector3()
               .subVectors(agentTargetPosition, aiAgent.position)
               .normalize();
@@ -1026,6 +1036,10 @@ export default function Home() {
           isAgentWalking = false;
           playAnimation('idle'); // Switch to idle animation
           console.log("Reached destination, stopping");
+          
+          // Dispatch event to notify our CaseSelector that agent has arrived
+          window.dispatchEvent(new CustomEvent('agentArrivedAtDestination'));
+          
           finalDestination = null;
           return;
         }
@@ -1108,7 +1122,6 @@ export default function Home() {
 
         // Force a render to show the AI Agent
         renderer.render(scene, camera);
-
         console.log("AI Agent is at position:", aiAgent.position);
       }
     }
@@ -2022,6 +2035,9 @@ export default function Home() {
 
     // Register the right-click event handler
     renderer.domElement.addEventListener("contextmenu", onRightClick);
+    
+    // Make onRightClick available globally for our navigator utility
+    window.onRightClick = onRightClick;
 
     // Handle window resize
     const handleResize = () => {
@@ -2221,6 +2237,9 @@ export default function Home() {
         <DialogIcon agentRef={window.aiAgent} />
       )}
       
+      {/* Case Selector Component */}
+      <CaseSelector onSelectCase={handleCaseSelection} />
+      
       {showShortcutPopup && (
         <Shortcut 
           onClose={() => setShowShortcutPopup(false)} 
@@ -2236,11 +2255,10 @@ export default function Home() {
       
       {showWorkflowPopup && (
         <WorkflowPopup 
-          onClose={() => setShowWorkflowPopup(false)} 
-          showSavedSection={true}
-          readOnly={true}
+          onClose={() => setShowWorkflowPopup(false)}
         />
       )}
     </>
   );
 }
+
