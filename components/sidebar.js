@@ -32,7 +32,7 @@ export function initSidebar(callbacks = {}, scene) {
     metamaskButton.id = 'metamask-button';
     metamaskButton.className = 'sidebar-button wallet-button';
     metamaskButton.style.border = 'none';
-    metamaskButton.style.backgroundColor = '#333a52';
+    metamaskButton.style.backgroundColor = '#f8a846';
     
     // Create icon for Metamask
     const metamaskIcon = document.createElement('img');
