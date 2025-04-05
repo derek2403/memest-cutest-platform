@@ -1,23 +1,22 @@
-# Title
-**One Line**
+# Memest Cutest Project (MCP)
+_A gamified, cross app based Model Context Protocol platform_
 
-![Logo]()
+![Logo](https://github.com/derek2403/memest-cutest-platform/blob/main/public/logo.png?raw=true)
 
+We’re building a **unified platform** that brings together your favorite Web3 and Web2 services—like **MetaMask, Uniswap, 1inch, Gmail, Google Sheets**, and more—into **one** convenient, visually orchestrated workflow. No more juggling tabs or manually connecting wallets every time!
 
-
----
-
-## Inspiration: How We Came Up with This Idea💡
-
-Long
-
-We thought:
-
-> *“What if we could ?”*
-
-So
+We’ve deployed a **live demonstration of MCP** at [**(Link Coming Soon)**](#).
 
 ---
+
+## Inspiration: How We Came Up with This Idea 💡
+We noticed how **inconvenient** it is to manage multiple wallet connections whether MetaMask, 1inch, or Uniswap—because each service forces you to visit its own site and manually connect your wallet. The same fragmentation appears in Web2 tools like Gmail or Microsoft Excel, which offer no straightforward way to communicate with each other. It leads to a constant juggling act of logins and disjointed experiences. Even worse, there’s no easy way to bridge these Web2 and Web3 worlds together, leading to fragmented experiences, extra logins, and lots of frustration.
+
+> *“What if we had a single platform that connected all these services into building blocks, letting users assemble custom workflows in one place?”*
+
+Thus, **Memest Cutest Project (MCP)** was born, a unified space where all your services coexist in one interface, powered by simple drag-and-drop building blocks and AI-driven orchestration for seamless cross-service tasks. We also gamified the visual process, so users can truly see and understand every interaction happening within the MCP—making cross-service integration as transparent and engaging as possible.
+
+
 
 
 ## The Problem🚧
