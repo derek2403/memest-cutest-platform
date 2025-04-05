@@ -52,7 +52,7 @@ Thus, **Memest Cutest Project** was born, a unified space where all your service
 ## How Our Project Works ⚙️
 
 **Single-Platform Integration**  
-Users begin by connecting their wallets (via RainbowKit) and linking Web2 services (e.g., Gmail) directly within our unified interface so they are not require to hop across separate websites.
+Users begin by connecting their wallets (via RainbowKit) and linking Web2 services (e.g., Gmail) directly within our unified interface thus no more hopping across separate websites.
 
 **Visual Service Blocks**  
 We spawn a playful representation of each service once it’s added. For example:  
@@ -64,13 +64,22 @@ We spawn a playful representation of each service once it’s added. For example
 - **Gmail** is shown as a laptop with Gmail open
 
 **Drag-and-Drop Workflows**  
-Inspired by Apple Shortcuts, users can simply drag, drop, and connect these service blocks. An AI agent automatically translates these connections into real actions behind the scenes. You can also define workflows via natural language as our agent will interpret phrases like “For each MetaMask fund transfer, notify me by Gmail and record it in Google Sheets.”
+Inspired by Apple Shortcuts, users can simply drag, drop, and connect these service blocks. An AI agent automatically translates these connections into real actions behind the scenes. You can also define workflows via natural language—our agent will interpret phrases like “For each MetaMask fund transfer, notify me by Gmail and record it in Google Sheets.”
 
 **AI Agent Execution**  
-Once you’ve configured a workflow, our AI agent (a little robot in the interface) “walks” between the relevant service blocks to illustrate how your automation runs. In the background, MCP triggers event listeners (for instance, on MetaMask) and processes each command (like sending an email, logging data to a spreadsheet, or initiating a token swap on 1inch).
+Once you’ve configured a workflow, our AI agent (a little robot in the interface) “walks” between the relevant service blocks to illustrate how your automation runs. In the background, MCP triggers event listeners (for instance, on MetaMask) and processes each command (like sending an email, logging data to a spreadsheet, or initiating a token swap).
+
+---
+
+### Example Workflows
+- **For each fund transfer in MetaMask, notify me in Gmail and record the transaction in Google Sheets.**  
+- **Upon receiving funds in MetaMask, automatically swap them to Arbitrum using 1inch.**  
+- **Listen to a specific smart contract on any supported chain, and notify me by email whenever it emits an event.**
+
+---
 
 **Endless Possibilities**  
-Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, and Google Sheets but any additional plugins can expand the platform further. Whether it’s purely Web2 integrations (like email and spreadsheets) or advanced cross-chain automations (e.g., swapping funds via 1inch upon receiving tokens in MetaMask), the **Memest Cutest Project** can handle it all as more services are added.
+Our proof of concept currently includes MetaMask, 1inch, Polygon, Celo, Gmail, and Google Sheets—but any additional plugins can be added to expand the platform’s capabilities. Think of **Memest Cutest Project** as an “agent kit” with building blocks anyone can contribute to. Best of all, it can be **self-hosted**, giving you full control and privacy over your cross-service automations. Whether it’s purely Web2 integrations (like email and spreadsheets) or advanced cross-chain workflows, **MCP** supports it all as more services are added.
 
 
 
