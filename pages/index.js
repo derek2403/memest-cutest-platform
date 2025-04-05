@@ -11,6 +11,7 @@ import { spawnMetamaskFox } from "../components/metawallet.js";
 import { spawnPolygonModel } from "../components/polygon.js";
 import { spawnCeloModel } from "../components/celo.js";
 import { spawnGmailModel } from "../components/gmail.js";
+import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
 import dynamic from 'next/dynamic';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
@@ -2108,15 +2109,20 @@ export default function Home() {
         // Add Celo functionality to spawn the model
         spawnCeloModel(scene);
       },
-      'gmail-button': () => {
-        console.log("Gmail button clicked");
-        // Add Gmail functionality to spawn the model
-        spawnGmailModel(scene);
-      },
       'oneinch-button': () => {
         console.log("1inch button clicked");
         // Add 1inch functionality to spawn the unicorn
         spawn1inchUnicorn(scene);
+      },
+      'spreadsheet-button': () => {
+        console.log("Spreadsheet button clicked");
+        // Add Spreadsheet functionality to spawn the model
+        spawnSpreadsheetModel(scene);
+      },
+      'gmail-button': () => {
+        console.log("Gmail button clicked");
+        // Add Gmail functionality to spawn the model
+        spawnGmailModel(scene);
       }
     }, scene); // Pass the scene object here
 

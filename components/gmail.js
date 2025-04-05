@@ -28,7 +28,7 @@ export function spawnGmailModel(scene) {
       const model = gltf.scene;
       
       // Scale the model appropriately (60% of original size)
-      model.scale.set(0.5, 0.5, 0.5);
+      model.scale.set(0.45, 0.45, 0.45);
       
       // Set the position to the provided coordinates, but raise the y value
       model.position.set(
