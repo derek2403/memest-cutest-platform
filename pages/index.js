@@ -15,6 +15,7 @@ import { spawnSpreadsheetModel } from "../components/spreadsheet.js";
 import dynamic from 'next/dynamic';
 const Shortcut = dynamic(() => import('../components/shortcut'), { ssr: false });
 const MetamaskShortcut = dynamic(() => import('../components/shortcutdetails.js'), { ssr: false });
+const WorkflowPopup = dynamic(() => import('../components/WorkflowPopup'), { ssr: false });
 
 // At the top of your file, before the component
 // Add this if you remove globals.css
@@ -110,6 +111,7 @@ export default function Home() {
   // Add these state variables
   const [showShortcutPopup, setShowShortcutPopup] = useState(false);
   const [showMetamaskShortcut, setShowMetamaskShortcut] = useState(false);
+  const [showWorkflowPopup, setShowWorkflowPopup] = useState(false);
   
   // Debug mode for visualizing obstacles
   const DEBUG_MODE = true;
@@ -2000,6 +2002,9 @@ export default function Home() {
           // Handle different clickable objects
           if (clickableObject.userData.type === 'airConditioner') {
             setShowShortcutPopup(true);
+          } else if (clickableObject.userData.type === 'books') {
+            // Show the workflow popup when books are clicked
+            setShowWorkflowPopup(true);
           }
         }
       }
@@ -2118,6 +2123,13 @@ export default function Home() {
       {showMetamaskShortcut && (
         <MetamaskShortcut 
           onClose={() => setShowMetamaskShortcut(false)} 
+        />
+      )}
+      
+      {showWorkflowPopup && (
+        <WorkflowPopup 
+          onClose={() => setShowWorkflowPopup(false)} 
+          showSavedSection={true}
         />
       )}
     </>

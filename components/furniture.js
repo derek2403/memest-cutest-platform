@@ -132,6 +132,10 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
                 if (node.isMesh) {
                   node.castShadow = false;
                   node.receiveShadow = false;
+                  
+                  // Make the book mesh clickable
+                  node.userData.clickable = true;
+                  node.userData.type = 'books';
                 }
               });
               
@@ -143,6 +147,10 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
               
               // Scale down the book set to make it smaller
               bookSet.scale.set(0.7, 0.7, 0.7); // 70% of original size
+              
+              // Make the entire book set clickable
+              bookSet.userData.clickable = true;
+              bookSet.userData.type = 'books';
               
               scene.add(bookSet);
               console.log("Book set loaded successfully");
