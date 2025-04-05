@@ -246,7 +246,7 @@ export function loadFurniture(scene, roomWidth, roomHeight, roomDepth) {
       });
       
       // Position the bed in the room - adjusted for 6x6 room
-      bed.position.set(-2, 0, -2.2); // Moved toward the back wall
+      bed.position.set(-2, 0, -2.5); // Moved right from original position (-2)
       
       // Rotate the bed
       bed.rotation.y = Math.PI / 2;
