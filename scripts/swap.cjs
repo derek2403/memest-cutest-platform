@@ -11,26 +11,43 @@ const { randomBytes } = require("crypto");
 const { PrivateKeyProviderConnector } = require("@1inch/fusion-sdk");
 require("dotenv").config();
 
-const privateKey =
-  process.env.PRIVATE_KEY ||
-  "0x6906b2082e6d499c54d2356f735b42a01b553a4978e67f190b7ceb7fd6c306d0";
+const privateKey = process.env.PRIVATE_KEY;
 const rpc = "https://arb1.arbitrum.io/rpc";
-const authKey = process.env.AUTH_KEY || "MGSIHfWToI4VXtUAwvzmjgRSiUdxLogC";
+const authKey = process.env.AUTH_KEY;
 const source = "sdk-tutorial";
 
+// Enhanced logging function with timestamp and optional object details
+function logWithTimestamp(message, obj = null) {
+  const timestamp = new Date().toISOString();
+  if (obj) {
+    console.log(
+      `[${timestamp}] ${message}`,
+      JSON.stringify(obj, jsonReplacer, 2)
+    );
+  } else {
+    console.log(`[${timestamp}] ${message}`);
+  }
+}
+
 // Create the web3 instance
+logWithTimestamp("🔄 Initializing Web3 with RPC:", { rpc });
 const web3 = new Web3(rpc);
 const walletAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
 
-console.log(`Using wallet address: ${walletAddress}`);
+logWithTimestamp("👤 Using wallet address:", { walletAddress });
+logWithTimestamp("🔑 Auth key configured:", {
+  authKeyLength: authKey ? authKey.length : 0,
+});
 
 const sdk = new SDK({
   url: "https://api.1inch.dev/fusion-plus",
   authKey,
   blockchainProvider: new PrivateKeyProviderConnector(privateKey, web3),
 });
+logWithTimestamp("✅ SDK initialized successfully");
 
 function sleep(ms) {
+  logWithTimestamp(`⏱️ Sleeping for ${ms}ms`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -45,7 +62,15 @@ function jsonReplacer(key, value) {
 async function main() {
   try {
     // estimate
-    console.log("Getting quote...");
+    logWithTimestamp("🚀 Starting cross-chain swap process");
+    logWithTimestamp("📊 Getting quote with parameters:", {
+      amount: "1000000000000000", // 0.001 ETH in wei
+      srcChainId: NetworkEnum.ARBITRUM,
+      dstChainId: NetworkEnum.POLYGON,
+      srcTokenAddress: "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", // WETH on Arbitrum
+      dstTokenAddress: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", // WETH on Polygon
+    });
+
     const quote = await sdk.getQuote({
       amount: "1000000000000000", // 0.001 ETH in wei
       srcChainId: NetworkEnum.ARBITRUM,
@@ -57,24 +82,50 @@ async function main() {
     });
 
     // Use the custom replacer function to handle BigInt values
-    console.log("Quote received:", JSON.stringify(quote, jsonReplacer, 2));
+    logWithTimestamp("✅ Quote received successfully", {
+      srcTokenAmount: quote.srcTokenAmount,
+      dstTokenAmount: quote.dstTokenAmount,
+      srcChainId: quote.srcChainId,
+      dstChainId: quote.dstChainId,
+      presets: Object.keys(quote.presets),
+    });
+
+    logWithTimestamp("📝 Full quote details:", quote);
 
     const preset = PresetEnum.fast;
+    logWithTimestamp(`🔧 Using preset: ${preset}`);
 
     // generate secrets
+    logWithTimestamp(
+      `🔐 Generating ${quote.presets[preset].secretsCount} secrets`
+    );
     const secrets = Array.from({
       length: quote.presets[preset].secretsCount,
     }).map(() => "0x" + randomBytes(32).toString("hex"));
+
+    logWithTimestamp("🔑 Secrets generated", { count: secrets.length });
 
     const hashLock =
       secrets.length === 1
         ? HashLock.forSingleFill(secrets[0])
         : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets));
+    logWithTimestamp("🔒 HashLock created", {
+      type: secrets.length === 1 ? "SingleFill" : "MultipleFills",
+    });
 
     const secretHashes = secrets.map((s) => HashLock.hashSecret(s));
+    logWithTimestamp("🔏 Secret hashes generated", {
+      count: secretHashes.length,
+    });
 
     // create order
-    console.log("Creating order...");
+    logWithTimestamp("📝 Creating order with parameters:", {
+      walletAddress,
+      preset,
+      source,
+      secretHashesCount: secretHashes.length,
+    });
+
     const { hash, quoteId, order } = await sdk.createOrder(quote, {
       walletAddress,
       hashLock,
@@ -82,53 +133,100 @@ async function main() {
       source,
       secretHashes,
     });
-    console.log({ hash }, "order created");
+    logWithTimestamp("✅ Order created successfully", { hash, quoteId });
+    logWithTimestamp("📄 Order details:", order);
 
     // submit order
-    console.log("Submitting order...");
-    const _orderInfo = await sdk.submitOrder(
+    logWithTimestamp("📤 Submitting order to blockchain", {
+      srcChainId: quote.srcChainId,
+      quoteId,
+      secretHashesCount: secretHashes.length,
+    });
+
+    const orderInfo = await sdk.submitOrder(
       quote.srcChainId,
       order,
       quoteId,
       secretHashes
     );
-    console.log({ hash }, "order submitted");
+    logWithTimestamp("✅ Order submitted successfully", { hash });
+    logWithTimestamp("📄 Order submission details:", orderInfo);
 
     // submit secrets for deployed escrows
-    console.log("Monitoring order status...");
+    logWithTimestamp("🔍 Starting order status monitoring loop", { hash });
+    let loopCount = 0;
+
     while (true) {
+      loopCount++;
+      logWithTimestamp(`⏳ Monitoring iteration #${loopCount}`, { hash });
+
+      logWithTimestamp("🔍 Checking for ready-to-accept secret fills");
       const secretsToShare = await sdk.getReadyToAcceptSecretFills(hash);
+      logWithTimestamp("📊 Ready-to-accept fills status", {
+        fillsCount: secretsToShare.fills.length,
+        fills: secretsToShare.fills,
+      });
 
       if (secretsToShare.fills.length) {
         for (const { idx } of secretsToShare.fills) {
+          logWithTimestamp(`🔓 Submitting secret for fill index ${idx}`);
           await sdk.submitSecret(hash, secrets[idx]);
-          console.log({ idx }, "shared secret");
+          logWithTimestamp(`✅ Secret shared successfully for index ${idx}`);
         }
       }
 
       // check if order finished
+      logWithTimestamp("🔍 Checking order status");
       const { status } = await sdk.getOrderStatus(hash);
-      console.log("Current status:", status);
+      logWithTimestamp(`📊 Current order status: ${status}`);
 
       if (
         status === OrderStatus.Executed ||
         status === OrderStatus.Expired ||
         status === OrderStatus.Refunded
       ) {
+        logWithTimestamp(`🏁 Order reached final status: ${status}`, { hash });
         break;
       }
 
+      logWithTimestamp(
+        `⏳ Order still in progress (status: ${status}), waiting...`
+      );
       await sleep(1000);
     }
 
+    logWithTimestamp("🔍 Getting final order status details");
     const statusResponse = await sdk.getOrderStatus(hash);
-    console.log(
-      "Final status:",
-      JSON.stringify(statusResponse, jsonReplacer, 2)
-    );
+    logWithTimestamp("🏁 Final order status details:", statusResponse);
+
+    logWithTimestamp("✅ Cross-chain swap process completed");
   } catch (error) {
-    console.error("Error:", error);
+    logWithTimestamp("❌ Error occurred during execution", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+
+    if (error.response) {
+      logWithTimestamp("🔍 API Error Response:", {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+      });
+    }
+
+    console.error("Stack trace:", error.stack);
   }
 }
 
-main();
+logWithTimestamp("🚀 Starting main function");
+main()
+  .then(() => {
+    logWithTimestamp("👋 Script execution completed");
+  })
+  .catch((err) => {
+    logWithTimestamp("💥 Unhandled error in main promise", {
+      message: err.message,
+      stack: err.stack,
+    });
+  });
