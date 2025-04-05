@@ -170,74 +170,81 @@ Here's a brief overview of important directories in our repository:
   - Includes contract ABIs, blockchain-related utilities, and other helper functions needed for contract interactions.
 
 ---
-## How We Are Different🌟
----
 
-We noticed that while there are several tools to connect Web2 and Web3 services, none of them offer a seamless, visual, and user-friendly experience for managing cross-platform workflows. Many existing platforms are usually either fragmented, complicated, or require technical knowledge to be used effectively.
+## 1inch Integration: Cross-Chain Swaps
 
-Here’s how Memest Cutest Platform is uniquely positioned:
+We integrate **1inch Fusion+** to provide efficient cross-chain swaps within our platform. This feature allows users to seamlessly swap tokens across chains without the need for bridging. 
 
-| **Feature**                          | **Traditional Web2/Web3 Tools**                                                   | **Memest Cutest Platform**                                                                 |
-|--------------------------------------|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| **Integration Across Web2 & Web3**   | Web2 and Web3 services are siloed; users must switch between apps and sites manually. | Unified interface to connect Web2 (e.g., Gmail, Google Sheets) and Web3 (e.g., MetaMask, Uniswap) seamlessly in one place. |
-| **User Experience**                  | Complicated, requires manual connections, and lacks a visual workflow tool.       | Drag-and-drop, visual, gamified interface that makes cross-platform workflows intuitive and fun to create. |
-| **Automation**                       | Limited automation options or require technical knowledge to configure.          | Easy-to-create, AI-driven workflows that automate tasks across platforms without coding. |
-| **Privacy & Security**               | Centralized platforms with no control over data privacy.                          | Users can self-host the platform, providing full control over data and privacy within their cross-service automations. |
-| **Visibility & Transparency**        | Services run in separate tabs, making it hard to visualize or understand workflows. | Gamified visualization that shows real-time interactions between services, helping users track and understand every action. |
-| **Customization & Flexibility**      | Limited customization options; most services require manual intervention or external tools. | Highly customizable workflows that can be adjusted using drag-and-drop tools or natural language instructions. |
-| **Platform Ecosystem**               | Rigid and closed ecosystems; adding new services requires external integrations.  | Open and modular system that supports plugin additions and self-hosting for greater flexibility and user control. |
-| **Scalability**                      | Centralized platforms are often limited by infrastructure or bandwidth.           | Scalable platform that can grow with more services and users, supporting decentralized workflows. |
-
-Memest Cutest Platform offers a fully integrated, automated, and gamified approach to managing both Web2 and Web3 services, overcoming the pain points of fragmentation, privacy issues, and complicated workflows seen in traditional tools. Whether for developers or non-technical users, it’s designed to be intuitive, secure, and highly customizable.
+- **Use Case Example**: In our workflow, when a user holds **Arbitrum USDC**, the system automatically converts it to **Base USDC**. This entire process is managed by the AI Agent, which executes the cross-chain swap without user intervention.
+  
+By using 1inch, we provide an efficient way to enable cross-chain swaps for our users, simplifying the process and improving liquidity.
 
 ---
 
+## Polygon and Celo Integration
+
+### Polygon Integration
+- **Event Capturing**: We have verified a smart contract (`0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1`) on Polygon PoS and capture blockchain events.
+- **Gmail Integration**: We use captured blockchain events and link them to **Gmail**, enabling notifications or other actions based on blockchain events.
+
+### Celo Integration
+- We have deployed a smart contract on the **Celo Mainnet** with contract address `0x35643527da0fe2251445dcd77d313ad280a50fe4`. This contract is fully verified and operational, showing successful transactions on the Celo blockchain.
+
+### Use Case:
+We leverage **Polygon** and **Celo** to interact with decentralized applications (dApps) and blockchain events. When a smart contract is triggered on either Polygon or Celo, events are captured and used to trigger actions. For example, upon triggering events, the system sends notifications or triggers further actions (e.g., interacting with the AI agent), ensuring seamless integration and enhanced functionality for blockchain interactions across both networks.
+
+
+
+---
+
+
+## How We Are Different 🌟
+---
+
+Unlike general Multi-Party Computation (MPC) models, our platform focuses on **orchestration and workflow management** from the **user’s perspective**. We’re not just optimizing AI; we’re making workflows intuitive, transparent, and customizable for everyday users. Here’s how **Memest Cutest Platform** stands out:
+
+| **Feature**                          | **Traditional MPC Models**                                             | **Memest Cutest Platform**                                                                 |
+|--------------------------------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| **Focus**                            | Focus on AI-centric models and algorithms.                           | **User-centric orchestration**, enabling seamless workflows for both Web2 and Web3 services. |
+| **Source Code**                      | Closed-source, proprietary platforms.                                | **Open-source**, allowing users and developers to contribute and expand the platform. |
+| **Web2 & Web3 Integration**          | Typically Web2-only or Web3-only solutions.                          | Unified platform that integrates **both Web2 (e.g., Gmail, Google Sheets)** and **Web3 (e.g., MetaMask, Uniswap)** services. |
+| **Trusted Execution Environment (TEE)** | Lack of built-in TEE for data security.                              | Integrated **TEE** provided by **Phala Network** for added privacy and security in workflows. |
+| **Workflow Flexibility**             | Limited workflows with few integration tools.                        | Highly customizable workflows with **multiple tools**, including blockchain, data services, and APIs. |
+| **User Interface**                   | Often lacks user-friendly interfaces or requires technical knowledge. | **Gamified front-end** that makes building workflows visually engaging and intuitive. |
+| **Cross-DApp Communication**         | Web3 services typically operate in isolation.                        | **Web3 services** can interact with each other across DApps, allowing for **cross-DApp connections** in workflows. |
+| **Platform Ecosystem**               | Closed ecosystems with limited ability for user contributions.       | Open, **community-driven ecosystem** where users can contribute new services, plugins, and integrations. |
+
+**Memest Cutest Platform** goes beyond traditional models by offering a **full-stack, user-friendly solution** that integrates both **Web2 and Web3**. It’s designed to provide **privacy, flexibility, and scalability** with an easy-to-use interface, while supporting **cross-platform interoperability**.
+
+---
 
 ## Future Implementations 🚀
-### Cross-Chain Diagram
 
-In the future, Memest Cutest Platform will extend its support for additional blockchain networks beyond those already integrated (e.g., Polygon, Celo). By implementing a cross-chain framework, users will be able to create seamless workflows that span multiple chains, such as Ethereum, Binance Smart Chain, Solana, and more. This will allow for automated actions across a diverse range of blockchain ecosystems—whether it’s token swaps, event listening, or contract interactions—without users needing to manually switch between networks.
+We are committed to continuously improving our platform and enabling the community to build on it. Here are some exciting future plans:
 
-We envision a network of interconnected blockchains that are easily accessed and automated within a single, unified interface. This will bring true interoperability to the Web3 space and offer greater flexibility for users building cross-chain workflows.
-
-Advanced AI-Driven Orchestration: Context-Aware Workflows
-
-### Gamification Visualization Diagram
-
-In the future, we plan to expand the visual gamified interface to support real-time data streaming, showing not just the static flow of actions but live updates as workflows execute. Users will be able to watch their actions unfold in real-time, with service blocks reacting interactively to data flows. This will improve the transparency and engagement of the platform, turning automated tasks into a highly interactive experience.
-
-This enhancement will also allow for a more comprehensive monitoring dashboard, where users can view detailed metrics, like transaction speeds, service health, and the efficiency of each step in their workflow.
-
-
-### Modular Plugin Diagram
-
-To further expand Memest Cutest Platform’s capabilities, we will be developing a modular plugin system where both users and developers can contribute new services, block types, and integrations. This open-source ecosystem will allow the platform to grow continuously, adapting to new tools, services, and blockchain networks as they emerge. Users will be able to install and configure plugins easily, ensuring that they are always able to integrate the latest technologies into their workflows.
-
-We aim to build a community-driven platform where anyone can contribute to the Platform’s evolution, creating a constantly growing repository of pre-built workflows, service blocks, and integrations.
-
-
----
+### Super DApp: Connecting All DApps
+In the future, **Memest Cutest Platform** aims to become the **super DApp**, a platform that connects to **all other DApps**. We envision a future where users can interact with and automate workflows across every decentralized application, regardless of the underlying blockchain network.
 
 
 ## Team👥
 
 - **Derek Liew Qi Jian**  
-  - *Role*: Platform Lead, AI & 
+  - *Role*: Platform Lead, AI & TEE  
   - [LinkedIn](https://www.linkedin.com/in/derek2403/) | [Twitter](https://x.com/derek2403)
 
 - **Phen Jing Yuan**  
-  - *Role*: TEE & Frontend Integration  
+  - *Role*: Backend Integration  
   - [LinkedIn](https://www.linkedin.com/in/jing-yuan-phen-b42266295/) | [Twitter](https://x.com/ilovedahmo)
- 
+
 - **Marcus Tan Chi Yau**  
-  - *Role*: Backend  
+  - *Role*: Frontend Developer & UI/UX Design  
   - [LinkedIn](https://www.linkedin.com/in/marcus-tan-8846ba271/)
 
 - **Tan Zhi Wei**  
-  - *Role*: Frontend & UI/UX Design  
+  - *Role*: Frontend Developer & UI/UX Design  
   - [LinkedIn](https://www.linkedin.com/in/tanzhiwei0328/)
- 
+
 - **Edwina Hon**  
-  - *Role*: 
+  - *Role*: 1inch Integration & Backend Integration 
   - [LinkedIn](https://www.linkedin.com/in/edwina-hon-548189340/)
- 
+
