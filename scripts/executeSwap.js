@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 const axios = require("axios");
-const inquirer = require("inquirer");
+const readline = require("readline");
 require("dotenv").config();
 
 // Arbitrum Addresses
@@ -162,68 +162,142 @@ async function swapTokens(wallet, fromToken, toToken, amount) {
   }
 }
 
+// Create readline interface for user input
+function createInterface() {
+  return readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+}
+
+// Helper function to ask questions
+function question(rl, query) {
+  return new Promise((resolve) => {
+    rl.question(query, (answer) => {
+      resolve(answer);
+    });
+  });
+}
+
+// Helper function to validate private key
+function isValidPrivateKey(key) {
+  // Remove 0x prefix if present
+  const cleanKey = key.startsWith("0x") ? key.slice(2) : key;
+
+  // Check if it's a valid hex string with correct length (64 characters = 32 bytes)
+  return /^[0-9a-fA-F]{64}$/.test(cleanKey);
+}
+
 // Get user input
 async function getUserInput() {
-  const questions = [
-    {
-      type: "password",
-      name: "privateKey",
-      message: "Enter your private key:",
-      mask: "*",
-    },
-    {
-      type: "list",
-      name: "action",
-      message: "What would you like to do?",
-      choices: ["Check Balances", "Swap Tokens", "Wrap ETH to WETH"],
-    },
-  ];
+  const rl = createInterface();
 
-  const answers = await inquirer.prompt(questions);
+  console.log("Please enter your information:");
+  let privateKey = await question(
+    rl,
+    "Enter your private key (64 hex characters): "
+  );
 
-  if (answers.action === "Swap Tokens") {
-    const tokenChoices = Object.keys(TOKENS);
-
-    const swapQuestions = [
-      {
-        type: "list",
-        name: "fromToken",
-        message: "Select token to swap from:",
-        choices: [...tokenChoices, "ETH"],
-      },
-      {
-        type: "list",
-        name: "toToken",
-        message: "Select token to swap to:",
-        choices: tokenChoices,
-      },
-      {
-        type: "input",
-        name: "amount",
-        message: "Enter amount to swap:",
-        validate: (value) =>
-          !isNaN(parseFloat(value)) ? true : "Please enter a valid number",
-      },
-    ];
-
-    const swapAnswers = await inquirer.prompt(swapQuestions);
-    return { ...answers, ...swapAnswers };
-  } else if (answers.action === "Wrap ETH to WETH") {
-    const wrapQuestions = [
-      {
-        type: "input",
-        name: "wrapAmount",
-        message: "Enter amount of ETH to wrap:",
-        validate: (value) =>
-          !isNaN(parseFloat(value)) ? true : "Please enter a valid number",
-      },
-    ];
-
-    const wrapAnswers = await inquirer.prompt(wrapQuestions);
-    return { ...answers, ...wrapAnswers };
+  // Validate private key
+  while (!isValidPrivateKey(privateKey)) {
+    console.log(
+      "Invalid private key format. A private key should be 64 hexadecimal characters."
+    );
+    privateKey = await question(
+      rl,
+      "Enter a valid private key (64 hex characters): "
+    );
   }
 
-  return answers;
+  // Ensure the key has 0x prefix
+  if (!privateKey.startsWith("0x")) {
+    privateKey = "0x" + privateKey;
+  }
+
+  console.log("\nWhat would you like to do?");
+  console.log("1. Check Balances");
+  console.log("2. Swap Tokens");
+  console.log("3. Wrap ETH to WETH");
+
+  const actionChoice = await question(rl, "Enter your choice (1-3): ");
+  let action;
+
+  switch (actionChoice) {
+    case "1":
+      action = "Check Balances";
+      rl.close();
+      return { privateKey, action };
+
+    case "2":
+      action = "Swap Tokens";
+      console.log("\nAvailable tokens:");
+
+      const tokenChoices = [...Object.keys(TOKENS), "ETH"];
+      tokenChoices.forEach((token, index) => {
+        console.log(`${index + 1}. ${token}`);
+      });
+
+      const fromTokenIndex =
+        parseInt(
+          await question(rl, "Select token to swap from (enter number): ")
+        ) - 1;
+      if (fromTokenIndex < 0 || fromTokenIndex >= tokenChoices.length) {
+        console.log("Invalid selection. Exiting.");
+        rl.close();
+        process.exit(1);
+      }
+
+      const fromToken = tokenChoices[fromTokenIndex];
+
+      // Only offer proper tokens (not ETH) as destination
+      const toTokenChoices = Object.keys(TOKENS);
+      toTokenChoices.forEach((token, index) => {
+        console.log(`${index + 1}. ${token}`);
+      });
+
+      const toTokenIndex =
+        parseInt(
+          await question(rl, "Select token to swap to (enter number): ")
+        ) - 1;
+      if (toTokenIndex < 0 || toTokenIndex >= toTokenChoices.length) {
+        console.log("Invalid selection. Exiting.");
+        rl.close();
+        process.exit(1);
+      }
+
+      const toToken = toTokenChoices[toTokenIndex];
+
+      const amountStr = await question(rl, "Enter amount to swap: ");
+      const amount = parseFloat(amountStr);
+
+      if (isNaN(amount) || amount <= 0) {
+        console.log("Invalid amount. Exiting.");
+        rl.close();
+        process.exit(1);
+      }
+
+      rl.close();
+      return { privateKey, action, fromToken, toToken, amount };
+
+    case "3":
+      action = "Wrap ETH to WETH";
+      const wrapAmountStr = await question(rl, "Enter amount of ETH to wrap: ");
+      const wrapAmount = parseFloat(wrapAmountStr);
+
+      if (isNaN(wrapAmount) || wrapAmount <= 0) {
+        console.log("Invalid amount. Exiting.");
+        rl.close();
+        process.exit(1);
+      }
+
+      rl.close();
+      return { privateKey, action, wrapAmount };
+
+    default:
+      console.log("Invalid choice. Exiting.");
+      rl.close();
+      process.exit(1);
+  }
 }
 
 // Main flow
