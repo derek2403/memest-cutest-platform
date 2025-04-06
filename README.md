@@ -59,12 +59,12 @@ Users begin by connecting their wallets (via RainbowKit) and linking Web2 servic
 
 **Visual Service Blocks**  
 We spawn a playful representation of each service once it’s added. For example:  
-- **MetaMask** appears as a fox  
-- **1inch** appears as a unicorn  
-- **Polygon** is a purple crystal ball  
-- **Celo** is a plant  
-- **Google Sheets** appears as a paper spreadsheet  
-- **Gmail** is shown as a laptop with Gmail open
+- **MetaMask** appears as a fox 🦊  
+- **1inch** appears as a unicorn 🦄  
+- **Polygon** is a purple crystal ball 🔮  
+- **Celo** is a plant 🌱  
+- **Google Sheets** appears as a paper spreadsheet 📊  
+- **Gmail** is shown as a laptop with Gmail open 💻📧  
 
 **Drag-and-Drop Workflows**  
 Inspired by Apple Shortcuts, users can simply drag, drop, and connect these service blocks. An AI agent automatically translates these connections into real actions behind the scenes. You can also define workflows via natural language—our agent will interpret phrases like “For each MetaMask fund transfer, notify me by Gmail and record it in Google Sheets.”
