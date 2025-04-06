@@ -16,3 +16,4 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/app/data 
+      - /var/run/tappd.sock:/var/run/tappd.sock 

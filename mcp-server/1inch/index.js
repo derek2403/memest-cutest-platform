@@ -26,7 +26,7 @@ function getRandomBytes32() {
 // Load environment variables (wallet key, address, RPC URL, and 1inch API key)
 const makerPrivateKey = process?.WALLET_KEY;
 const makerAddress = process?.WALLET_ADDRESS;
-const nodeUrl = process?.RPC_URL; // suggested for ethereum https://eth.llamarpc.com
+const nodeUrl = process?.RPC_URL; 
 const devPortalApiKey = process?.DEV_PORTAL_KEY;
 
 // Ensure all necessary environment variables are set
@@ -296,7 +296,7 @@ const makeRetryableRequest = async (
     dstChainId,
     srcTokenAddress,
     dstTokenAddress,
-    amount: "100000", // 0.001 WETH
+    amount: "100000", 
     enableEstimate: true,
     walletAddress: makerAddress,
   };
