@@ -193,11 +193,11 @@ These links provide a record of the transactions on **Base** blockchain, showcas
 ## Polygon and Celo Integration
 
 ### Polygon Integration
-- **Event Capturing**: We have verified a smart contract (`[0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1](https://amoy.polygonscan.com/address/0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1)`) on Polygon PoS and capture blockchain events.
+- **Event Capturing**: We have verified a smart contract [0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1](https://amoy.polygonscan.com/address/0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1) on Polygon PoS and capture blockchain events.
 - **Gmail Integration**: We use captured blockchain events and link them to **Gmail**, enabling notifications or other actions based on blockchain events.
 
 ### Celo Integration
-- We have deployed a smart contract on the **Celo Mainnet** with contract address `[0x35643527da0fe2251445dcd77d313ad280a50fe4](https://celoscan.io/address/0x35643527da0fe2251445dcd77d313ad280a50fe4)`. This contract is fully verified and operational, showing successful transactions on the Celo blockchain.
+- We have deployed a smart contract on the **Celo Mainnet** with contract address [0x35643527da0fe2251445dcd77d313ad280a50fe4](https://celoscan.io/address/0x35643527da0fe2251445dcd77d313ad280a50fe4). This contract is fully verified and operational, showing successful transactions on the Celo blockchain.
 
 ### Use Case:
 We leverage **Polygon** and **Celo** to interact with decentralized applications (dApps) and blockchain events. When a smart contract is triggered on either Polygon or Celo, events are captured and used to trigger actions. For example, upon triggering events, the system sends notifications or triggers further actions (e.g., interacting with the AI agent), ensuring seamless integration and enhanced functionality for blockchain interactions across both networks.
