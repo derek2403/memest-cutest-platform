@@ -176,19 +176,28 @@ Here's a brief overview of important directories in our repository:
 We integrate **1inch Fusion+** to provide efficient cross-chain swaps within our platform. This feature allows users to seamlessly swap tokens across chains without the need for bridging. 
 
 - **Use Case Example**: In our workflow, when a user holds **Arbitrum USDC**, the system automatically converts it to **Base USDC**. This entire process is managed by the AI Agent, which executes the cross-chain swap without user intervention.
-  
-By using 1inch, we provide an efficient way to enable cross-chain swaps for our users, simplifying the process and improving liquidity.
+
+By using **1inch**, we provide an efficient way to enable cross-chain swaps for our users, simplifying the process and improving liquidity.
+
+### Proof of Execution:
+The following transaction hashes demonstrate that the cross-chain swaps have been successfully executed:
+
+1. [Transaction Hash 1: 0x947132e2b42af672bc27ca2ce66a1ff7cd7b0eda0847da7bcb594bf3ad7e5abb](https://basescan.org/tx/0x947132e2b42af672bc27ca2ce66a1ff7cd7b0eda0847da7bcb594bf3ad7e5abb)
+2. [Transaction Hash 2: 0xfeb99c27b47d8e98d6dc3a8e1d2f04f46039b27c133cf934f52c4dd2ff7070b9](https://basescan.org/tx/0xfeb99c27b47d8e98d6dc3a8e1d2f04f46039b27c133cf934f52c4dd2ff7070b9)
+
+These links provide a record of the transactions on **Base** blockchain, showcasing that the cross-chain swap process was completed successfully.
+
 
 ---
 
 ## Polygon and Celo Integration
 
 ### Polygon Integration
-- **Event Capturing**: We have verified a smart contract (`0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1`) on Polygon PoS and capture blockchain events.
+- **Event Capturing**: We have verified a smart contract (`[0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1](https://amoy.polygonscan.com/address/0xFaDC1F029af77faE9405B9f565b92Ec0B59130E1)`) on Polygon PoS and capture blockchain events.
 - **Gmail Integration**: We use captured blockchain events and link them to **Gmail**, enabling notifications or other actions based on blockchain events.
 
 ### Celo Integration
-- We have deployed a smart contract on the **Celo Mainnet** with contract address `0x35643527da0fe2251445dcd77d313ad280a50fe4`. This contract is fully verified and operational, showing successful transactions on the Celo blockchain.
+- We have deployed a smart contract on the **Celo Mainnet** with contract address `[0x35643527da0fe2251445dcd77d313ad280a50fe4](https://celoscan.io/address/0x35643527da0fe2251445dcd77d313ad280a50fe4)`. This contract is fully verified and operational, showing successful transactions on the Celo blockchain.
 
 ### Use Case:
 We leverage **Polygon** and **Celo** to interact with decentralized applications (dApps) and blockchain events. When a smart contract is triggered on either Polygon or Celo, events are captured and used to trigger actions. For example, upon triggering events, the system sends notifications or triggers further actions (e.g., interacting with the AI agent), ensuring seamless integration and enhanced functionality for blockchain interactions across both networks.
