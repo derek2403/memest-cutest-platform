@@ -54,6 +54,7 @@ export default function Shortcut({ onClose, onDrop }) {
       
       // Get the dragged button ID
       const buttonId = e.dataTransfer.getData('text/plain');
+      console.log('Dropped button ID:', buttonId);
       
       // Call the onDrop callback with the button ID
       if (onDrop) {
@@ -69,22 +70,22 @@ export default function Shortcut({ onClose, onDrop }) {
       // Handle different assistants based on the dragged icon
       if (buttonId === 'metamask-button' || buttonId === 'metamask-icon') {
         renderAssistant('metamask');
-        onClose();
+        // Keep modal open after drop
       } else if (buttonId === 'gmail-button' || buttonId === 'gmail-icon') {
         renderAssistant('gmail');
-        onClose();
+        // Keep modal open after drop
       } else if (buttonId === '1inch-button' || buttonId === '1inch-icon') {
         renderAssistant('1inch');
-        onClose();
+        // Keep modal open after drop
       } else if (buttonId === 'polygon-button' || buttonId === 'polygon-icon') {
         renderAssistant('polygon');
-        onClose();
+        // Keep modal open after drop
       } else if (buttonId === 'celo-button' || buttonId === 'celo-icon') {
         renderAssistant('celo');
-        onClose();
+        // Keep modal open after drop
       } else if (buttonId === 'spreadsheet-button' || buttonId === 'spreadsheet-icon') {
         renderAssistant('spreadsheet');
-        onClose();
+        // Keep modal open after drop
       } else {
         // Check if the dragged element was one of the icons in the shortcut component
         const dataTransfer = e.dataTransfer;
@@ -96,27 +97,27 @@ export default function Shortcut({ onClose, onDrop }) {
               const file = dataTransfer.items[i].getAsFile();
               if (file.name.includes('metamask')) {
                 renderAssistant('metamask');
-                onClose();
+                // Keep modal open after drop
                 break;
               } else if (file.name.includes('gmail')) {
                 renderAssistant('gmail');
-                onClose();
+                // Keep modal open after drop
                 break;
               } else if (file.name.includes('1inch')) {
                 renderAssistant('1inch');
-                onClose();
+                // Keep modal open after drop
                 break;
               } else if (file.name.includes('polygon')) {
                 renderAssistant('polygon');
-                onClose();
+                // Keep modal open after drop
                 break;
               } else if (file.name.includes('celo')) {
                 renderAssistant('celo');
-                onClose();
+                // Keep modal open after drop
                 break;
               } else if (file.name.includes('spreadsheet')) {
                 renderAssistant('spreadsheet');
-                onClose();
+                // Keep modal open after drop
                 break;
               }
             }
@@ -208,54 +209,64 @@ export default function Shortcut({ onClose, onDrop }) {
   // Make the icons in the shortcut component draggable
   useEffect(() => {
     const icons = document.querySelectorAll(`.${styles.shortcutIcon}`);
+    
+    const handleDragStart = (e) => {
+      // Set the data based on the icon's alt text
+      const iconType = e.target.alt.toLowerCase();
+      console.log('Dragging icon:', iconType);
+      e.dataTransfer.setData('text/plain', `${iconType}-icon`);
+      
+      // Set a drag image to ensure the icon is visible during drag
+      const dragImage = e.target.cloneNode(true);
+      dragImage.style.width = '50px';
+      dragImage.style.height = '50px';
+      dragImage.style.opacity = '0.8';
+      dragImage.style.position = 'absolute';
+      dragImage.style.top = '-1000px';
+      document.body.appendChild(dragImage);
+      
+      // Use the cloned image as the drag image
+      e.dataTransfer.setDragImage(dragImage, 25, 25);
+      
+      // Clean up the drag image after dragend
+      setTimeout(() => {
+        if (dragImage.parentNode) {
+          dragImage.parentNode.removeChild(dragImage);
+        }
+      }, 0);
+      
+      // Indicate that dragging has started
+      setIsDragging(true);
+    };
+    
+    const handleDragEnd = () => {
+      // Reset dragging state when drag ends
+      setIsDragging(false);
+    };
+    
     icons.forEach(icon => {
       icon.setAttribute('draggable', 'true');
-      
-      icon.addEventListener('dragstart', (e) => {
-        // Set the data based on the icon's alt text
-        const iconType = icon.alt.toLowerCase();
-        e.dataTransfer.setData('text/plain', `${iconType}-icon`);
-        
-        // Set a drag image to ensure the icon is visible during drag
-        const dragImage = icon.cloneNode(true);
-        dragImage.style.width = '50px';
-        dragImage.style.height = '50px';
-        dragImage.style.opacity = '0.8';
-        dragImage.style.position = 'absolute';
-        dragImage.style.top = '-1000px';
-        document.body.appendChild(dragImage);
-        
-        // Use the cloned image as the drag image
-        e.dataTransfer.setDragImage(dragImage, 25, 25);
-        
-        // Clean up the drag image after dragend
-        setTimeout(() => {
-          if (dragImage.parentNode) {
-            dragImage.parentNode.removeChild(dragImage);
-          }
-        }, 0);
-        
-        // Indicate that dragging has started
-        setIsDragging(true);
-      });
-      
-      icon.addEventListener('dragend', () => {
-        // Reset dragging state when drag ends
-        setIsDragging(false);
-      });
+      icon.addEventListener('dragstart', handleDragStart);
+      icon.addEventListener('dragend', handleDragEnd);
     });
     
     // Add global dragend event to handle cases when drag is canceled
-    const handleDragEnd = () => {
+    const handleGlobalDragEnd = () => {
       setIsDragging(false);
       setIsDraggingOver(false);
     };
     
-    document.addEventListener('dragend', handleDragEnd);
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    
     return () => {
-      document.removeEventListener('dragend', handleDragEnd);
+      // Clean up all event listeners
+      icons.forEach(icon => {
+        icon.removeEventListener('dragstart', handleDragStart);
+        icon.removeEventListener('dragend', handleDragEnd);
+      });
+      document.removeEventListener('dragend', handleGlobalDragEnd);
     };
-  }, []);
+  }, [activePlugins]);
 
   // Handle direct drop of the icon (without using drag events)
   useEffect(() => {
@@ -285,7 +296,7 @@ export default function Shortcut({ onClose, onDrop }) {
           
           // Render the MetaMask assistant
           renderAssistant('metamask');
-          onClose();
+          // Keep modal open after drop
         }
       }
       
@@ -306,6 +317,9 @@ export default function Shortcut({ onClose, onDrop }) {
         // Don't close if we're clicking on the draggable icon
         if (event.target.id === 'draggable-metamask-icon') return;
         
+        // Don't close if we're currently dragging
+        if (isDragging || isDraggingOver) return;
+        
         onClose();
       }
     };
@@ -314,7 +328,7 @@ export default function Shortcut({ onClose, onDrop }) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [onClose]);
+  }, [onClose, isDragging, isDraggingOver]);
 
   // Handle send button click
   const handleSendMessage = () => {
