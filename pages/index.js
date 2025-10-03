@@ -435,11 +435,8 @@ export default function Home() {
     videoTexture.magFilter = THREE.NearestFilter;
     videoTexture.format = THREE.RGBAFormat;
     
-    if (THREE.SRGBColorSpace !== undefined) {
-      videoTexture.colorSpace = THREE.SRGBColorSpace;
-    } else if (THREE.sRGBEncoding !== undefined) {
-      videoTexture.encoding = THREE.sRGBEncoding;
-    }
+    // Use the new color space API (Three.js r152+)
+    videoTexture.colorSpace = THREE.SRGBColorSpace;
     
     videoTexture.generateMipmaps = false;
     videoTexture.needsUpdate = true;
@@ -566,13 +563,9 @@ export default function Home() {
       renderer.shadowMap.enabled = true; // Enable shadow mapping
       renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Use soft shadows for better quality
       
-      // Set output encoding to sRGB for vibrant colors throughout the scene
-      if (THREE.OutputEncoding !== undefined) {
-        renderer.outputEncoding = THREE.sRGBEncoding;
-      } else if (THREE.ColorManagement !== undefined) {
-        THREE.ColorManagement.enabled = true;
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-      }
+      // Set output color space to sRGB for vibrant colors throughout the scene (Three.js r152+)
+      THREE.ColorManagement.enabled = true;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
       
       // Always use the device's actual pixel ratio for maximum clarity
       renderer.setPixelRatio(window.devicePixelRatio);
